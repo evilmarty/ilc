@@ -1,6 +1,8 @@
 ILC - The simple way to create a command-line utility
 -----------------------------------------------------
 
+[![CI](https://github.com/evilmarty/ilc/actions/workflows/ci.yml/badge.svg)](https://github.com/evilmarty/ilc/actions/workflows/ci.yml)
+
 Create an easy to use interactive CLI to simplify your workflow with a single YAML file.
 
 ## Installation
