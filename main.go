@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	defaultConfigFile = "ilc.yml"
+	defaultConfigFile  = "ilc.yml"
+	minChoiceFiltering = 5
 )
 
 var (
@@ -40,6 +41,10 @@ func askInputChoice(input *ConfigCommandInput) (any, error) {
 		choices = append(choices, &selection.Choice{String: label, Value: value})
 	}
 	sp := selection.New(prompt, choices)
+
+	if len(choices) <= minChoiceFiltering {
+		sp.Filter = nil
+	}
 
 	if choice, err := sp.RunPrompt(); err != nil {
 		return choice, err
@@ -121,7 +126,13 @@ func (m *model) askCommand() error {
 		choices[i] = &selection.Choice{String: command.Name, Value: command}
 	}
 
-	sp := selection.New("Choose command", choices)
+	prompt := promptStyle.Render("Choose command")
+	sp := selection.New(prompt, choices)
+
+	if len(choices) <= minChoiceFiltering {
+		sp.Filter = nil
+	}
+
 	choice, err := sp.RunPrompt()
 	if err != nil {
 		return err
