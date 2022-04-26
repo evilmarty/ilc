@@ -166,6 +166,16 @@ func (m *model) askInputs() error {
 	return nil
 }
 
+func (m *model) ask() error {
+	if err := m.askCommand(); err != nil {
+		return err
+	} else if err := m.askInputs(); err != nil {
+		return nil
+	} else {
+		return nil
+	}
+}
+
 func (m *model) env() []string {
 	if m.command == nil {
 		return []string{}
@@ -218,12 +228,7 @@ func newModel(defaultConfigFile string) *model {
 func main() {
 	m := newModel(defaultConfigFile)
 
-	if err := m.askCommand(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	}
-
-	if err := m.askInputs(); err != nil {
+	if err := m.ask(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
