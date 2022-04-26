@@ -1,12 +1,13 @@
 package main
 
 import (
-	"os"
-	"os/exec"
 	"flag"
 	"fmt"
-	"text/template"
+	"os"
+	"os/exec"
 	"strings"
+	"text/template"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/erikgeiser/promptkit/selection"
 	"github.com/erikgeiser/promptkit/textinput"
@@ -17,7 +18,7 @@ const (
 )
 
 var (
-	promptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#666"))
+	promptStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#666"))
 	inputNameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#0cc")).Bold(true)
 )
 
@@ -32,29 +33,10 @@ func renderTemplate(name, text string, data map[string]any) (string, error) {
 	}
 }
 
-func askCommand(config *Config) (*ConfigCommand, error) {
-	var choices = make([]*selection.Choice, len(config.Commands))
-
-	for i, command := range(config.Commands) {
-		choices[i] = &selection.Choice{String: command.Name, Value: command}
-	}
-
-	sp := selection.New("Choose command", choices)
-	choice, err := sp.RunPrompt()
-	if err != nil {
-		return nil, err
-	}
-	if command, ok := choice.Value.(ConfigCommand); ok {
-		return &command, nil
-	} else {
-		return nil, fmt.Errorf("Failed to cast choice: %s", choice.String)
-	}
-}
-
 func askInputChoice(input *ConfigCommandInput) (any, error) {
 	var choices = make([]*selection.Choice, 0, len(input.Options))
 	prompt := fmt.Sprintf("%s %s", promptStyle.Render("Choose a"), inputNameStyle.Render(input.Name))
-	for label, value := range(input.Options) {
+	for label, value := range input.Options {
 		choices = append(choices, &selection.Choice{String: label, Value: value})
 	}
 	sp := selection.New(prompt, choices)
@@ -83,9 +65,9 @@ func askInput(input *ConfigCommandInput) (any, error) {
 }
 
 type model struct {
-	config *Config
+	config  *Config
 	command *ConfigCommand
-	values map[string]any
+	values  map[string]any
 	flagSet *flag.FlagSet
 }
 
@@ -99,7 +81,7 @@ func (m *model) populate(args []string) error {
 		return nil
 	}
 
-	for _, command := range(m.config.Commands) {
+	for _, command := range m.config.Commands {
 		if command.Name == args[0] {
 			m.setCommand(&command)
 		}
@@ -111,7 +93,7 @@ func (m *model) populate(args []string) error {
 
 	values := make(map[string]*string)
 	m.flagSet = flag.NewFlagSet(m.config.Description, flag.ExitOnError)
-	for _, input := range(m.command.Inputs) {
+	for _, input := range m.command.Inputs {
 		values[input.Name] = m.flagSet.String(input.Name, input.Default, "")
 	}
 
@@ -119,7 +101,7 @@ func (m *model) populate(args []string) error {
 		return err
 	}
 
-	for name, value := range(values) {
+	for name, value := range values {
 		if value != nil && (*value) != "" {
 			m.values[name] = value
 		}
@@ -135,7 +117,7 @@ func (m *model) askCommand() error {
 
 	var choices = make([]*selection.Choice, len(m.config.Commands))
 
-	for i, command := range(m.config.Commands) {
+	for i, command := range m.config.Commands {
 		choices[i] = &selection.Choice{String: command.Name, Value: command}
 	}
 
@@ -157,7 +139,7 @@ func (m *model) askInputs() error {
 		return nil
 	}
 
-	for _, input := range(m.command.Inputs) {
+	for _, input := range m.command.Inputs {
 		if _, ok := m.values[input.Name]; ok {
 			continue
 		}
@@ -180,7 +162,7 @@ func (m *model) env() []string {
 
 	var env = make([]string, len(m.command.Env))
 
-	for name, rawValue := range(m.command.Env) {
+	for name, rawValue := range m.command.Env {
 		if value, err := renderTemplate(name, rawValue, m.values); err == nil {
 			env = append(env, fmt.Sprintf("%s=%s", name, value))
 		}
