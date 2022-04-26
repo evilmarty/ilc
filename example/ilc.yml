@@ -1,0 +1,44 @@
+description: Example config
+commands:
+  weather:
+    description: Show the current weather forecast
+    run: curl wttr.in/{{ .airport }}
+    inputs:
+      airport:
+        options:
+          Brisbane International Airport: bne
+          Los Angeles International Airport: lax
+          Munich International Airport: muc
+  calendar:
+    description: Display a calendar for the month
+    inputs:
+      month:
+        options:
+          - January
+          - February
+          - March
+          - April
+          - May
+          - June
+          - July
+          - August
+          - September
+          - October
+          - November
+          - December
+    run: cal -m {{ .month }}
+  greet:
+    description: Give a greeting
+    inputs:
+      name:
+        default: World
+        pattern: "^[a-zA-Z]+"
+      greeting:
+        options:
+          - Hello
+          - Hi
+          - G'day
+    run: echo $GREETING $NAME
+    env:
+      NAME: "{{ .name }}"
+      GREETING: "{{ .greeting }}"
