@@ -70,25 +70,36 @@ func (cci ConfigCommandInput) matches(value string) bool {
 type ConfigCommandInputs []ConfigCommandInput
 
 func (x *ConfigCommandInputs) UnmarshalYAML(value *yaml.Node) error {
-	if value.Kind != yaml.MappingNode {
-		return fmt.Errorf("line %d: cannot unmarshal commands into map", value.Line)
+	if value.Kind != yaml.MappingNode || len(value.Content)%2 != 0 {
+		return fmt.Errorf("line %d: cannot unmarshal inputs into map", value.Line)
 	}
 
-	var name string
 	inputs := ConfigCommandInputs{}
+	content := value.Content
 
-	for _, node := range value.Content {
-		switch node.Kind {
+	for len(content) > 0 {
+		keyNode := content[0]
+		valueNode := content[1]
+
+		if keyNode.Kind != yaml.ScalarNode {
+			return fmt.Errorf("line %d: unexpected node type", keyNode.Line)
+		}
+
+		switch valueNode.Kind {
 		case yaml.ScalarNode:
-			name = node.Value
+			inputs = append(inputs, ConfigCommandInput{Name: keyNode.Value})
 		case yaml.MappingNode:
 			var input ConfigCommandInput
-			if err := node.Decode(&input); err != nil {
+			if err := valueNode.Decode(&input); err != nil {
 				return err
 			}
-			input.Name = name
+			input.Name = keyNode.Value
 			inputs = append(inputs, input)
+		default:
+			return fmt.Errorf("line %d: unexpected node type", valueNode.Line)
 		}
+
+		content = content[2:]
 	}
 
 	*x = inputs
@@ -107,25 +118,29 @@ type ConfigCommand struct {
 type ConfigCommands []ConfigCommand
 
 func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
-	if value.Kind != yaml.MappingNode {
+	if value.Kind != yaml.MappingNode || len(value.Content)%2 != 0 {
 		return fmt.Errorf("line %d: cannot unmarshal commands into map", value.Line)
 	}
 
-	var name string
 	commands := ConfigCommands{}
+	content := value.Content
 
-	for _, node := range value.Content {
-		switch node.Kind {
-		case yaml.ScalarNode:
-			name = node.Value
-		case yaml.MappingNode:
-			var command ConfigCommand
-			if err := node.Decode(&command); err != nil {
-				return err
-			}
-			command.Name = name
-			commands = append(commands, command)
+	for len(content) > 0 {
+		keyNode := content[0]
+		valueNode := content[1]
+
+		if keyNode.Kind != yaml.ScalarNode || valueNode.Kind != yaml.MappingNode {
+			return fmt.Errorf("line %d: unexpected node type", keyNode.Line)
 		}
+
+		var command ConfigCommand
+		if err := valueNode.Decode(&command); err != nil {
+			return err
+		}
+		command.Name = keyNode.Value
+		commands = append(commands, command)
+
+		content = content[2:]
 	}
 
 	*x = commands
