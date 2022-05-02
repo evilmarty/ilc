@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"regexp"
 
+	"github.com/kr/pretty"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,12 +42,12 @@ type ConfigCommandInput struct {
 	Options ConfigCommandInputOptions
 }
 
-func (cci ConfigCommandInput) CanSelect() bool {
+func (cci ConfigCommandInput) Selectable() bool {
 	return len(cci.Options) > 0
 }
 
 func (cci ConfigCommandInput) Validate(value string) bool {
-	if cci.CanSelect() {
+	if cci.Selectable() {
 		return cci.contains(value)
 	} else {
 		return cci.matches(value)
@@ -63,7 +64,8 @@ func (cci ConfigCommandInput) contains(value string) bool {
 }
 
 func (cci ConfigCommandInput) matches(value string) bool {
-	matched, _ := regexp.MatchString(cci.Pattern, value)
+	matched, err := regexp.MatchString(cci.Pattern, value)
+	pretty.Println(err)
 	return matched
 }
 
