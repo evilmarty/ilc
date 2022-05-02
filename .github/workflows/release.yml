@@ -1,0 +1,66 @@
+name: Create release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The release version"
+        required: true
+        type: string
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [darwin, linux, windows]
+        arch: [amd64, arm, arm64]
+        exclude:
+          - os: darwin
+            arch: arm
+
+    env:
+      GOOS: ${{ matrix.os }}
+      GOARCH: ${{ matrix.arch }}
+      RELEASE_VERSION: ${{ github.event.inputs.version }}
+      ARTEFACT_NAME: "ilc-${{ github.event.inputs.version }}-${{ matrix.os }}_${{ matrix.arch }}"
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+
+    - name: Build
+      run: go build -ldflags "-X main.BuildDate=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.Version=${RELEASE_VERSION}" -v -o "${ARTEFACT_NAME}" .
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}_${{ matrix.arch }}
+        path: ${{ env.ARTEFACT_NAME }}
+        if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        path: builds
+
+    - uses: softprops/action-gh-release@v1
+      with:
+        name: ${{ github.event.inputs.version }}
+        tag_name: v${{ github.event.inputs.version }}
+        fail_on_unmatched_files: true
+        generate_release_notes: true
+        files: builds/**/*
