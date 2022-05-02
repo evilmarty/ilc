@@ -10,9 +10,20 @@ const (
 	defaultConfigFile = "ilc.yml"
 )
 
+var (
+	Version   = "No version provided"
+	BuildDate = "Unknown build date"
+)
+
 func main() {
-	var configFile = flag.String("f", defaultConfigFile, "Config file to load")
+	configFile := flag.String("f", defaultConfigFile, "Config file to load")
+	version := flag.Bool("v", false, "Print version")
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("ILC - %s\nVersion: %s\n", BuildDate, Version)
+		os.Exit(0)
+	}
 
 	m, err := newModel(*configFile)
 	if err != nil {
