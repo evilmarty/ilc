@@ -152,6 +152,7 @@ func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
 
 type Config struct {
 	Description string
+	Shell       []string
 	Commands    ConfigCommands `yaml:",flow"`
 }
 

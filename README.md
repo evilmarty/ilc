@@ -24,6 +24,10 @@ config file pass `-f` with the path. A config file is required.
 
 The overall description of what is the config's purpose. Is optional.
 
+### `shell`
+
+The shell to run the command in. Must be in JSON array format. Defaults to `["sh", "-c"]`.
+
 ### `commands`
 
 The commands defined are then available to be invoked from the command line

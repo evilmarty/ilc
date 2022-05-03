@@ -7,6 +7,10 @@ import (
 	"os/exec"
 )
 
+var (
+	DefaultShell = []string{"sh", "-c"}
+)
+
 type model struct {
 	config  *Config
 	command *ConfigCommand
@@ -123,20 +127,30 @@ func (m *model) env() []string {
 	return env
 }
 
+func (m *model) shell() []string {
+	if len(m.config.Shell) > 0 {
+		return m.config.Shell
+	} else {
+		return DefaultShell
+	}
+}
+
 func (m *model) exec() error {
 	if m.command == nil {
 		return fmt.Errorf("No command specified")
 	}
 
-	if script, err := RenderTemplate(m.command.Run, m.values); err != nil {
+	script, err := RenderTemplate(m.command.Run, m.values)
+	if err != nil {
 		return err
-	} else {
-		cmd := exec.Command("sh", "-c", script)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Env = m.env()
-		return cmd.Run()
 	}
+
+	args := append(m.shell(), script)
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = m.env()
+	return cmd.Run()
 }
 
 func (m *model) Run(args []string) error {
