@@ -116,7 +116,7 @@ func (m *model) env() []string {
 		return []string{}
 	}
 
-	var env = make([]string, len(m.command.Env))
+	var env = make([]string, 0, len(m.command.Env))
 
 	for name, rawValue := range m.command.Env {
 		if value, err := RenderTemplate(rawValue, m.values); err == nil {

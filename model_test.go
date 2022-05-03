@@ -5,6 +5,22 @@ import (
 	"testing"
 )
 
+func TestModelEnv(t *testing.T) {
+	model := &model{
+		command: &ConfigCommand{
+			Env: map[string]string{"FOOBAR": "{{.a}} {{.b}}"},
+		},
+		values: map[string]any{"a": "123", "b": 456},
+	}
+
+	expected := []string{"FOOBAR=123 456"}
+	actual := model.env()
+
+	if !reflect.DeepEqual(actual, expected) {
+		fatalDiff(t, expected, actual)
+	}
+}
+
 func TestModelShell_Default(t *testing.T) {
 	model := &model{
 		config: &Config{},
