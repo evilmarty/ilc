@@ -8,6 +8,7 @@ import (
 
 const (
 	defaultConfigFile = "ilc.yml"
+	helpWidth         = 80
 )
 
 var (
@@ -17,15 +18,22 @@ var (
 
 func main() {
 	configFile := flag.String("f", defaultConfigFile, "Config file to load")
-	version := flag.Bool("v", false, "Print version")
+	showVersion := flag.Bool("version", false, "Print version")
+	showHelp := flag.Bool("help", false, "Show this help screen")
 	flag.Parse()
 
-	if *version {
+	if *showVersion {
 		fmt.Printf("ILC - %s\nVersion: %s\n", BuildDate, Version)
 		os.Exit(0)
 	}
 
 	m, err := newModel(*configFile)
+
+	if *showHelp {
+		printHelp(m)
+		os.Exit(0)
+	}
+
 	if err != nil {
 		fmt.Println("Error loading config:", err)
 		os.Exit(1)

@@ -27,6 +27,11 @@ func (m *model) parse(args []string) error {
 		return nil
 	}
 
+	if args[0] == "help" {
+		printHelp(m)
+		os.Exit(0)
+	}
+
 	for _, command := range m.config.Commands {
 		if command.Name == args[0] {
 			m.setCommand(&command)
@@ -39,8 +44,15 @@ func (m *model) parse(args []string) error {
 	}
 
 	fs := m.getFlagSet()
+	showHelp := fs.Bool("help", false, "Show help for command")
+
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
+	}
+
+	if *showHelp {
+		printHelp(m)
+		os.Exit(0)
 	}
 
 	return nil
