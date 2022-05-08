@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"regexp"
 
-	"github.com/kr/pretty"
 	"gopkg.in/yaml.v3"
 )
 
@@ -64,8 +63,7 @@ func (cci ConfigCommandInput) contains(value string) bool {
 }
 
 func (cci ConfigCommandInput) matches(value string) bool {
-	matched, err := regexp.MatchString(cci.Pattern, value)
-	pretty.Println(err)
+	matched, _ := regexp.MatchString(cci.Pattern, value)
 	return matched
 }
 
