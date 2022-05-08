@@ -171,7 +171,6 @@ commands:
     description: Display a calendar for the month
     inputs:
       month:
-        type: choice
         options:
           - January
           - February
@@ -190,10 +189,8 @@ commands:
     description: Give a greeting
     inputs:
       name:
-        type: text
         default: World
       greeting:
-        type: choice
         options:
           - Hello
           - Hi
