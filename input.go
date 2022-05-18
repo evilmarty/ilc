@@ -65,7 +65,7 @@ func askInputText(input *ConfigCommandInput) (any, error) {
 	prompt := fmt.Sprintf("%s %s", promptStyle.Render("Please specify a"), inputNameStyle.Render(input.Name))
 	ti := textinput.New(prompt)
 	ti.InitialValue = input.Default
-	ti.Validate = input.Validate
+	ti.Validate = input.Valid
 	return ti.RunPrompt()
 }
 

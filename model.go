@@ -70,7 +70,7 @@ func (m *model) getFlagSet() *flag.FlagSet {
 
 func (m *model) addFlagSetInput(fs *flag.FlagSet, input ConfigCommandInput) {
 	fs.Func(input.Name, "", func(value string) error {
-		if input.Validate(value) {
+		if input.Valid(value) {
 			m.values[input.Name] = value
 			return nil
 		} else {

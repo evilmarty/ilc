@@ -45,7 +45,7 @@ func (cci ConfigCommandInput) Selectable() bool {
 	return len(cci.Options) > 0
 }
 
-func (cci ConfigCommandInput) Validate(value string) bool {
+func (cci ConfigCommandInput) Valid(value string) bool {
 	if cci.Selectable() {
 		return cci.contains(value)
 	} else {
