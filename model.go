@@ -97,17 +97,22 @@ func (m *model) askInputs() error {
 		return nil
 	}
 
-	for _, input := range m.command.Inputs {
-		if _, ok := m.values[input.Name]; ok {
-			continue
-		}
+	remainingInputs := make(ConfigCommandInputs, 0, len(m.command.Inputs))
 
-		value, err := askInput(&input)
-		if err != nil {
-			return err
-		} else {
-			m.values[input.Name] = value
+	for _, input := range m.command.Inputs {
+		_, ok := m.values[input.Name]
+		if !ok {
+			remainingInputs = append(remainingInputs, input)
 		}
+	}
+
+	remainingValues, err := askInputs(&remainingInputs)
+	if err != nil {
+		return err
+	}
+
+	for key, value := range remainingValues {
+		m.values[key] = value
 	}
 
 	return nil

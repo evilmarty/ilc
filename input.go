@@ -17,6 +17,8 @@ var (
 	inputNameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#0cc")).Bold(true)
 )
 
+type InputValues map[string]any
+
 func askCommand(commands ConfigCommands) (*ConfigCommand, error) {
 	var choices = make([]*selection.Choice, len(commands))
 
@@ -77,4 +79,16 @@ func askInput(input *ConfigCommandInput) (any, error) {
 	} else {
 		return askInputText(input)
 	}
+}
+
+func askInputs(inputs *ConfigCommandInputs) (InputValues, error) {
+	values := make(InputValues, len(*inputs))
+	for _, input := range *inputs {
+		value, err := askInput(&input)
+		if err != nil {
+			return values, err
+		}
+		values[input.Name] = value
+	}
+	return values, nil
 }
