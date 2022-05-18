@@ -84,6 +84,67 @@ city:
 	}
 }
 
+func TestConfigCommandInputSelectable_WithOptions(t *testing.T) {
+	input := ConfigCommandInput{
+		Options: ConfigCommandInputOptions{
+			"a": "1",
+			"b": "2",
+		},
+	}
+
+	if !input.Selectable() {
+		t.Error("Expected input to be selectable")
+	}
+}
+
+func TestConfigCommandInputSelectable_WithoutOptions(t *testing.T) {
+	input := ConfigCommandInput{}
+
+	if input.Selectable() {
+		t.Error("Expected input to not be selectable")
+	}
+}
+
+func TestConfigCommandInputValid_WithOptions(t *testing.T) {
+	input := ConfigCommandInput{
+		Options: ConfigCommandInputOptions{
+			"a": "1",
+			"b": "2",
+		},
+	}
+
+	if !input.Valid("1") {
+		t.Fatal("Expected value '1' to be valid")
+	}
+	if input.Valid("3") {
+		t.Fatal("Expected value '3' to be invalid")
+	}
+}
+
+func TestConfigCommandInputValid_WithPattern(t *testing.T) {
+	input := ConfigCommandInput{
+		Pattern: "^[0-9]+$",
+	}
+
+	if !input.Valid("1") {
+		t.Fatal("Expected value '1' to be valid")
+	}
+	if input.Valid("a") {
+		t.Fatal("Expected value 'a' to be invalid")
+	}
+}
+
+func TestConfigCommandInputValid_WithoutPattern(t *testing.T) {
+	input := ConfigCommandInput{}
+	values := []string{"a", " ", ""}
+
+	for _, value := range values {
+		if !input.Valid(value) {
+			t.Fatalf("Expected value '%s' to be valid", value)
+		}
+	}
+}
+
 func TestConfigCommandsUnmarshalYAML(t *testing.T) {
 	var actual ConfigCommands
 	content := `

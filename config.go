@@ -45,7 +45,7 @@ func (cci ConfigCommandInput) Selectable() bool {
 	return len(cci.Options) > 0
 }
 
-func (cci ConfigCommandInput) Valid(value string) bool {
+func (cci ConfigCommandInput) Valid(value any) bool {
 	if cci.Selectable() {
 		return cci.contains(value)
 	} else {
@@ -53,7 +53,7 @@ func (cci ConfigCommandInput) Valid(value string) bool {
 	}
 }
 
-func (cci ConfigCommandInput) contains(value string) bool {
+func (cci ConfigCommandInput) contains(value any) bool {
 	for _, option := range cci.Options {
 		if option == value {
 			return true
@@ -62,8 +62,12 @@ func (cci ConfigCommandInput) contains(value string) bool {
 	return false
 }
 
-func (cci ConfigCommandInput) matches(value string) bool {
-	matched, _ := regexp.MatchString(cci.Pattern, value)
+func (cci ConfigCommandInput) matches(value any) bool {
+	s, ok := value.(string)
+	if !ok {
+		return false
+	}
+	matched, _ := regexp.MatchString(cci.Pattern, s)
 	return matched
 }
 
