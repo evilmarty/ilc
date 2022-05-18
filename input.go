@@ -44,7 +44,7 @@ func askCommand(commands ConfigCommands) (*ConfigCommand, error) {
 	}
 }
 
-func askInputChoice(input *ConfigCommandInput) (any, error) {
+func askInputChoice(input ConfigCommandInput) (any, error) {
 	var choices = make([]*selection.Choice, 0, len(input.Options))
 	prompt := fmt.Sprintf("%s %s", promptStyle.Render("Choose a"), inputNameStyle.Render(input.Name))
 	for label, value := range input.Options {
@@ -63,7 +63,7 @@ func askInputChoice(input *ConfigCommandInput) (any, error) {
 	}
 }
 
-func askInputText(input *ConfigCommandInput) (any, error) {
+func askInputText(input ConfigCommandInput) (any, error) {
 	prompt := fmt.Sprintf("%s %s", promptStyle.Render("Please specify a"), inputNameStyle.Render(input.Name))
 	ti := textinput.New(prompt)
 	ti.InitialValue = input.DefaultValue
@@ -73,7 +73,7 @@ func askInputText(input *ConfigCommandInput) (any, error) {
 	return ti.RunPrompt()
 }
 
-func askInput(input *ConfigCommandInput) (any, error) {
+func askInput(input ConfigCommandInput) (any, error) {
 	if input.Selectable() {
 		return askInputChoice(input)
 	} else {
@@ -81,10 +81,10 @@ func askInput(input *ConfigCommandInput) (any, error) {
 	}
 }
 
-func askInputs(inputs *ConfigCommandInputs) (InputValues, error) {
-	values := make(InputValues, len(*inputs))
-	for _, input := range *inputs {
-		value, err := askInput(&input)
+func askInputs(inputs ConfigCommandInputs) (InputValues, error) {
+	values := make(InputValues, len(inputs))
+	for _, input := range inputs {
+		value, err := askInput(input)
 		if err != nil {
 			return values, err
 		}

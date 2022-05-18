@@ -106,7 +106,7 @@ func (m *model) askInputs() error {
 		}
 	}
 
-	remainingValues, err := askInputs(&remainingInputs)
+	remainingValues, err := askInputs(remainingInputs)
 	if err != nil {
 		return err
 	}
