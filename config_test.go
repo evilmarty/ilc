@@ -69,8 +69,8 @@ city:
 			Name: "name",
 		},
 		ConfigCommandInput{
-			Name:    "city",
-			Default: "Autobot City",
+			Name:         "city",
+			DefaultValue: "Autobot City",
 		},
 	}
 	err := yaml.Unmarshal([]byte(content), &actual)

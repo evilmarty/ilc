@@ -35,10 +35,10 @@ func (x *ConfigCommandInputOptions) UnmarshalYAML(node *yaml.Node) error {
 }
 
 type ConfigCommandInput struct {
-	Name    string `yaml:"-"`
-	Default string
-	Pattern string
-	Options ConfigCommandInputOptions
+	Name         string `yaml:"-"`
+	DefaultValue string `yaml:"default"`
+	Pattern      string
+	Options      ConfigCommandInputOptions
 }
 
 func (cci ConfigCommandInput) Selectable() bool {

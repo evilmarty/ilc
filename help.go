@@ -114,8 +114,8 @@ func renderInputs(title string, inputs *ConfigCommandInputs) string {
 	for _, input := range *inputs {
 		desc := ""
 
-		if input.Default != "" {
-			desc = fmt.Sprintf("Default is %s", helpDefaultValue.Render(input.Default))
+		if input.DefaultValue != "" {
+			desc = fmt.Sprintf("Default is %s", helpDefaultValue.Render(input.DefaultValue))
 		}
 
 		items = append(
