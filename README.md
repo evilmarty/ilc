@@ -38,7 +38,14 @@ one command.
 
 Use `commands.<command_name>` to give your command a unique name. The key
 `command_name` is a string and its value is a map of the command's configuration
-data.
+data. A string value can be used as a shorthand for the `run` attribute.
+
+#### Example
+
+```yaml
+commands:
+  calendar: cal
+```
 
 ### `commands.<command_name>.description`
 

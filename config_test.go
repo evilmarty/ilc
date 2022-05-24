@@ -264,6 +264,33 @@ punish:
 	}
 }
 
+func TestConfigCommandsUnmarshalYAML_Shorthand(t *testing.T) {
+	var actual ConfigCommands
+	content := `
+protect: echo Protect all sentient life forms
+punish: echo Punish and enslave
+`
+	expected := ConfigCommands{
+		ConfigCommand{
+			Name: "protect",
+			Run:  "echo Protect all sentient life forms",
+		},
+		ConfigCommand{
+			Name: "punish",
+			Run:  "echo Punish and enslave",
+		},
+	}
+	err := yaml.Unmarshal([]byte(content), &actual)
+
+	if err != nil {
+		t.Errorf("Received error from parser: %s", err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		fatalDiff(t, expected, actual)
+	}
+}
+
 func TestConfigCommandsGet(t *testing.T) {
 	commands := ConfigCommands{
 		ConfigCommand{

@@ -155,20 +155,27 @@ func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
 		keyNode := content[0]
 		valueNode := content[1]
 
-		if keyNode.Kind != yaml.ScalarNode || valueNode.Kind != yaml.MappingNode {
+		if keyNode.Kind != yaml.ScalarNode || !(valueNode.Kind == yaml.MappingNode || valueNode.Kind == yaml.ScalarNode) {
 			return fmt.Errorf("line %d: unexpected node type", keyNode.Line)
 		}
 
 		var command ConfigCommand
-		if err := valueNode.Decode(&command); err != nil {
-			return err
+		if valueNode.Kind == yaml.ScalarNode {
+			command = ConfigCommand{
+				Name: keyNode.Value,
+				Run:  valueNode.Value,
+			}
+		} else {
+			if err := valueNode.Decode(&command); err != nil {
+				return err
+			}
+			if numCommands := len(command.Commands); command.Run == "" && numCommands == 0 {
+				return fmt.Errorf("line %d: '%s' command missing run or commands attribute", keyNode.Line, keyNode.Value)
+			} else if command.Run != "" && numCommands > 0 {
+				return fmt.Errorf("line %d: '%s' command cannot have both run and commands attribute", keyNode.Line, keyNode.Value)
+			}
+			command.Name = keyNode.Value
 		}
-		if numCommands := len(command.Commands); command.Run == "" && numCommands == 0 {
-			return fmt.Errorf("line %d: '%s' command missing run or commands attribute", keyNode.Line, keyNode.Value)
-		} else if command.Run != "" && numCommands > 0 {
-			return fmt.Errorf("line %d: '%s' command cannot have both run and commands attribute", keyNode.Line, keyNode.Value)
-		}
-		command.Name = keyNode.Value
 		commands = append(commands, command)
 
 		content = content[2:]
