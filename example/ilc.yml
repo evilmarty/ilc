@@ -42,3 +42,18 @@ commands:
     env:
       NAME: "{{ .name }}"
       GREETING: "{{ .greeting }}"
+  foo:
+    inputs:
+      prefix:
+        default: foo
+    commands:
+      bar:
+        inputs:
+          suffix:
+            default: bar
+        run: echo foobar
+      baz:
+        inputs:
+          suffix:
+            default: baz
+        run: echo foobaz

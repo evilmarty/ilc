@@ -70,6 +70,11 @@ commands:
       date
 ```
 
+### `commands.<command_name>.commands`
+
+Define sub-commands in the same structure as `commands`. All `inputs` or `env`
+defined cascade to all sub-commands. Cannot be used in conjunction with `run`.
+
 ### `commands.<command_name>.env`
 
 Optionally set environment variables for the command. Expressions can be used

@@ -12,106 +12,63 @@ var (
 )
 
 type model struct {
-	config  *Config
-	command *ConfigCommand
-	values  map[string]any
+	config   Config
+	commands ConfigCommands
+	values   InputValues
+	showHelp bool
 }
 
-func (m *model) setCommand(command *ConfigCommand) {
-	m.command = command
-	m.values = make(map[string]any, len(command.Inputs))
+func (m *model) Selected() bool {
+	return len(m.commands) > 0
 }
 
-func (m *model) parse(args []string) error {
-	if len(args) == 0 {
-		return nil
-	}
+func (m *model) Inputs() ConfigCommandInputs {
+	return m.commands.Inputs()
+}
 
-	if args[0] == "help" {
-		printHelp(m)
-		os.Exit(0)
-	}
+func (m *model) outstandingInputs() ConfigCommandInputs {
+	inputs := m.Inputs()
+	outstandingInputs := make(ConfigCommandInputs, 0)
 
-	for _, command := range m.config.Commands {
-		if command.Name == args[0] {
-			m.setCommand(&command)
-			break
+	for _, input := range inputs {
+		if _, ok := m.values[input.Name]; !ok {
+			outstandingInputs = append(outstandingInputs, input)
 		}
 	}
 
-	if m.command == nil {
-		return fmt.Errorf("Unknown command: %s", args[0])
+	return outstandingInputs
+}
+
+func (m *model) AvailableCommands() ConfigCommands {
+	if m.Selected() {
+		return m.commands[len(m.commands)-1].Commands
+	} else {
+		return m.config.Commands
 	}
+}
 
-	fs := m.getFlagSet()
-	showHelp := fs.Bool("help", false, "Show help for command")
-
-	if err := fs.Parse(args[1:]); err != nil {
+func (m *model) askCommands() error {
+	numCommands := len(m.commands)
+	if numCommands > 0 {
+		lastCommand := m.commands[numCommands-1]
+		subcommands, err := askCommands(lastCommand.Commands)
+		m.commands = append(m.commands, subcommands...)
+		return err
+	} else {
+		commands, err := askCommands(m.config.Commands)
+		m.commands = commands
 		return err
 	}
-
-	if *showHelp {
-		printHelp(m)
-		os.Exit(0)
-	}
-
-	return nil
-}
-
-func (m *model) getFlagSet() *flag.FlagSet {
-	usage := fmt.Sprintf("command '%s'", m.command.Name)
-	fs := flag.NewFlagSet(usage, flag.ExitOnError)
-	for _, input := range m.command.Inputs {
-		m.addFlagSetInput(fs, input)
-	}
-
-	return fs
-}
-
-func (m *model) addFlagSetInput(fs *flag.FlagSet, input ConfigCommandInput) {
-	fs.Func(input.Name, "", func(value string) error {
-		if input.Valid(value) {
-			m.values[input.Name] = value
-			return nil
-		} else {
-			return fmt.Errorf("Invalid value given")
-		}
-	})
-}
-
-func (m *model) askCommand() error {
-	if m.command != nil {
-		return nil
-	}
-
-	command, err := askCommand(m.config.Commands)
-	if err == nil {
-		m.setCommand(command)
-	}
-
-	return err
 }
 
 func (m *model) askInputs() error {
-	if m.command == nil {
-		return nil
-	}
-
-	remainingInputs := make(ConfigCommandInputs, 0, len(m.command.Inputs))
-
-	for _, input := range m.command.Inputs {
-		_, ok := m.values[input.Name]
-		if !ok {
-			remainingInputs = append(remainingInputs, input)
-		}
-	}
-
-	remainingValues, err := askInputs(remainingInputs)
+	outstandingInputs := m.outstandingInputs()
+	values, err := askInputs(outstandingInputs)
 	if err != nil {
 		return err
 	}
 
-	for key, value := range remainingValues {
+	for key, value := range values {
 		m.values[key] = value
 	}
 
@@ -119,7 +76,7 @@ func (m *model) askInputs() error {
 }
 
 func (m *model) ask() error {
-	if err := m.askCommand(); err != nil {
+	if err := m.askCommands(); err != nil {
 		return err
 	}
 	if err := m.askInputs(); err != nil {
@@ -129,15 +86,13 @@ func (m *model) ask() error {
 }
 
 func (m *model) env() []string {
-	if m.command == nil {
-		return []string{}
-	}
+	var env = make([]string, 0)
 
-	var env = make([]string, 0, len(m.command.Env))
-
-	for name, rawValue := range m.command.Env {
-		if value, err := RenderTemplate(rawValue, m.values); err == nil {
-			env = append(env, fmt.Sprintf("%s=%s", name, value))
+	for _, command := range m.commands {
+		for name, rawValue := range command.Env {
+			if value, err := RenderTemplate(rawValue, m.values); err == nil {
+				env = append(env, fmt.Sprintf("%s=%s", name, value))
+			}
 		}
 	}
 
@@ -152,12 +107,21 @@ func (m *model) shell() []string {
 	}
 }
 
-func (m *model) exec() error {
-	if m.command == nil {
-		return fmt.Errorf("No command specified")
+func (m *model) runScript() (string, error) {
+	numCommands := len(m.commands)
+	if numCommands == 0 {
+		return "", fmt.Errorf("No command specified")
 	}
 
-	script, err := RenderTemplate(m.command.Run, m.values)
+	command := m.commands[numCommands-1]
+	if command.Run == "" {
+		return "", fmt.Errorf("Invalid run command for %s", command.Name)
+	}
+	return RenderTemplate(command.Run, m.values)
+}
+
+func (m *model) exec() error {
+	script, err := m.runScript()
 	if err != nil {
 		return err
 	}
@@ -170,11 +134,7 @@ func (m *model) exec() error {
 	return cmd.Run()
 }
 
-func (m *model) Run(args []string) error {
-	if err := m.parse(args); err != nil {
-		return err
-	}
-
+func (m *model) Run() error {
 	if err := m.ask(); err != nil {
 		return err
 	}
@@ -186,11 +146,52 @@ func (m *model) Run(args []string) error {
 	return nil
 }
 
-func newModel(configFile string) (*model, error) {
+func parseCommands(initCommands ConfigCommands, args []string) (ConfigCommands, []string) {
+	commands := initCommands
+	foundCommands := make(ConfigCommands, 0)
+	for len(args) > 0 {
+		command := commands.Get(args[0])
+		if command == nil {
+			break
+		}
+		foundCommands = append(foundCommands, *command)
+		commands = command.Commands
+		args = args[1:]
+	}
+	return foundCommands, args
+}
+
+func parseInputValues(inputs ConfigCommandInputs, args []string) (bool, InputValues, error) {
+	values := make(InputValues, len(inputs))
+	fs := flag.NewFlagSet("", flag.ExitOnError)
+	showHelp := fs.Bool("help", false, "Show this help screen")
+
+	for _, input := range inputs {
+		fs.Func(input.Name, "", func(value string) error {
+			if input.Valid(value) {
+				values[input.Name] = value
+				return nil
+			} else {
+				return fmt.Errorf("Invalid value given for input '%s'", input.Name)
+			}
+		})
+	}
+
+	err := fs.Parse(args)
+	return *showHelp, values, err
+}
+
+func newModel(configFile string, args []string) (*model, error) {
 	config, err := LoadConfig(configFile)
 	if err != nil {
 		return nil, err
 	}
+	commands, remainingArgs := parseCommands(config.Commands, args)
+	showHelp, values, err := parseInputValues(commands.Inputs(), remainingArgs)
 
-	return &model{config: config}, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return &model{config: *config, commands: commands, values: values, showHelp: showHelp}, nil
 }

@@ -27,9 +27,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	m, err := newModel(*configFile)
+	m, err := newModel(*configFile, flag.Args())
 
-	if *showHelp {
+	if *showHelp || m.showHelp {
 		printHelp(m)
 		os.Exit(0)
 	}
@@ -39,7 +39,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = m.Run(flag.Args())
+	err = m.Run()
 
 	if err != nil {
 		fmt.Println("Error running program:", err)

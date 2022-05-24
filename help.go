@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -41,17 +42,16 @@ func renderHelp(m *model) string {
 	}
 
 	if m != nil {
-		if m.command != nil {
+		if m.Selected() {
 			sections = append(
 				sections,
-				renderInputs("FLAGS", &m.command.Inputs),
-			)
-		} else {
-			sections = append(
-				sections,
-				renderCommands("COMMANDS", &m.config.Commands),
+				renderInputs("FLAGS", m.Inputs()),
 			)
 		}
+		sections = append(
+			sections,
+			renderCommands("COMMANDS", m.AvailableCommands()),
+		)
 	}
 
 	output := lipgloss.JoinVertical(0, sections...)
@@ -60,14 +60,22 @@ func renderHelp(m *model) string {
 }
 
 func renderUsage(title string, m *model) string {
-	command := "<command>"
-	if m != nil && m.command != nil {
-		command = m.command.Name
+	commandNames := make([]string, 0)
+	if m != nil {
+		for _, command := range m.commands {
+			commandNames = append(commandNames, command.Name)
+		}
+		if l := len(m.commands); l > 0 && m.commands[l-1].HasSubCommands() {
+			commandNames = append(commandNames, "<subcommand>")
+		}
+	}
+	if len(commandNames) == 0 {
+		commandNames = append(commandNames, "<command>")
 	}
 
 	return renderSection(
 		title,
-		fmt.Sprintf("ilc [global flags] %s [flags]", command),
+		fmt.Sprintf("ilc [global flags] %s [flags]", strings.Join(commandNames, " ")),
 	)
 }
 
@@ -87,14 +95,14 @@ func renderGlobalFlags(title string) string {
 	)
 }
 
-func renderCommands(title string, commands *ConfigCommands) string {
-	commandsCount := len(*commands)
+func renderCommands(title string, commands ConfigCommands) string {
+	commandsCount := len(commands)
 	if commandsCount == 0 {
 		return ""
 	}
 
 	items := make([]string, 0, commandsCount*2)
-	for _, command := range *commands {
+	for _, command := range commands {
 		items = append(items, command.Name, command.Description)
 	}
 
@@ -104,14 +112,14 @@ func renderCommands(title string, commands *ConfigCommands) string {
 	)
 }
 
-func renderInputs(title string, inputs *ConfigCommandInputs) string {
-	inputsCount := len(*inputs)
+func renderInputs(title string, inputs ConfigCommandInputs) string {
+	inputsCount := len(inputs)
 	if inputsCount == 0 {
 		return ""
 	}
 
 	items := make([]string, 0, inputsCount*2)
-	for _, input := range *inputs {
+	for _, input := range inputs {
 		desc := ""
 
 		if input.DefaultValue != "" {

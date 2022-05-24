@@ -19,29 +19,35 @@ var (
 
 type InputValues map[string]any
 
-func askCommand(commands ConfigCommands) (*ConfigCommand, error) {
-	var choices = make([]*selection.Choice, len(commands))
+func askCommands(initCommands ConfigCommands) (ConfigCommands, error) {
+	askedCommands := make(ConfigCommands, 0)
+	commands := initCommands
 
-	for i, command := range commands {
-		choices[i] = &selection.Choice{String: command.Name, Value: command}
+	for numCommands := len(commands); numCommands > 0; numCommands = len(commands) {
+		choices := make([]*selection.Choice, numCommands)
+
+		for i, command := range commands {
+			choices[i] = &selection.Choice{String: command.Name, Value: command}
+		}
+
+		prompt := promptStyle.Render("Choose command")
+		sp := selection.New(prompt, choices)
+
+		if numCommands <= minChoiceFiltering {
+			sp.Filter = nil
+		}
+
+		choice, err := sp.RunPrompt()
+		if err != nil {
+			return askedCommands, err
+		}
+
+		command := choice.Value.(ConfigCommand)
+		askedCommands = append(askedCommands, command)
+		commands = command.Commands
 	}
 
-	prompt := promptStyle.Render("Choose command")
-	sp := selection.New(prompt, choices)
-
-	if len(choices) <= minChoiceFiltering {
-		sp.Filter = nil
-	}
-
-	choice, err := sp.RunPrompt()
-	if err != nil {
-		return nil, err
-	}
-	if command, ok := choice.Value.(ConfigCommand); ok {
-		return &command, nil
-	} else {
-		return nil, fmt.Errorf("Failed to cast choice: %s", choice.String)
-	}
+	return askedCommands, nil
 }
 
 func askInputChoice(input ConfigCommandInput) (any, error) {

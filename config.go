@@ -117,9 +117,31 @@ type ConfigCommand struct {
 	Run         string
 	Env         map[string]string
 	Inputs      ConfigCommandInputs
+	Commands    ConfigCommands
+}
+
+func (cc *ConfigCommand) HasSubCommands() bool {
+	return len(cc.Commands) > 0
 }
 
 type ConfigCommands []ConfigCommand
+
+func (cc *ConfigCommands) Get(name string) *ConfigCommand {
+	for _, command := range *cc {
+		if command.Name == name {
+			return &command
+		}
+	}
+	return nil
+}
+
+func (cc *ConfigCommands) Inputs() ConfigCommandInputs {
+	inputs := make(ConfigCommandInputs, 0)
+	for _, command := range *cc {
+		inputs = append(inputs, command.Inputs...)
+	}
+	return inputs
+}
 
 func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind != yaml.MappingNode || len(value.Content)%2 != 0 {
@@ -140,6 +162,11 @@ func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
 		var command ConfigCommand
 		if err := valueNode.Decode(&command); err != nil {
 			return err
+		}
+		if numCommands := len(command.Commands); command.Run == "" && numCommands == 0 {
+			return fmt.Errorf("line %d: '%s' command missing run or commands attribute", keyNode.Line, keyNode.Value)
+		} else if command.Run != "" && numCommands > 0 {
+			return fmt.Errorf("line %d: '%s' command cannot have both run and commands attribute", keyNode.Line, keyNode.Value)
 		}
 		command.Name = keyNode.Value
 		commands = append(commands, command)

@@ -7,8 +7,10 @@ import (
 
 func TestModelEnv(t *testing.T) {
 	model := &model{
-		command: &ConfigCommand{
-			Env: map[string]string{"FOOBAR": "{{.a}} {{.b}}"},
+		commands: ConfigCommands{
+			ConfigCommand{
+				Env: map[string]string{"FOOBAR": "{{.a}} {{.b}}"},
+			},
 		},
 		values: map[string]any{"a": "123", "b": 456},
 	}
@@ -23,7 +25,7 @@ func TestModelEnv(t *testing.T) {
 
 func TestModelShell_Default(t *testing.T) {
 	model := &model{
-		config: &Config{},
+		config: Config{},
 	}
 	actual := model.shell()
 
@@ -35,7 +37,7 @@ func TestModelShell_Default(t *testing.T) {
 func TestModelShell_Custom(t *testing.T) {
 	expected := []string{"foo", "bar"}
 	model := &model{
-		config: &Config{
+		config: Config{
 			Shell: expected,
 		},
 	}
