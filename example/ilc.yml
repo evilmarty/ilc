@@ -31,6 +31,7 @@ commands:
     description: Give a greeting
     inputs:
       name:
+        description: A person's name
         default: World
         pattern: "^[a-zA-Z]+"
       greeting:

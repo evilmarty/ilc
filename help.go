@@ -27,7 +27,7 @@ var (
 				Width(14)
 	helpDataListData = lipgloss.NewStyle()
 	helpDefaultValue = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("51"))
+				Foreground(lipgloss.Color("8"))
 )
 
 func printHelp(m *model) {
@@ -120,10 +120,15 @@ func renderInputs(title string, inputs ConfigCommandInputs) string {
 
 	items := make([]string, 0, inputsCount*2)
 	for _, input := range inputs {
-		desc := ""
+		desc := input.Description
 
 		if input.DefaultValue != "" {
-			desc = fmt.Sprintf("Default is %s", helpDefaultValue.Render(input.DefaultValue))
+			defaultDesc := fmt.Sprintf("%s %s", helpDefaultValue.Render("Default is"), helpDefaultValue.Bold(true).Render(input.DefaultValue))
+			if desc == "" {
+				desc = defaultDesc
+			} else {
+				desc = fmt.Sprintf("%s %s", desc, defaultDesc)
+			}
 		}
 
 		items = append(

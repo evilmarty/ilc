@@ -39,6 +39,7 @@ type ConfigCommandInput struct {
 	DefaultValue string `yaml:"default"`
 	Pattern      string
 	Options      ConfigCommandInputOptions
+	Description  string
 }
 
 func (cci ConfigCommandInput) Selectable() bool {

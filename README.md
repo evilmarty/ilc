@@ -108,6 +108,10 @@ The key `input_name` is a string and its value is a map of the input's
 configuration. The name can be used as an argument in the form `-<input_name>`
 or `--<input_name>` followed by a value. The input's value is a string.
 
+### `commands.<command_name>.inputs.<input_name>.description`
+
+Optionally describe the input's purpose or outcome.
+
 ### `commands.<command_name>.inputs.<input_name>.options`
 
 Limit the value to a list of acceptable values. Options can be a list of values
