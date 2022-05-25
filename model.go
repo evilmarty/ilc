@@ -13,7 +13,7 @@ var (
 
 type model struct {
 	config   Config
-	commands ConfigCommands
+	commands Commands
 	values   InputValues
 	showHelp bool
 }
@@ -39,7 +39,7 @@ func (m *model) outstandingInputs() Inputs {
 	return outstandingInputs
 }
 
-func (m *model) AvailableCommands() ConfigCommands {
+func (m *model) AvailableCommands() Commands {
 	if m.Selected() {
 		return m.commands[len(m.commands)-1].Commands
 	} else {
@@ -48,14 +48,13 @@ func (m *model) AvailableCommands() ConfigCommands {
 }
 
 func (m *model) askCommands() error {
-	numCommands := len(m.commands)
-	if numCommands > 0 {
+	if numCommands := len(m.commands); numCommands > 0 {
 		lastCommand := m.commands[numCommands-1]
-		subcommands, err := askCommands(lastCommand.Commands)
+		subcommands, err := lastCommand.Commands.Select()
 		m.commands = append(m.commands, subcommands...)
 		return err
 	} else {
-		commands, err := askCommands(m.config.Commands)
+		commands, err := m.config.Commands.Select()
 		m.commands = commands
 		return err
 	}
@@ -146,9 +145,9 @@ func (m *model) Run() error {
 	return nil
 }
 
-func parseCommands(initCommands ConfigCommands, args []string) (ConfigCommands, []string) {
+func parseCommands(initCommands Commands, args []string) (Commands, []string) {
 	commands := initCommands
-	foundCommands := make(ConfigCommands, 0)
+	foundCommands := make(Commands, 0)
 	for len(args) > 0 {
 		command := commands.Get(args[0])
 		if command == nil {

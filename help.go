@@ -95,7 +95,7 @@ func renderGlobalFlags(title string) string {
 	)
 }
 
-func renderCommands(title string, commands ConfigCommands) string {
+func renderCommands(title string, commands Commands) string {
 	commandsCount := len(commands)
 	if commandsCount == 0 {
 		return ""

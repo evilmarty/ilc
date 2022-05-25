@@ -173,34 +173,3 @@ func (x *Inputs) UnmarshalYAML(value *yaml.Node) error {
 
 	return nil
 }
-
-func askCommands(initCommands ConfigCommands) (ConfigCommands, error) {
-	askedCommands := make(ConfigCommands, 0)
-	commands := initCommands
-
-	for numCommands := len(commands); numCommands > 0; numCommands = len(commands) {
-		choices := make([]*selection.Choice, numCommands)
-
-		for i, command := range commands {
-			choices[i] = &selection.Choice{String: command.Name, Value: command}
-		}
-
-		prompt := promptStyle.Render("Choose command")
-		sp := selection.New(prompt, choices)
-
-		if numCommands <= minChoiceFiltering {
-			sp.Filter = nil
-		}
-
-		choice, err := sp.RunPrompt()
-		if err != nil {
-			return askedCommands, err
-		}
-
-		command := choice.Value.(ConfigCommand)
-		askedCommands = append(askedCommands, command)
-		commands = command.Commands
-	}
-
-	return askedCommands, nil
-}

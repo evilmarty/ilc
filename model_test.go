@@ -7,8 +7,8 @@ import (
 
 func TestModelEnv(t *testing.T) {
 	model := &model{
-		commands: ConfigCommands{
-			ConfigCommand{
+		commands: Commands{
+			Command{
 				Env: map[string]string{"FOOBAR": "{{.a}} {{.b}}"},
 			},
 		},
