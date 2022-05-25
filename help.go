@@ -112,7 +112,7 @@ func renderCommands(title string, commands ConfigCommands) string {
 	)
 }
 
-func renderInputs(title string, inputs ConfigCommandInputs) string {
+func renderInputs(title string, inputs Inputs) string {
 	inputsCount := len(inputs)
 	if inputsCount == 0 {
 		return ""

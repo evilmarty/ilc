@@ -22,13 +22,13 @@ func (m *model) Selected() bool {
 	return len(m.commands) > 0
 }
 
-func (m *model) Inputs() ConfigCommandInputs {
+func (m *model) Inputs() Inputs {
 	return m.commands.Inputs()
 }
 
-func (m *model) outstandingInputs() ConfigCommandInputs {
+func (m *model) outstandingInputs() Inputs {
 	inputs := m.Inputs()
-	outstandingInputs := make(ConfigCommandInputs, 0)
+	outstandingInputs := make(Inputs, 0)
 
 	for _, input := range inputs {
 		if _, ok := m.values[input.Name]; !ok {
@@ -63,7 +63,7 @@ func (m *model) askCommands() error {
 
 func (m *model) askInputs() error {
 	outstandingInputs := m.outstandingInputs()
-	values, err := askInputs(outstandingInputs)
+	values, err := outstandingInputs.Get()
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func parseCommands(initCommands ConfigCommands, args []string) (ConfigCommands, 
 	return foundCommands, args
 }
 
-func parseInputValues(inputs ConfigCommandInputs, args []string) (bool, InputValues, error) {
+func parseInputValues(inputs Inputs, args []string) (bool, InputValues, error) {
 	values := make(InputValues, len(inputs))
 	fs := flag.NewFlagSet("", flag.ExitOnError)
 	showHelp := fs.Bool("help", false, "Show this help screen")
