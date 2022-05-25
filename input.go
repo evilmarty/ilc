@@ -21,10 +21,15 @@ var (
 
 type InputValues map[string]any
 
-type InputOptions map[string]string
+type InputOption struct {
+	Label string
+	Value string
+}
+
+type InputOptions []InputOption
 
 func (x *InputOptions) UnmarshalYAML(node *yaml.Node) error {
-	var mapValue map[string]string
+	var options InputOptions
 
 	switch node.Kind {
 	case yaml.SequenceNode:
@@ -32,17 +37,23 @@ func (x *InputOptions) UnmarshalYAML(node *yaml.Node) error {
 		if err := node.Decode(&seqValue); err != nil {
 			return err
 		}
-		mapValue = make(map[string]string, len(seqValue))
-		for _, item := range seqValue {
-			mapValue[item] = item
+		options = make(InputOptions, len(seqValue))
+		for i, item := range seqValue {
+			options[i].Label = item
+			options[i].Value = item
 		}
 	case yaml.MappingNode:
+		var mapValue map[string]string
 		if err := node.Decode(&mapValue); err != nil {
 			return err
 		}
+		options = make(InputOptions, 0, len(mapValue))
+		for label, value := range mapValue {
+			options = append(options, InputOption{Label: label, Value: value})
+		}
 	}
 
-	*x = mapValue
+	*x = options
 
 	return nil
 }
@@ -69,7 +80,7 @@ func (input Input) Valid(value any) bool {
 
 func (input Input) contains(value any) bool {
 	for _, option := range input.Options {
-		if option == value {
+		if option.Value == value {
 			return true
 		}
 	}
@@ -88,8 +99,8 @@ func (input Input) matches(value any) bool {
 func (input Input) choose() (any, error) {
 	var choices = make([]*selection.Choice, 0, len(input.Options))
 	prompt := fmt.Sprintf("%s %s", promptStyle.Render("Choose a"), inputNameStyle.Render(input.Name))
-	for label, value := range input.Options {
-		choices = append(choices, &selection.Choice{String: label, Value: value})
+	for _, option := range input.Options {
+		choices = append(choices, &selection.Choice{String: option.Label, Value: option.Value})
 	}
 	sp := selection.New(prompt, choices)
 

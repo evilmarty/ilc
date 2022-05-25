@@ -15,9 +15,9 @@ func TestInputOptionsUnmarshalYAMLSequence(t *testing.T) {
 - Starscream
 `
 	expected := InputOptions{
-		"Megatron":   "Megatron",
-		"Soundwave":  "Soundwave",
-		"Starscream": "Starscream",
+		InputOption{Label: "Megatron", Value: "Megatron"},
+		InputOption{Label: "Soundwave", Value: "Soundwave"},
+		InputOption{Label: "Starscream", Value: "Starscream"},
 	}
 	err := yaml.Unmarshal([]byte(content), &actual)
 
@@ -38,9 +38,9 @@ Optimus Prime: Autobot
 Optimus Primal: Maximal
 `
 	expected := InputOptions{
-		"Megatron":       "Decepticon",
-		"Optimus Prime":  "Autobot",
-		"Optimus Primal": "Maximal",
+		InputOption{Label: "Megatron", Value: "Decepticon"},
+		InputOption{Label: "Optimus Prime", Value: "Autobot"},
+		InputOption{Label: "Optimus Primal", Value: "Maximal"},
 	}
 	err := yaml.Unmarshal([]byte(content), &actual)
 
@@ -83,8 +83,8 @@ city:
 func TestInputSelectable_WithOptions(t *testing.T) {
 	input := Input{
 		Options: InputOptions{
-			"a": "1",
-			"b": "2",
+			InputOption{Label: "a", Value: "1"},
+			InputOption{Label: "b", Value: "2"},
 		},
 	}
 
@@ -104,8 +104,8 @@ func TestInputSelectable_WithoutOptions(t *testing.T) {
 func TestInputValid_WithOptions(t *testing.T) {
 	input := Input{
 		Options: InputOptions{
-			"a": "1",
-			"b": "2",
+			InputOption{Label: "a", Value: "1"},
+			InputOption{Label: "b", Value: "2"},
 		},
 	}
 
