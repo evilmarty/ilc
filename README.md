@@ -233,7 +233,7 @@ commands:
 
 ## TODO
 
-* [ ] Add tests
-* [ ] Better help output
-* [ ] Support dynamic options
-* [ ] Sub-commands
+* [x] Add tests
+* [x] Better help output
+* [x] Support dynamic options
+* [x] Sub-commands
