@@ -3,7 +3,7 @@ module github.com/evilmarty/ilc
 go 1.18
 
 require (
-	github.com/charmbracelet/bubbles v0.10.3
+	github.com/charmbracelet/bubbles v0.11.0
 	github.com/charmbracelet/bubbletea v0.21.0
 	github.com/charmbracelet/lipgloss v0.5.0
 	github.com/erikgeiser/promptkit v0.6.0
