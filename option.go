@@ -65,13 +65,15 @@ func (x *Options) UnmarshalYAML(node *yaml.Node) error {
 		}
 		items = newOptions(seqValue)
 	case yaml.MappingNode:
-		var mapValue map[string]string
-		if err := node.Decode(&mapValue); err != nil {
-			return err
-		}
-		items = make([]Option, 0, len(mapValue))
-		for label, value := range mapValue {
-			items = append(items, Option{Label: label, Value: value})
+		items = make([]Option, 0)
+		content := node.Content
+		for len(content) > 0 {
+			item := Option{
+				Label: content[0].Value,
+				Value: content[1].Value,
+			}
+			items = append(items, item)
+			content = content[2:]
 		}
 	case yaml.ScalarNode:
 		script = node.Value
