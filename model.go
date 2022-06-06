@@ -3,12 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"os/exec"
-)
-
-var (
-	DefaultShell = []string{"sh", "-c"}
 )
 
 type model struct {
@@ -98,37 +92,26 @@ func (m *model) env() []string {
 	return env
 }
 
-func (m *model) shell() []string {
-	if len(m.config.Shell) > 0 {
-		return m.config.Shell
-	} else {
-		return DefaultShell
-	}
-}
-
-func (m *model) runScript() (string, error) {
+func (m *model) renderScript() (string, error) {
 	numCommands := len(m.commands)
 	if numCommands == 0 {
-		return "", fmt.Errorf("No command specified")
+		return "", fmt.Errorf("no command specified")
 	}
 
 	command := m.commands[numCommands-1]
 	if command.Run == "" {
-		return "", fmt.Errorf("Invalid run command for %s", command.Name)
+		return "", fmt.Errorf("invalid run command for %s", command.Name)
 	}
 	return RenderTemplate(command.Run, m.values)
 }
 
 func (m *model) exec() error {
-	script, err := m.runScript()
+	script, err := m.renderScript()
 	if err != nil {
 		return err
 	}
 
-	args := append(m.shell(), script)
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd := ScriptCommand(script)
 	cmd.Env = m.env()
 	return cmd.Run()
 }
@@ -171,7 +154,7 @@ func parseInputValues(inputs Inputs, args []string) (bool, InputValues, error) {
 				values[input.Name] = value
 				return nil
 			} else {
-				return fmt.Errorf("Invalid value given for input '%s'", input.Name)
+				return fmt.Errorf("invalid value given for input '%s'", input.Name)
 			}
 		})
 	}
@@ -185,6 +168,7 @@ func newModel(configFile string, args []string) (*model, error) {
 	if err != nil {
 		return nil, err
 	}
+	SetShell(config.Shell)
 	commands, remainingArgs := parseCommands(config.Commands, args)
 	showHelp, values, err := parseInputValues(commands.Inputs(), remainingArgs)
 

@@ -7,52 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestInputOptionsUnmarshalYAMLSequence(t *testing.T) {
-	var actual InputOptions
-	content := `
-- Megatron
-- Soundwave
-- Starscream
-`
-	expected := InputOptions{
-		InputOption{Label: "Megatron", Value: "Megatron"},
-		InputOption{Label: "Soundwave", Value: "Soundwave"},
-		InputOption{Label: "Starscream", Value: "Starscream"},
-	}
-	err := yaml.Unmarshal([]byte(content), &actual)
-
-	if err != nil {
-		t.Errorf("Received error from parser: %s", err)
-	}
-
-	if !reflect.DeepEqual(actual, expected) {
-		fatalDiff(t, actual, expected)
-	}
-}
-
-func TestInputOptionsUnmarshalYAMLMap(t *testing.T) {
-	var actual InputOptions
-	content := `
-Megatron: Decepticon
-Optimus Prime: Autobot
-Optimus Primal: Maximal
-`
-	expected := InputOptions{
-		InputOption{Label: "Megatron", Value: "Decepticon"},
-		InputOption{Label: "Optimus Prime", Value: "Autobot"},
-		InputOption{Label: "Optimus Primal", Value: "Maximal"},
-	}
-	err := yaml.Unmarshal([]byte(content), &actual)
-
-	if err != nil {
-		t.Errorf("Received error from parser: %s", err)
-	}
-
-	if !reflect.DeepEqual(actual, expected) {
-		fatalDiff(t, expected, actual)
-	}
-}
-
 func TestInputsUnmarshalYAML(t *testing.T) {
 	var actual Inputs
 	content := `
@@ -82,9 +36,11 @@ city:
 
 func TestInputSelectable_WithOptions(t *testing.T) {
 	input := Input{
-		Options: InputOptions{
-			InputOption{Label: "a", Value: "1"},
-			InputOption{Label: "b", Value: "2"},
+		Options: Options{
+			Items: []Option{
+				Option{Label: "a", Value: "1"},
+				Option{Label: "b", Value: "2"},
+			},
 		},
 	}
 
@@ -103,9 +59,11 @@ func TestInputSelectable_WithoutOptions(t *testing.T) {
 
 func TestInputValid_WithOptions(t *testing.T) {
 	input := Input{
-		Options: InputOptions{
-			InputOption{Label: "a", Value: "1"},
-			InputOption{Label: "b", Value: "2"},
+		Options: Options{
+			Items: []Option{
+				Option{Label: "a", Value: "1"},
+				Option{Label: "b", Value: "2"},
+			},
 		},
 	}
 

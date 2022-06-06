@@ -118,6 +118,10 @@ Limit the value to a list of acceptable values. Options can be a list of values
 or a map, with the keys presented as labels and the corresponding values the
 resulting value.
 
+If a string is used it is treated as a command to be executed
+and the resulting output to be used as options. Expressions are not available
+in this context.
+
 #### Example
 
 * A list of options:
@@ -154,6 +158,16 @@ commands:
           Sydney: syd
 ```
 
+* Use the output of a script as options:
+
+```yaml
+commands:
+  calendar:
+    inputs:
+      years:
+        options: |
+          date $((`date +%Y`-1)) $((`date +%Y`+1))
+```
 
 ### `commands.<command_name>.inputs.<input_name>.pattern`
 

@@ -21,70 +21,24 @@ var (
 
 type InputValues map[string]any
 
-type InputOption struct {
-	Label string
-	Value string
-}
-
-type InputOptions []InputOption
-
-func (x *InputOptions) UnmarshalYAML(node *yaml.Node) error {
-	var options InputOptions
-
-	switch node.Kind {
-	case yaml.SequenceNode:
-		var seqValue []string
-		if err := node.Decode(&seqValue); err != nil {
-			return err
-		}
-		options = make(InputOptions, len(seqValue))
-		for i, item := range seqValue {
-			options[i].Label = item
-			options[i].Value = item
-		}
-	case yaml.MappingNode:
-		var mapValue map[string]string
-		if err := node.Decode(&mapValue); err != nil {
-			return err
-		}
-		options = make(InputOptions, 0, len(mapValue))
-		for label, value := range mapValue {
-			options = append(options, InputOption{Label: label, Value: value})
-		}
-	}
-
-	*x = options
-
-	return nil
-}
-
 type Input struct {
 	Name         string `yaml:"-"`
 	DefaultValue string `yaml:"default"`
 	Pattern      string
-	Options      InputOptions
+	Options      Options
 	Description  string
 }
 
 func (input Input) Selectable() bool {
-	return len(input.Options) > 0
+	return !input.Options.Empty()
 }
 
 func (input Input) Valid(value any) bool {
 	if input.Selectable() {
-		return input.contains(value)
+		return input.Options.Contains(value)
 	} else {
 		return input.matches(value)
 	}
-}
-
-func (input Input) contains(value any) bool {
-	for _, option := range input.Options {
-		if option.Value == value {
-			return true
-		}
-	}
-	return false
 }
 
 func (input Input) matches(value any) bool {
@@ -97,9 +51,14 @@ func (input Input) matches(value any) bool {
 }
 
 func (input Input) choose() (any, error) {
-	var choices = make([]*selection.Choice, 0, len(input.Options))
 	prompt := fmt.Sprintf("%s %s", promptStyle.Render("Choose a"), inputNameStyle.Render(input.Name))
-	for _, option := range input.Options {
+	input.Options.Prefix = prompt
+	items, err := input.Options.Get()
+	if err != nil {
+		return nil, err
+	}
+	var choices = make([]*selection.Choice, 0, len(items))
+	for _, option := range items {
 		choices = append(choices, &selection.Choice{String: option.Label, Value: option.Value})
 	}
 	sp := selection.New(prompt, choices)
