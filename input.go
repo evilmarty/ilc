@@ -78,8 +78,12 @@ func (input Input) get() (any, error) {
 	prompt := fmt.Sprintf("%s %s", promptStyle.Render("Please specify a"), inputNameStyle.Render(input.Name))
 	ti := textinput.New(prompt)
 	ti.InitialValue = input.DefaultValue
-	ti.Validate = func(value string) bool {
-		return input.Valid(value)
+	ti.Validate = func(value string) error {
+		if input.Valid(value) {
+			return nil
+		} else {
+			return fmt.Errorf("Invalid value")
+		}
 	}
 	return ti.RunPrompt()
 }
