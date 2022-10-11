@@ -1,0 +1,60 @@
+project_name: ilc
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - 5
+      - 6
+      - 7
+    ldflags:
+      - "-s -w -X main.BuildDate={{ .Date }} -X main.Version={{ .Version }}"
+archives:
+  - name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    format: binary
+brews:
+  - folder: Formula
+    homepage: "https://github.com/evilmarty/ilc"
+    description: "A simple way to create a command-line utility."
+    license: "GPL-3.0"
+    install: |
+      bin.install Dir["*"].first => "ilc"
+    test: |
+      system "#{bin}/ilc", "--version"
+    tap:
+      owner: evilmarty
+      name: homebrew-ilc
+      branch: main
+release:
+  name_template: "{{ .Tag }}"
+  target_commitish: "{{ .Commit }}"
+  github:
+    owner: evilmarty
+    name: ilc
+checksum:
+  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
+  algorithm: sha256
+snapshot:
+  name_template: "{{ incpatch .Version }}-devel"
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - 'README'
+      - '^docs:'
+      - '^test:'
+
+# modelines, feel free to remove those if you don't want/use them:
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
