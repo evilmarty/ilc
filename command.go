@@ -12,6 +12,7 @@ type Command struct {
 	Description string
 	Run         string
 	Env         map[string]string
+	Pure        bool
 	Inputs      Inputs
 	Commands    Commands
 }
@@ -37,6 +38,11 @@ func (commands *Commands) Inputs() Inputs {
 		inputs = append(inputs, command.Inputs...)
 	}
 	return inputs
+}
+
+func (commands *Commands) Pure() bool {
+	numCommands := len(*commands)
+	return numCommands == 0 || (*commands)[numCommands-1].Pure
 }
 
 func (initCommands Commands) Select() (Commands, error) {

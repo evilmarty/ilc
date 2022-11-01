@@ -78,8 +78,12 @@ func (m *model) ask() error {
 	return nil
 }
 
-func (m *model) env() []string {
+func (m *model) env(baseEnv []string) []string {
 	var env = make([]string, 0)
+
+	if !m.commands.Pure() {
+		env = append(env, baseEnv...)
+	}
 
 	for _, command := range m.commands {
 		for name, rawValue := range command.Env {
@@ -105,23 +109,23 @@ func (m *model) renderScript() (string, error) {
 	return RenderTemplate(command.Run, m.values)
 }
 
-func (m *model) exec() error {
+func (m *model) exec(env []string) error {
 	script, err := m.renderScript()
 	if err != nil {
 		return err
 	}
 
 	cmd := ScriptCommand(script)
-	cmd.Env = m.env()
+	cmd.Env = m.env(env)
 	return cmd.Run()
 }
 
-func (m *model) Run() error {
+func (m *model) Run(env []string) error {
 	if err := m.ask(); err != nil {
 		return err
 	}
 
-	if err := m.exec(); err != nil {
+	if err := m.exec(env); err != nil {
 		return err
 	}
 

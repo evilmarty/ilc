@@ -196,3 +196,65 @@ func TestCommandsInputs(t *testing.T) {
 		fatalDiff(t, expected, actual)
 	}
 }
+
+func TestCommandsPure_SingleTrue(t *testing.T) {
+	commands := Commands{
+		Command{
+			Name:   "a",
+			Inputs: Inputs{},
+			Pure:   true,
+		},
+	}
+	if commands.Pure() != true {
+		t.Fatalf("Expected Pure to be %v", true)
+	}
+}
+
+func TestCommandsPure_SingleFalse(t *testing.T) {
+	commands := Commands{
+		Command{
+			Name:   "a",
+			Inputs: Inputs{},
+			Pure:   false,
+		},
+	}
+	if commands.Pure() != false {
+		t.Fatalf("Expected Pure to be %v", false)
+	}
+}
+
+func TestCommandsPure_NestedTrue(t *testing.T) {
+	commands := Commands{
+		Command{
+			Name:   "a",
+			Inputs: Inputs{},
+			Pure:   false,
+		},
+		Command{
+			Name:   "b",
+			Inputs: Inputs{},
+			Pure:   true,
+		},
+	}
+	if commands.Pure() != true {
+		t.Fatalf("Expected Pure to be %v", true)
+	}
+}
+
+func TestCommandsPure_NestedFalse(t *testing.T) {
+	commands := Commands{
+		Command{
+			Name:   "a",
+			Inputs: Inputs{},
+			Pure:   true,
+		},
+		Command{
+			Name:   "b",
+			Inputs: Inputs{},
+			Pure:   false,
+		},
+	}
+	if commands.Pure() != false {
+		t.Fatalf("Expected Pure to be %v", false)
+	}
+}

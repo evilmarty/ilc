@@ -97,6 +97,11 @@ commands:
       GREETING: Hello
 ```
 
+### `commands.<command_name>.pure`
+
+Setting `pure` to `true` to not pass through environment variables and only use
+environment variables that have been specified.
+
 ### `commands.<command_name>.inputs`
 
 Optionally specify inputs to be used in `run` and `env` values. Inputs can be

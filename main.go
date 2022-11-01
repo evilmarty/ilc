@@ -39,7 +39,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = m.Run()
+	err = m.Run(os.Environ())
 
 	if err != nil {
 		fmt.Println("Error running program:", err)
