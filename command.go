@@ -23,6 +23,14 @@ func (command *Command) HasSubCommands() bool {
 
 type Commands []Command
 
+func (commands *Commands) Last() *Command {
+	if l := len(*commands); l > 0 {
+		return &(*commands)[l-1]
+	} else {
+		return nil
+	}
+}
+
 func (commands *Commands) Get(name string) *Command {
 	for _, command := range *commands {
 		if command.Name == name {
@@ -41,8 +49,11 @@ func (commands *Commands) Inputs() Inputs {
 }
 
 func (commands *Commands) Pure() bool {
-	numCommands := len(*commands)
-	return numCommands == 0 || (*commands)[numCommands-1].Pure
+	if c := commands.Last(); c != nil {
+		return c.Pure
+	} else {
+		return false
+	}
 }
 
 func (initCommands Commands) Select() (Commands, error) {

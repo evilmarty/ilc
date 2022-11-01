@@ -42,8 +42,7 @@ func (m *model) AvailableCommands() Commands {
 }
 
 func (m *model) askCommands() error {
-	if numCommands := len(m.commands); numCommands > 0 {
-		lastCommand := m.commands[numCommands-1]
+	if lastCommand := m.commands.Last(); lastCommand != nil {
 		subcommands, err := lastCommand.Commands.Select()
 		m.commands = append(m.commands, subcommands...)
 		return err
@@ -97,12 +96,11 @@ func (m *model) env(baseEnv []string) []string {
 }
 
 func (m *model) renderScript() (string, error) {
-	numCommands := len(m.commands)
-	if numCommands == 0 {
+	command := m.commands.Last()
+	if command == nil {
 		return "", fmt.Errorf("no command specified")
 	}
 
-	command := m.commands[numCommands-1]
 	if command.Run == "" {
 		return "", fmt.Errorf("invalid run command for %s", command.Name)
 	}

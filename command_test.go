@@ -153,6 +153,17 @@ punish: echo Punish and enslave
 	}
 }
 
+func TestCommandsLast(t *testing.T) {
+	first := Command{Name: "first"}
+	last := Command{Name: "last"}
+	commands := Commands{first, last}
+
+	actual := commands.Last()
+	if !reflect.DeepEqual(actual, &last) {
+		t.Fatalf("Expected last element to be %v, not %v", last, actual)
+	}
+}
+
 func TestCommandsGet(t *testing.T) {
 	commands := Commands{
 		Command{

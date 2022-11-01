@@ -65,7 +65,7 @@ func renderUsage(title string, m *model) string {
 		for _, command := range m.commands {
 			commandNames = append(commandNames, command.Name)
 		}
-		if l := len(m.commands); l > 0 && m.commands[l-1].HasSubCommands() {
+		if lastCommand := m.commands.Last(); lastCommand != nil && lastCommand.HasSubCommands() {
 			commandNames = append(commandNames, "<subcommand>")
 		}
 	}
