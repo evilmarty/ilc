@@ -7,8 +7,8 @@ import (
 
 func TestModelEnv(t *testing.T) {
 	model := &model{
-		commands: Commands{
-			Command{
+		commands: CommandChain{
+			&Command{
 				Env: map[string]string{"FOOBAR": "{{.a}} {{.b}}"},
 			},
 		},
@@ -25,8 +25,8 @@ func TestModelEnv(t *testing.T) {
 
 func TestModelPureEnv(t *testing.T) {
 	model := &model{
-		commands: Commands{
-			Command{
+		commands: CommandChain{
+			&Command{
 				Env:  map[string]string{"FOOBAR": "{{.a}} {{.b}}"},
 				Pure: true,
 			},

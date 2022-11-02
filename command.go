@@ -23,14 +23,6 @@ func (command *Command) HasSubCommands() bool {
 
 type Commands []Command
 
-func (commands *Commands) Last() *Command {
-	if l := len(*commands); l > 0 {
-		return &(*commands)[l-1]
-	} else {
-		return nil
-	}
-}
-
 func (commands *Commands) Get(name string) *Command {
 	for _, command := range *commands {
 		if command.Name == name {
@@ -40,24 +32,8 @@ func (commands *Commands) Get(name string) *Command {
 	return nil
 }
 
-func (commands *Commands) Inputs() Inputs {
-	inputs := make(Inputs, 0)
-	for _, command := range *commands {
-		inputs = append(inputs, command.Inputs...)
-	}
-	return inputs
-}
-
-func (commands *Commands) Pure() bool {
-	if c := commands.Last(); c != nil {
-		return c.Pure
-	} else {
-		return false
-	}
-}
-
-func (initCommands Commands) Select() (Commands, error) {
-	askedCommands := make(Commands, 0)
+func (initCommands Commands) Select() (CommandChain, error) {
+	askedCommands := make(CommandChain, 0)
 	commands := initCommands
 
 	for numCommands := len(commands); numCommands > 0; numCommands = len(commands) {
@@ -80,7 +56,7 @@ func (initCommands Commands) Select() (Commands, error) {
 		}
 
 		command := choice.Value.(Command)
-		askedCommands = append(askedCommands, command)
+		askedCommands = append(askedCommands, &command)
 		commands = command.Commands
 	}
 

@@ -7,7 +7,7 @@ import (
 
 type model struct {
 	config   Config
-	commands Commands
+	commands CommandChain
 	values   InputValues
 	showHelp bool
 }
@@ -130,15 +130,15 @@ func (m *model) Run(env []string) error {
 	return nil
 }
 
-func parseCommands(initCommands Commands, args []string) (Commands, []string) {
+func parseCommands(initCommands Commands, args []string) (CommandChain, []string) {
 	commands := initCommands
-	foundCommands := make(Commands, 0)
+	foundCommands := make(CommandChain, 0)
 	for len(args) > 0 {
 		command := commands.Get(args[0])
 		if command == nil {
 			break
 		}
-		foundCommands = append(foundCommands, *command)
+		foundCommands = append(foundCommands, command)
 		commands = command.Commands
 		args = args[1:]
 	}
