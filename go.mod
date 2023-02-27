@@ -9,7 +9,7 @@ require (
 	github.com/erikgeiser/promptkit v0.7.0
 	github.com/kr/pretty v0.3.1
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
