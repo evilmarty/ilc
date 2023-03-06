@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.6.0
 	github.com/erikgeiser/promptkit v0.7.0
 	github.com/kr/pretty v0.3.1
-	golang.org/x/sys v0.5.0
+	golang.org/x/sys v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
