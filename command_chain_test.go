@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -109,6 +110,7 @@ func TestCommandChainRenderEnv_NonError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CommandChain.RenderEnv() returned an unexpected error: %v", err)
 	}
+	sort.Strings(actual)
 	assertDeepEqual(t, expected, actual, "CommandChain.RenderEnv() returned unexpected results")
 }
 
@@ -228,7 +230,9 @@ func TestCommandChainCmd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CommandChain.Cmd() returned an unexpected error: %v", err)
 	}
-	assertDeepEqual(t, []string{"A=aa", "B=b", "C=c"}, cmd.Env, "CommandChain.Cmd() did not set cmd.Env with correct values")
+	env := cmd.Env
+	sort.Strings(env)
+	assertDeepEqual(t, []string{"A=aa", "B=b", "C=c"}, env, "CommandChain.Cmd() did not set cmd.Env with correct values")
 	assertEqual(t, "/bin/bash", cmd.Path, "CommandChain.Cmd() did not set cmd.Path to the shell path")
 	assertDeepEqual(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandChain.Cmd() did not set cmd.Args with the correct values")
 }

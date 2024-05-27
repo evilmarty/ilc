@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -38,5 +39,7 @@ func TestArgsetParamNames(t *testing.T) {
 		},
 	}
 	expected := []string{"a", "b", "c"}
-	assertDeepEqual(t, expected, argset.ParamNames(), "ArgSet.ParamNames() returned unexpected result")
+	actual := argset.ParamNames()
+	sort.Strings(actual)
+	assertDeepEqual(t, expected, actual, "ArgSet.ParamNames() returned unexpected result")
 }
