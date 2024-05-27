@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 )
@@ -17,32 +16,52 @@ var (
 )
 
 func main() {
-	configFile := flag.String("f", defaultConfigFile, "Config file to load")
-	showVersion := flag.Bool("version", false, "Print version")
-	showHelp := flag.Bool("help", false, "Show this help screen")
-	flag.Parse()
-
-	if *showVersion {
-		fmt.Printf("ILC - %s\nVersion: %s\n", BuildDate, Version)
-		os.Exit(0)
-	}
-
-	m, err := newModel(*configFile, flag.Args())
-
-	if *showHelp || m.showHelp {
-		printHelp(m)
-		os.Exit(0)
-	}
-
-	if err != nil {
-		fmt.Println("Error loading config:", err)
+	if len(os.Args) < 2 {
+		printUsage()
 		os.Exit(1)
 	}
 
-	err = m.Run(os.Environ())
-
-	if err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
+	switch os.Args[1] {
+	case "help":
+		printUsage()
+	case "--help":
+		printUsage()
+	case "--version":
+		printVersion()
+	default:
+		if err := loadAndRun(os.Args[1], os.Args[2:]); err != nil {
+			fmt.Printf("Error: %v", err)
+			os.Exit(1)
+		}
 	}
+}
+
+func printUsage() {
+	fmt.Printf(`
+ILC
+---
+
+Usage:
+
+  ilc <--version|--help|CONFIG> ...
+
+Arguments:
+
+  --version         Display the version information.
+  --help            Display this message.
+
+  CONFIG            The path to a ILC config file.
+`)
+}
+
+func printVersion() {
+	fmt.Printf("ILC - %s\nVersion: %s\n", BuildDate, Version)
+}
+
+func loadAndRun(configPath string, args []string) error {
+	config, err := LoadConfig(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to load config '%s' for the following reason: %s", configPath, err)
+	}
+	return run(config, args)
 }

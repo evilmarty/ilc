@@ -58,3 +58,5 @@ commands:
           suffix:
             default: baz
         run: echo foobaz
+  fail:
+    run: "false"
