@@ -4,11 +4,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var defaultShell = []string{"/bin/sh"}
 
 type CommandChain []ConfigCommand
+
+func (cc CommandChain) Name() string {
+	var names []string
+	for _, c := range cc {
+		if c.Name != "" {
+			names = append(names, c.Name)
+		}
+	}
+	return strings.Join(names, " ")
+}
 
 func (cc CommandChain) Pure() bool {
 	for i := len(cc) - 1; i >= 0; {

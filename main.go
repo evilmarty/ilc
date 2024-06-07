@@ -1,13 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-)
-
-const (
-	defaultConfigFile = "ilc.yml"
-	helpWidth         = 80
 )
 
 var (
@@ -16,52 +12,36 @@ var (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		printUsage()
+	fs := flag.NewFlagSet("ILC", flag.ExitOnError)
+	fs.Usage = func() {
+		fmt.Fprintf(fs.Output(), "Usage of ILC:\n")
+		fs.PrintDefaults()
+		os.Exit(0)
+	}
+	fs.BoolFunc("version", "Displays the version", func(_ string) error {
+		fmt.Printf("ILC - %s\nVersion: %s\n", BuildDate, Version)
+		os.Exit(0)
+		return nil
+	})
+	debug := fs.Bool("debug", false, "Print debug information")
+	fs.Parse(os.Args[1:])
+	args := fs.Args()
+	if len(args) == 0 {
+		fmt.Fprintf(fs.Output(), "configuration file not provided\n")
+		os.Exit(2)
+	}
+
+	config, err := LoadConfig(args[0])
+	if err != nil {
+		fmt.Fprintf(fs.Output(), "error loading configuration: %v\n", err)
+		os.Exit(2)
+	}
+
+	runner := NewRunner(config, args[1:])
+	runner.Debug = *debug
+	err = runner.Run()
+	if err != nil {
+		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
-
-	switch os.Args[1] {
-	case "help":
-		printUsage()
-	case "--help":
-		printUsage()
-	case "--version":
-		printVersion()
-	default:
-		if err := loadAndRun(os.Args[1], os.Args[2:]); err != nil {
-			fmt.Printf("Error: %v", err)
-			os.Exit(1)
-		}
-	}
-}
-
-func printUsage() {
-	fmt.Printf(`
-ILC
----
-
-Usage:
-
-  ilc <--version|--help|CONFIG> ...
-
-Arguments:
-
-  --version         Display the version information.
-  --help            Display this message.
-
-  CONFIG            The path to a ILC config file.
-`)
-}
-
-func printVersion() {
-	fmt.Printf("ILC - %s\nVersion: %s\n", BuildDate, Version)
-}
-
-func loadAndRun(configPath string, args []string) error {
-	config, err := LoadConfig(configPath)
-	if err != nil {
-		return fmt.Errorf("failed to load config '%s' for the following reason: %s", configPath, err)
-	}
-	return run(config, args)
 }
