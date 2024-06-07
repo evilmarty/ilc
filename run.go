@@ -42,44 +42,6 @@ func (r *Runner) Run() error {
 	return cmd.Run()
 }
 
-func (r *Runner) selectCommands() (CommandChain, []string, error) {
-	var cursor ConfigCommand
-	rootCommand := ConfigCommand{
-		Name:        "",
-		Description: r.Config.Description,
-		Run:         r.Config.Run,
-		Shell:       r.Config.Shell,
-		Env:         r.Config.Env,
-		Pure:        r.Config.Pure,
-		Inputs:      r.Config.Inputs,
-		Commands:    r.Config.Commands,
-	}
-	cc := CommandChain{rootCommand}
-	args := r.Args
-
-	for len(args) > 0 {
-		cursor = cc[len(cc)-1]
-		if cursor.Run != "" || len(cursor.Commands) == 0 {
-			return cc, args, nil
-		}
-		next := cursor.Commands.Get(args[0])
-		if next == nil {
-			return cc, args, fmt.Errorf("invalid subcommand: %s", args[0])
-		}
-		cc = append(cc, *next)
-		args = args[1:]
-	}
-	// Now we ask to select any remaining commands
-	for cursor = cc[len(cc)-1]; cursor.Run == ""; cursor = cc[len(cc)-1] {
-		if subcommand, err := selectCommand(cursor); err != nil {
-			return cc, args, err
-		} else {
-			cc = append(cc, subcommand)
-		}
-	}
-	return cc, args, nil
-}
-
 func NewRunner(config Config, args []string) *Runner {
 	r := Runner{
 		Config: config,

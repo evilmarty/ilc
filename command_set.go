@@ -3,18 +3,111 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
 )
+
+var DefaultShell = []string{"/bin/sh"}
 
 type CommandSet struct {
 	Config   Config
-	Commands CommandChain
+	Commands []ConfigCommand
 	Args     []string
 }
 
+func (cs CommandSet) String() string {
+	var names []string
+	for _, c := range cs.Commands {
+		if c.Name != "" {
+			names = append(names, c.Name)
+		}
+	}
+	return strings.Join(names, " ")
+}
+
+func (cs CommandSet) Pure() bool {
+	for i := len(cs.Commands) - 1; i >= 0; {
+		command := cs.Commands[i]
+		return command.Pure
+	}
+	return false
+}
+
+func (cs CommandSet) Shell() []string {
+	for i := len(cs.Commands) - 1; i >= 0; i-- {
+		shell := cs.Commands[i].Shell
+		if len(shell) > 0 {
+			return shell
+		}
+	}
+	return DefaultShell
+}
+
+func (cs CommandSet) Inputs() []ConfigInput {
+	inputs := make([]ConfigInput, 0, len(cs.Commands))
+	for _, command := range cs.Commands {
+		inputs = append(inputs, command.Inputs...)
+	}
+	return inputs
+}
+
+func (cs CommandSet) Env() map[string]string {
+	envs := make(map[string]string)
+	for _, command := range cs.Commands {
+		for name, value := range command.Env {
+			envs[name] = value
+		}
+	}
+	return envs
+}
+
+func (cs CommandSet) RenderEnv(data map[string]any) ([]string, error) {
+	var renderedEnvs []string
+	for name, template := range cs.Env() {
+		if value, err := RenderTemplate(template, data); err != nil {
+			return renderedEnvs, fmt.Errorf("template error for environment variable: '%s' - %v", name, err)
+		} else {
+			renderedEnvs = append(renderedEnvs, fmt.Sprintf("%s=%s", name, value))
+		}
+	}
+	return renderedEnvs, nil
+}
+
+func (cs CommandSet) RenderScript(data map[string]any) (string, error) {
+	for i := len(cs.Commands) - 1; i >= 0; {
+		command := cs.Commands[i]
+		if script, err := RenderTemplate(command.Run, data); err != nil {
+			return script, fmt.Errorf("template error for command: '%s' - %v", command.Name, err)
+		} else {
+			return script, nil
+		}
+	}
+	return "", fmt.Errorf("no script present")
+}
+
+func (cs CommandSet) RenderScriptToTemp(data map[string]any) (string, error) {
+	var file *os.File
+	script, err := cs.RenderScript(data)
+	if err != nil {
+		return "", err
+	}
+	file, err = os.CreateTemp("", "*")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temporary script file: %v", err)
+	}
+	if _, err := file.Write([]byte(script)); err != nil {
+		return "", fmt.Errorf("failed to write to temporary script file: %v", err)
+	}
+	if err := file.Close(); err != nil {
+		return "", fmt.Errorf("failed to close temporary script file: %v", err)
+	}
+	return file.Name(), nil
+}
+
 func (cs CommandSet) parseArgs(values *map[string]any) error {
-	fs := flag.NewFlagSet(cs.Commands.Name(), flag.ExitOnError)
-	for _, input := range cs.Commands.Inputs() {
+	fs := flag.NewFlagSet(cs.String(), flag.ExitOnError)
+	for _, input := range cs.Inputs() {
 		fs.String(input.Name, input.DefaultValue, input.Description)
 	}
 	if err := fs.Parse(cs.Args); err != nil {
@@ -29,7 +122,7 @@ func (cs CommandSet) parseArgs(values *map[string]any) error {
 }
 
 func (cs CommandSet) askInputs(values *map[string]any) error {
-	for _, input := range cs.Commands.Inputs() {
+	for _, input := range cs.Inputs() {
 		found := false
 		for k := range *values {
 			if input.Name == k {
@@ -59,24 +152,21 @@ func (cs CommandSet) Values() (map[string]any, error) {
 	return values, err
 }
 
-func (cs CommandSet) Cmd(data map[string]any, moreEnv []string) (*exec.Cmd, error) {
+func (cs CommandSet) Cmd(data map[string]any, moreEnviron []string) (*exec.Cmd, error) {
 	var scriptFile string
 	var env []string
 	var err error
-	shell := cs.Commands.Shell()
-	if len(shell) == 0 {
-		shell = defaultShell[:]
-	}
-	scriptFile, err = cs.Commands.RenderScriptToTemp(data)
+	shell := cs.Shell()
+	scriptFile, err = cs.RenderScriptToTemp(data)
 	if err != nil {
 		return nil, err
 	}
-	env, err = cs.Commands.RenderEnv(data)
+	env, err = cs.RenderEnv(data)
 	if err != nil {
 		return nil, err
 	}
-	if !cs.Commands.Pure() {
-		env = append(moreEnv, env...)
+	if !cs.Pure() {
+		env = append(moreEnviron, env...)
 	}
 	shell = append(shell, scriptFile)
 	cmd := exec.Command(shell[0], shell[1:]...)
