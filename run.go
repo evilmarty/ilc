@@ -14,17 +14,18 @@ const (
 )
 
 type Runner struct {
-	Config Config
-	Args   []string
-	Debug  bool
-	Env    []string
-	Stdin  *os.File
-	Stdout *os.File
-	Stderr *os.File
+	Config     Config
+	Args       []string
+	Debug      bool
+	Env        []string
+	Stdin      *os.File
+	Stdout     *os.File
+	Stderr     *os.File
+	Entrypoint []string
 }
 
 func (r *Runner) Run() error {
-	cs, err := NewCommandSet(r.Config, r.Args)
+	cs, err := NewCommandSet(r.Entrypoint, r.Config, r.Args)
 	if err != nil {
 		return fmt.Errorf("failed to select command: %v", err)
 	}

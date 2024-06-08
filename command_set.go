@@ -14,6 +14,7 @@ var (
 )
 
 type CommandSet struct {
+	Entrypoint    []string
 	Config        Config
 	Commands      []ConfigCommand
 	Args          []string
@@ -28,6 +29,68 @@ func (cs CommandSet) String() string {
 		}
 	}
 	return strings.Join(names, " ")
+}
+
+func (cs CommandSet) Description() string {
+	for i := len(cs.Commands) - 1; i >= 0; {
+		command := cs.Commands[i]
+		return command.Description
+	}
+	return ""
+}
+
+func (cs CommandSet) Usage() string {
+	var b strings.Builder
+	subcommands := cs.subcommands()
+	inputs := cs.Inputs()
+	if s := cs.Description(); s != "" {
+		fmt.Fprintf(&b, "%s\n\n", s)
+	}
+	usage := []string{"[flags]"}
+	if len(cs.Entrypoint) > 0 {
+		usage = append([]string{cs.Entrypoint[0]}, usage...)
+		usage = append(usage, cs.Entrypoint[1:]...)
+	}
+	if s := cs.String(); s != "" {
+		usage = append(usage, s)
+	}
+	if len(subcommands) > 0 {
+		usage = append(usage, "<commands>")
+	}
+	if len(inputs) > 0 {
+		usage = append(usage, "[inputs]")
+	}
+	if len(usage) > 0 {
+		fmt.Fprintf(&b, "USAGE\n  %s\n", strings.Join(usage, " "))
+	}
+	if len(subcommands) > 0 {
+		fmt.Fprintf(&b, "\nCOMMANDS\n")
+		for _, subcommand := range subcommands {
+			fmt.Fprintf(&b, "  %-20s %s\n", subcommand.Name, subcommand.Description)
+		}
+	}
+	if len(inputs) > 0 {
+		fmt.Fprintf(&b, "\nINPUTS\n")
+		for _, input := range inputs {
+			fmt.Fprintf(&b, "  -%-19s %s\n", input.Name, input.Description)
+		}
+	}
+	if mainFlagSet.NFlag() > 0 {
+		b.WriteString("\nFLAGS\n")
+		mainFlagSet.VisitAll(func(f *flag.Flag) {
+			fmt.Fprintf(&b, "  -%-19s %s\n", f.Name, f.Usage)
+		})
+	}
+	b.WriteString("\n")
+	return b.String()
+}
+
+func (cs CommandSet) subcommands() []ConfigCommand {
+	for i := len(cs.Commands) - 1; i >= 0; {
+		command := cs.Commands[i]
+		return command.Commands
+	}
+	return []ConfigCommand{}
 }
 
 func (cs CommandSet) Pure() bool {
@@ -111,6 +174,9 @@ func (cs CommandSet) RenderScriptToTemp(data map[string]any) (string, error) {
 
 func (cs CommandSet) ParseArgs(values *map[string]any) error {
 	fs := flag.NewFlagSet(cs.String(), cs.ErrorHandling)
+	fs.Usage = func() {
+		fmt.Fprintf(fs.Output(), cs.Usage())
+	}
 	for _, input := range cs.Inputs() {
 		fs.String(input.Name, input.DefaultValue, input.Description)
 	}
@@ -188,8 +254,9 @@ func (cs CommandSet) Cmd(data map[string]any, moreEnviron []string) (*exec.Cmd, 
 	return cmd, nil
 }
 
-func NewCommandSet(config Config, args []string) (CommandSet, error) {
+func NewCommandSet(entrypoint []string, config Config, args []string) (CommandSet, error) {
 	var cursor ConfigCommand
+	help := false
 	rootCommand := ConfigCommand{
 		Name:        "",
 		Description: config.Description,
@@ -208,6 +275,12 @@ func NewCommandSet(config Config, args []string) (CommandSet, error) {
 			break
 		}
 		if args[0][0] == '-' {
+			arg := args[0][1:]
+			// Is double dashed argument
+			if arg[0] == '-' {
+				arg = arg[1:]
+			}
+			help = arg == "help" || arg == "h"
 			break
 		}
 		next := cursor.Commands.Get(args[0])
@@ -218,14 +291,17 @@ func NewCommandSet(config Config, args []string) (CommandSet, error) {
 		args = args[1:]
 	}
 	// Now we ask to select any remaining commands
-	for cursor = cc[len(cc)-1]; cursor.Run == ""; cursor = cc[len(cc)-1] {
-		if subcommand, err := selectCommand(cursor); err != nil {
-			break
-		} else {
-			cc = append(cc, subcommand)
+	if !help {
+		for cursor = cc[len(cc)-1]; cursor.Run == ""; cursor = cc[len(cc)-1] {
+			if subcommand, err := selectCommand(cursor); err != nil {
+				break
+			} else {
+				cc = append(cc, subcommand)
+			}
 		}
 	}
 	cs := CommandSet{
+		Entrypoint:    entrypoint,
 		Config:        config,
 		Commands:      cc,
 		Args:          args,
