@@ -213,6 +213,7 @@ func ParseConfig(content []byte) (Config, error) {
 }
 
 func LoadConfig(path string) (Config, error) {
+	logger.Printf("Attempting to load config file: %s", path)
 	if content, err := os.ReadFile(path); err != nil {
 		return Config{}, err
 	} else {

@@ -169,6 +169,7 @@ func (cs CommandSet) RenderScriptToTemp(data map[string]any) (string, error) {
 	if err := file.Close(); err != nil {
 		return "", fmt.Errorf("failed to close temporary script file: %v", err)
 	}
+	logger.Printf("Created temporary script: %s\n", file.Name())
 	return file.Name(), nil
 }
 
@@ -227,6 +228,7 @@ func (cs CommandSet) ParseEnv(values *map[string]any, environ []string) {
 		if input, ok := inputsMap[name]; !ok {
 			continue
 		} else {
+			logger.Printf("Found value for input in environment: %s\n", input.Name)
 			(*values)[input.Name] = entry[1]
 		}
 	}
@@ -291,7 +293,9 @@ func NewCommandSet(entrypoint []string, config Config, args []string) (CommandSe
 		args = args[1:]
 	}
 	// Now we ask to select any remaining commands
-	if !help {
+	if help {
+		logger.Println("Detected help flag whilst parsing arguments for command")
+	} else {
 		for cursor = cc[len(cc)-1]; cursor.Run == ""; cursor = cc[len(cc)-1] {
 			if subcommand, err := selectCommand(cursor); err != nil {
 				break

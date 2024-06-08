@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -11,6 +13,7 @@ var (
 	Version     = "No version provided"
 	BuildDate   = "Unknown build date"
 	mainFlagSet = flag.NewFlagSet("ILC", flag.ExitOnError)
+	logger      = log.New(io.Discard, "DEBUG: ", log.Lshortfile)
 )
 
 func main() {
@@ -32,6 +35,10 @@ func main() {
 		os.Exit(2)
 	}
 
+	if *debug {
+		logger.SetOutput(os.Stderr)
+	}
+
 	config, err := LoadConfig(args[0])
 	if err != nil {
 		fmt.Fprintf(mainFlagSet.Output(), "error loading configuration: %v\n", err)
@@ -40,7 +47,6 @@ func main() {
 
 	runner := NewRunner(config, args[1:])
 	runner.Entrypoint = getEntrypoint(args[0])
-	runner.Debug = *debug
 	err = runner.Run()
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -58,8 +64,10 @@ func getEntrypoint(configPath string) []string {
 	}
 	// Check if config was invoked
 	if underscore == configPath {
+		logger.Println("Detected entrypoint to be config file")
 		return []string{underscore}
 	} else {
+		logger.Println("Assuming direct execution of binary")
 		return []string{os.Args[0], configPath}
 	}
 }

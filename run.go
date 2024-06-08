@@ -16,7 +16,6 @@ const (
 type Runner struct {
 	Config     Config
 	Args       []string
-	Debug      bool
 	Env        []string
 	Stdin      *os.File
 	Stdout     *os.File
