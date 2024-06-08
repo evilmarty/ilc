@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -23,6 +24,14 @@ type Runner struct {
 	Entrypoint []string
 }
 
+func (r *Runner) printUsage(cs CommandSet) {
+	entrypoint := append([]string{}, r.Entrypoint...)
+	entrypoint = append(entrypoint, cs.String())
+	u := NewUsage(entrypoint, "ILC", cs.Description()).ImportCommandSet(cs)
+	fmt.Fprint(r.Stderr, u.String())
+	os.Exit(0)
+}
+
 func (r *Runner) Run() error {
 	cs, err := NewCommandSet(r.Entrypoint, r.Config, r.Args)
 	if err != nil {
@@ -30,7 +39,9 @@ func (r *Runner) Run() error {
 	}
 	values := make(map[string]any)
 	cs.ParseEnv(&values, r.Env)
-	if err = cs.ParseArgs(&values); err != nil {
+	if err = cs.ParseArgs(&values); err == flag.ErrHelp {
+		r.printUsage(cs)
+	} else if err != nil {
 		return fmt.Errorf("failed parsing arguments: %v", err)
 	}
 	if err = cs.AskInputs(&values); err != nil {

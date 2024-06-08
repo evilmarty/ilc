@@ -18,8 +18,8 @@ var (
 
 func main() {
 	mainFlagSet.Usage = func() {
-		fmt.Fprintf(mainFlagSet.Output(), "Usage of ILC:\n")
-		mainFlagSet.PrintDefaults()
+		u := NewUsage(os.Args[0:1], "ILC", "")
+		fmt.Printf("%s", u.String())
 		os.Exit(0)
 	}
 	mainFlagSet.BoolFunc("version", "Displays the version", func(_ string) error {
