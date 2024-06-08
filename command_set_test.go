@@ -400,6 +400,30 @@ func TestCommandSetParseArgs_Help(t *testing.T) {
 	assertDeepEqual(t, flag.ErrHelp, actual, "CommandSet.ParseArgs() did not acknowledge help")
 }
 
+func TestCommandSetParseEnv(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "A", DefaultValue: ""},
+					ConfigInput{Name: "B", DefaultValue: "b"},
+				},
+			},
+			{
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "C", DefaultValue: "c"},
+				},
+			},
+		},
+		Args: []string{"-help"},
+	}
+	env := []string{"ILC_INPUT_A=a=a", "ILC_INPUT_C=", "ILC_INPUT_D=dd"}
+	expected := map[string]any{"A": "a=a", "C": ""}
+	actual := make(map[string]any)
+	cs.ParseEnv(&actual, env)
+	assertDeepEqual(t, expected, actual, "CommandSet.ParseEnv() returned unexpected results")
+}
+
 func TestNewCommandSet_PreselectedFromArgs(t *testing.T) {
 	config := Config{
 		Commands: ConfigCommands{

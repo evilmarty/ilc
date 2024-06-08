@@ -8,7 +8,10 @@ import (
 	"strings"
 )
 
-var DefaultShell = []string{"/bin/sh"}
+var (
+	DefaultShell = []string{"/bin/sh"}
+	EnvVarPrefix = "ILC_INPUT_"
+)
 
 type CommandSet struct {
 	Config        Config
@@ -143,14 +146,24 @@ func (cs CommandSet) AskInputs(values *map[string]any) error {
 	return nil
 }
 
-func (cs CommandSet) Values() (map[string]any, error) {
-	var err error
-	values := make(map[string]any)
-	err = cs.ParseArgs(&values)
-	if err == nil {
-		err = cs.AskInputs(&values)
+func (cs CommandSet) ParseEnv(values *map[string]any, environ []string) {
+	inputs := cs.Inputs()
+	inputsMap := make(map[string]*ConfigInput, len(inputs))
+	for _, input := range inputs {
+		inputsMap[input.Name] = &input
 	}
-	return values, err
+	for _, item := range environ {
+		if !strings.HasPrefix(item, EnvVarPrefix) {
+			continue
+		}
+		entry := strings.SplitN(item, "=", 2)
+		name := strings.TrimPrefix(entry[0], EnvVarPrefix)
+		if input, ok := inputsMap[name]; !ok {
+			continue
+		} else {
+			(*values)[input.Name] = entry[1]
+		}
+	}
 }
 
 func (cs CommandSet) Cmd(data map[string]any, moreEnviron []string) (*exec.Cmd, error) {

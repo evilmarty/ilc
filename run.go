@@ -28,8 +28,12 @@ func (r *Runner) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to select command: %v", err)
 	}
-	values, err := cs.Values()
-	if err != nil {
+	values := make(map[string]any)
+	cs.ParseEnv(&values, r.Env)
+	if err = cs.ParseArgs(&values); err != nil {
+		return fmt.Errorf("failed parsing arguments: %v", err)
+	}
+	if err = cs.AskInputs(&values); err != nil {
 		return fmt.Errorf("failed getting input values: %v", err)
 	}
 	cmd, err := cs.Cmd(values, r.Env)
