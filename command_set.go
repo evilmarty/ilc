@@ -11,9 +11,10 @@ import (
 var DefaultShell = []string{"/bin/sh"}
 
 type CommandSet struct {
-	Config   Config
-	Commands []ConfigCommand
-	Args     []string
+	Config        Config
+	Commands      []ConfigCommand
+	Args          []string
+	ErrorHandling flag.ErrorHandling
 }
 
 func (cs CommandSet) String() string {
@@ -105,8 +106,8 @@ func (cs CommandSet) RenderScriptToTemp(data map[string]any) (string, error) {
 	return file.Name(), nil
 }
 
-func (cs CommandSet) parseArgs(values *map[string]any) error {
-	fs := flag.NewFlagSet(cs.String(), flag.ExitOnError)
+func (cs CommandSet) ParseArgs(values *map[string]any) error {
+	fs := flag.NewFlagSet(cs.String(), cs.ErrorHandling)
 	for _, input := range cs.Inputs() {
 		fs.String(input.Name, input.DefaultValue, input.Description)
 	}
@@ -121,7 +122,7 @@ func (cs CommandSet) parseArgs(values *map[string]any) error {
 	return nil
 }
 
-func (cs CommandSet) askInputs(values *map[string]any) error {
+func (cs CommandSet) AskInputs(values *map[string]any) error {
 	for _, input := range cs.Inputs() {
 		found := false
 		for k := range *values {
@@ -145,9 +146,9 @@ func (cs CommandSet) askInputs(values *map[string]any) error {
 func (cs CommandSet) Values() (map[string]any, error) {
 	var err error
 	values := make(map[string]any)
-	err = cs.parseArgs(&values)
+	err = cs.ParseArgs(&values)
 	if err == nil {
-		err = cs.askInputs(&values)
+		err = cs.AskInputs(&values)
 	}
 	return values, err
 }
@@ -212,9 +213,10 @@ func NewCommandSet(config Config, args []string) (CommandSet, error) {
 		}
 	}
 	cs := CommandSet{
-		Config:   config,
-		Commands: cc,
-		Args:     args,
+		Config:        config,
+		Commands:      cc,
+		Args:          args,
+		ErrorHandling: flag.ExitOnError,
 	}
 	return cs, nil
 }

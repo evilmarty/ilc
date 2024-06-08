@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"sort"
@@ -347,6 +348,56 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 	assertDeepEqual(t, []string{"A=aa", "B=b", "C=c", "D=d"}, env, "CommandSet.Cmd() did not set cmd.Env with correct values")
 	assertEqual(t, "/bin/bash", cmd.Path, "CommandSet.Cmd() did not set cmd.Path to the shell path")
 	assertDeepEqual(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
+}
+
+func TestCommandSetParseArgs_Valid(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "A", DefaultValue: ""},
+					ConfigInput{Name: "B", DefaultValue: "b"},
+				},
+			},
+			{
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "C", DefaultValue: "c"},
+				},
+			},
+		},
+		Args: []string{"-A", "aa", "--C", "cc"},
+	}
+	expected := map[string]any{
+		"A": "aa",
+		"C": "cc",
+	}
+	actual := make(map[string]any)
+	if err := cs.ParseArgs(&actual); err != nil {
+		t.Fatalf("CommandSet.ParseArgs() returned unexpected error: %v", err)
+	}
+	assertDeepEqual(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
+}
+
+func TestCommandSetParseArgs_Help(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "A", DefaultValue: ""},
+					ConfigInput{Name: "B", DefaultValue: "b"},
+				},
+			},
+			{
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "C", DefaultValue: "c"},
+				},
+			},
+		},
+		Args: []string{"-help"},
+	}
+	values := make(map[string]any)
+	actual := cs.ParseArgs(&values)
+	assertDeepEqual(t, flag.ErrHelp, actual, "CommandSet.ParseArgs() did not acknowledge help")
 }
 
 func TestNewCommandSet_PreselectedFromArgs(t *testing.T) {
