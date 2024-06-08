@@ -14,8 +14,44 @@ go install github.com/evilmarty/ilc
 
 ## Usage
 
-Run `ilc` for it to load `ilc.yml` in the current directory, or to specify a
-config file pass `-f` with the path. A config file is required.
+The usage is as followed:
+
+```shell
+ilc [--version] [--debug] CONFIG [COMMAND ...] [INPUT ...]
+```
+
+`CONFIG` is the path to your config file.
+
+`COMMAND` is one or a cascade of subcommands defined in the config file.
+
+`INPUT` is one or many inputs inherited by the command.
+
+The best way to use `ilc` is to include it in the shebang of your config, like so:
+
+```yaml
+#!/usr/bin/env ilc
+```
+
+### Commands
+
+If the configuration has defined `commands` they can either be passed as arguments or an interactive prompt will allow you to choose a command. If the command specified in the arguments has itself subcommands the interactive prompt will appear to complete the selection process.
+
+### Inputs
+
+After a command is specified or selected an interactive prompt will ask for input before the command will be executed. Inputs can be passed as arguments or as environment variables that are prefixed with `ILC_INPUT_`. Inputs that have been passed as arguments will not be asked, only for the inputs that have yet a value.
+
+#### Example of passing inputs as arguments
+
+```shell
+ilc example/ilc.yaml calendar -month feb
+```
+
+#### Example of passing inputs via environment variables
+
+```shell
+export ILC_INPUT_month=feb
+ilc example/ilc.yaml calendar
+```
 
 ## Config
 
