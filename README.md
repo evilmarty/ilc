@@ -6,11 +6,25 @@ Create an easy to use interactive CLI to simplify your workflow with a single YA
 
 ## Installation
 
+### Homebrew
+
+To install via [Homebrew](https://brew.sh) just run the following command:
+
+```shell
+brew install --cask evilmarty/ilc/ilc
+```
+
+### Golang
+
 Ensure you have [Go](https://go.dev) installed then run the follow:
 
 ```shell
 go install github.com/evilmarty/ilc
 ```
+
+### Manual
+
+Binaries are available to download. Get the [latest release](https://github.com/evilmarty/ilc/releases/latest) binary for your platform.
 
 ## Usage
 
