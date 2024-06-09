@@ -430,7 +430,7 @@ func TestNewCommandSet_PreselectedFromArgs(t *testing.T) {
 			ConfigCommand{Name: "foobar", Run: "true"},
 		},
 	}
-	cs, err := NewCommandSet([]string{}, config, []string{"foobar", "-a", "1"})
+	cs, err := NewCommandSet(config, []string{"foobar", "-a", "1"})
 	if err != nil {
 		t.Fatalf("NewCommandSet() returned unexpected error: %v", err)
 	}
@@ -444,7 +444,7 @@ func TestNewCommandSet_Invalid(t *testing.T) {
 			ConfigCommand{Name: "foobar", Run: "true"},
 		},
 	}
-	_, err := NewCommandSet([]string{}, config, []string{"foobaz", "-a", "1"})
+	_, err := NewCommandSet(config, []string{"foobaz", "-a", "1"})
 	expected := "invalid subcommand: foobaz"
 	actual := fmt.Sprintf("%s", err)
 	assertEqual(t, expected, actual, "NewCommandSet() returned unexpected error")

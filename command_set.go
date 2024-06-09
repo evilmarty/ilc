@@ -14,7 +14,6 @@ var (
 )
 
 type CommandSet struct {
-	Entrypoint    []string
 	Config        Config
 	Commands      []ConfigCommand
 	Args          []string
@@ -210,7 +209,7 @@ func (cs CommandSet) Cmd(data map[string]any, moreEnviron []string) (*exec.Cmd, 
 	return cmd, nil
 }
 
-func NewCommandSet(entrypoint []string, config Config, args []string) (CommandSet, error) {
+func NewCommandSet(config Config, args []string) (CommandSet, error) {
 	var cursor ConfigCommand
 	help := false
 	rootCommand := ConfigCommand{
@@ -259,7 +258,6 @@ func NewCommandSet(entrypoint []string, config Config, args []string) (CommandSe
 		}
 	}
 	cs := CommandSet{
-		Entrypoint:    entrypoint,
 		Config:        config,
 		Commands:      cc,
 		Args:          args,

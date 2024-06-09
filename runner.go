@@ -33,7 +33,7 @@ func (r *Runner) printUsage(cs CommandSet) {
 }
 
 func (r *Runner) Run() error {
-	cs, err := NewCommandSet(r.Entrypoint, r.Config, r.Args)
+	cs, err := NewCommandSet(r.Config, r.Args)
 	if err != nil {
 		return fmt.Errorf("failed to select command: %v", err)
 	}
