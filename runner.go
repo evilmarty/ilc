@@ -71,13 +71,8 @@ func NewRunner(config Config, args []string) *Runner {
 
 func selectCommand(command ConfigCommand) (ConfigCommand, error) {
 	commandsLength := len(command.Commands)
-	choices := make([]*selection.Choice, commandsLength)
 
-	for i, subcommand := range command.Commands {
-		choices[i] = &selection.Choice{String: subcommand.Name, Value: subcommand}
-	}
-
-	sp := selection.New("Choose command", choices)
+	sp := selection.New("Choose command", command.Commands)
 
 	if commandsLength <= minChoiceFiltering {
 		sp.Filter = nil
@@ -86,8 +81,7 @@ func selectCommand(command ConfigCommand) (ConfigCommand, error) {
 	if choice, err := sp.RunPrompt(); err != nil {
 		return command, err
 	} else {
-		value := choice.Value.(ConfigCommand)
-		return value, nil
+		return choice, nil
 	}
 }
 
@@ -101,18 +95,14 @@ func askInput(input ConfigInput) (string, error) {
 
 func selectInput(input ConfigInput) (string, error) {
 	prompt := fmt.Sprintf("Choose a %s", input.Name)
-	choices := make([]*selection.Choice, 0, input.Options.Len())
-	for _, option := range input.Options {
-		choices = append(choices, &selection.Choice{String: option.Label, Value: option.Value})
-	}
-	sp := selection.New(prompt, choices)
+	sp := selection.New(prompt, input.Options)
 
-	if len(choices) <= minChoiceFiltering {
+	if len(input.Options) <= minChoiceFiltering {
 		sp.Filter = nil
 	}
 
-	if choice, err := sp.RunPrompt(); err == nil {
-		return choice.Value.(string), err
+	if option, err := sp.RunPrompt(); err == nil {
+		return option.Value, err
 	} else {
 		return "", err
 	}

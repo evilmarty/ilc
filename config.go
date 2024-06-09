@@ -13,6 +13,10 @@ type ConfigInputOption struct {
 	Value string
 }
 
+func (option ConfigInputOption) String() string {
+	return option.Label
+}
+
 type ConfigInputOptions []ConfigInputOption
 
 func (options ConfigInputOptions) Len() int {
@@ -134,6 +138,10 @@ type ConfigCommand struct {
 	Pure        bool
 	Inputs      ConfigInputs
 	Commands    ConfigCommands `yaml:",flow"`
+}
+
+func (command ConfigCommand) String() string {
+	return command.Name
 }
 
 type ConfigCommands []ConfigCommand
