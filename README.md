@@ -84,7 +84,7 @@ The shell to run the command in. Must be in JSON array format. Defaults to `["/b
 
 ### `run`
 
-Runs command-line programs using the specified shell. Inputs defined are available to use via expressions. Go's [templating](https://pkg.go.dev/text/template) syntax is fully supported here.
+Runs command-line programs using the specified shell. See [[Templating]] for more information.
 
 ### `pure`
 
@@ -163,7 +163,7 @@ value is required.
 
 ### `run`
 
-Runs command-line programs using the specified `shell`. Inputs defined are available to use via expression. Go's [templating](https://pkg.go.dev/text/template) syntax is fully supported here.
+Runs command-line programs using the specified `shell`. See [[Templating]] for more information.
 
 #### Example
 
@@ -216,7 +216,7 @@ defined cascade to all sub-commands. Cannot be used in conjunction with `run`.
 ### `commands.<command_name>.env`
 
 Optionally set environment variables for the command. Cascades to descending
-commands and subcommands. Expressions can be used in values.
+commands and subcommands. See [[Templating]] for more information.
 
 #### Example
 
@@ -224,7 +224,7 @@ commands and subcommands. Expressions can be used in values.
 commands:
   greet:
     env:
-      NAME: "{{ .name }}"
+      NAME: "{{ .Input.name }}"
       GREETING: Hello
 ```
 
@@ -235,6 +235,18 @@ Setting `pure` to `true` to not pass through environment variables and only use 
 ### `commands.<command_name>.inputs`
 
 Optionally specify inputs to be used in `run` and `env` values. Inputs can be passed as arguments or will be asked when invoking a command. Nested commands inherit inputs and cascade down. See [`inputs`] for more information.
+
+## Templating
+
+Go's [templating](https://pkg.go.dev/text/template) is available for `run` and `env` values to construct complex entries. Templates are evaluated after inputs are collected but before script execution. Along with inputs, templates can access environment variables that are present and regardless whether `pure` is enabled or not.
+
+### .Input.<input_name>
+
+The expression to reference an input value. ie. '{{ .Input.my_input }}'
+
+### .Env.<variable_name>
+
+The expression to reference an environment variable. ie. '{{ .Env.HOME }}'
 
 ## Example config with single command
 
@@ -255,7 +267,7 @@ inputs:
       - October
       - November
       - December
-run: cal -m {{ .month }}
+run: cal -m {{ .Input.month }}
 ```
 
 ## Example config with commands
@@ -283,7 +295,7 @@ commands:
           - October
           - November
           - December
-    run: cal -m {{ .month }}
+    run: cal -m {{ .Input.month }}
   greet:
     description: Give a greeting
     inputs:
@@ -296,8 +308,8 @@ commands:
           - G'day
     run: echo $GREETING $NAME
     env:
-      NAME: "{{ .name }}"
-      GREETING: "{{ .greeting }}"
+      NAME: "{{ .Input.name }}"
+      GREETING: "{{ .Input.greeting }}"
 ```
 
 ## TODO

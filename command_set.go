@@ -82,7 +82,7 @@ func (cs CommandSet) Env() map[string]string {
 	return envs
 }
 
-func (cs CommandSet) RenderEnv(data map[string]any) ([]string, error) {
+func (cs CommandSet) RenderEnv(data TemplateData) ([]string, error) {
 	var renderedEnvs []string
 	for name, template := range cs.Env() {
 		if value, err := RenderTemplate(template, data); err != nil {
@@ -94,7 +94,7 @@ func (cs CommandSet) RenderEnv(data map[string]any) ([]string, error) {
 	return renderedEnvs, nil
 }
 
-func (cs CommandSet) RenderScript(data map[string]any) (string, error) {
+func (cs CommandSet) RenderScript(data TemplateData) (string, error) {
 	for i := len(cs.Commands) - 1; i >= 0; {
 		command := cs.Commands[i]
 		if script, err := RenderTemplate(command.Run, data); err != nil {
@@ -106,7 +106,7 @@ func (cs CommandSet) RenderScript(data map[string]any) (string, error) {
 	return "", fmt.Errorf("no script present")
 }
 
-func (cs CommandSet) RenderScriptToTemp(data map[string]any) (string, error) {
+func (cs CommandSet) RenderScriptToTemp(data TemplateData) (string, error) {
 	var file *os.File
 	script, err := cs.RenderScript(data)
 	if err != nil {
@@ -187,7 +187,7 @@ func (cs CommandSet) ParseEnv(values *map[string]any, environ []string) {
 	}
 }
 
-func (cs CommandSet) Cmd(data map[string]any, moreEnviron []string) (*exec.Cmd, error) {
+func (cs CommandSet) Cmd(data TemplateData, moreEnviron []string) (*exec.Cmd, error) {
 	var scriptFile string
 	var env []string
 	var err error

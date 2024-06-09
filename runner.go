@@ -47,7 +47,8 @@ func (r *Runner) Run() error {
 	if err = cs.AskInputs(&values); err != nil {
 		return fmt.Errorf("failed getting input values: %v", err)
 	}
-	cmd, err := cs.Cmd(values, r.Env)
+	data := NewTemplateData(values, r.Env)
+	cmd, err := cs.Cmd(data, r.Env)
 	if err != nil {
 		return fmt.Errorf("failed generating script: %v", err)
 	}

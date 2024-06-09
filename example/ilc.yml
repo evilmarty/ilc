@@ -2,7 +2,7 @@ description: Example config
 commands:
   weather:
     description: Show the current weather forecast
-    run: curl wttr.in/{{ .airport }}
+    run: curl wttr.in/{{ .Input.airport }}
     inputs:
       airport:
         options:
@@ -26,7 +26,7 @@ commands:
           - October
           - November
           - December
-    run: cal -m {{ .month }}
+    run: cal -m {{ .Input.month }}
   greet:
     description: Give a greeting
     inputs:
@@ -41,8 +41,8 @@ commands:
           - G'day
     run: echo $GREETING $NAME
     env:
-      NAME: "{{ .name }}"
-      GREETING: "{{ .greeting }}"
+      NAME: "{{ .Input.name }}"
+      GREETING: "{{ .Input.greeting }}"
   foo:
     inputs:
       prefix:

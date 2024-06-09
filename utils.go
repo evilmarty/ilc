@@ -7,7 +7,32 @@ import (
 
 var renderTemplate = template.New("")
 
-func RenderTemplate(text string, data map[string]any) (string, error) {
+type TemplateData struct {
+	Input map[string]any
+	Env   map[string]string
+}
+
+func NewTemplateData(input map[string]any, env []string) TemplateData {
+	return TemplateData{
+		Input: input,
+		Env:   EnvMap(env),
+	}
+}
+
+func EnvMap(env []string) map[string]string {
+	m := make(map[string]string, len(env))
+	for _, item := range env {
+		entry := strings.SplitN(item, "=", 2)
+		if len(entry) > 1 {
+			m[entry[0]] = entry[1]
+		} else {
+			m[entry[0]] = ""
+		}
+	}
+	return m
+}
+
+func RenderTemplate(text string, data TemplateData) (string, error) {
 	b := strings.Builder{}
 	if tmpl, err := renderTemplate.Parse(text); err != nil {
 		return "", err

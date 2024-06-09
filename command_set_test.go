@@ -140,23 +140,25 @@ func TestCommandSetEnv(t *testing.T) {
 }
 
 func TestCommandSetRenderEnv_NonError(t *testing.T) {
-	data := map[string]any{
-		"A": "a",
-		"B": "b",
-		"C": "c",
+	data := TemplateData{
+		Input: map[string]any{
+			"A": "a",
+			"B": "b",
+			"C": "c",
+		},
 	}
 	cs := CommandSet{
 		Commands: []ConfigCommand{
 			{
 				Env: map[string]string{
-					"A": "{{.A}}",
-					"B": "{{.B}}",
+					"A": "{{.Input.A}}",
+					"B": "{{.Input.B}}",
 				},
 			},
 			{
 				Env: map[string]string{
 					"A": "aa",
-					"C": "{{.C}}",
+					"C": "{{.Input.C}}",
 				},
 			},
 		},
@@ -175,14 +177,16 @@ func TestCommandSetRenderEnv_NonError(t *testing.T) {
 }
 
 func TestCommandSetRenderEnv_TemplateError(t *testing.T) {
-	data := map[string]any{
-		"A": "a",
+	data := TemplateData{
+		Input: map[string]any{
+			"A": "a",
+		},
 	}
 	cs := CommandSet{
 		Commands: []ConfigCommand{
 			{
 				Env: map[string]string{
-					"A": "{{.A}",
+					"A": "{{.Input.A}",
 				},
 			},
 		},
@@ -194,7 +198,7 @@ func TestCommandSetRenderEnv_TemplateError(t *testing.T) {
 }
 
 func TestCommandSetRenderScript_Empty(t *testing.T) {
-	data := map[string]any{}
+	data := TemplateData{}
 	cs := CommandSet{}
 	_, err := cs.RenderScript(data)
 	expected := "no script present"
@@ -203,14 +207,16 @@ func TestCommandSetRenderScript_Empty(t *testing.T) {
 }
 
 func TestCommandSetRenderScript_TemplateError(t *testing.T) {
-	data := map[string]any{
-		"A": "a",
+	data := TemplateData{
+		Input: map[string]any{
+			"A": "a",
+		},
 	}
 	cs := CommandSet{
 		Commands: []ConfigCommand{
 			{
 				Name: "foobar",
-				Run:  "{{.A}",
+				Run:  "{{.Input.A}",
 			},
 		},
 	}
@@ -221,19 +227,21 @@ func TestCommandSetRenderScript_TemplateError(t *testing.T) {
 }
 
 func TestCommandSetRenderScript_NonError(t *testing.T) {
-	data := map[string]any{
-		"A": "a",
-		"B": "b",
+	data := TemplateData{
+		Input: map[string]any{
+			"A": "a",
+			"B": "b",
+		},
 	}
 	cs := CommandSet{
 		Commands: []ConfigCommand{
 			{
 				Name: "foobaz",
-				Run:  "echo {{.B}}",
+				Run:  "echo {{.Input.B}}",
 			},
 			{
 				Name: "foobar",
-				Run:  "echo {{.A}}",
+				Run:  "echo {{.Input.A}}",
 			},
 		},
 	}
@@ -246,14 +254,16 @@ func TestCommandSetRenderScript_NonError(t *testing.T) {
 }
 
 func TestCommandSetRenderScriptToTemp(t *testing.T) {
-	data := map[string]any{
-		"A": "a",
+	data := TemplateData{
+		Input: map[string]any{
+			"A": "a",
+		},
 	}
 	cs := CommandSet{
 		Commands: []ConfigCommand{
 			{
 				Name: "foobar",
-				Run:  "echo {{.A}}",
+				Run:  "echo {{.Input.A}}",
 			},
 		},
 	}
@@ -270,10 +280,12 @@ func TestCommandSetRenderScriptToTemp(t *testing.T) {
 }
 
 func TestCommandSetCmd_IsPure(t *testing.T) {
-	data := map[string]any{
-		"A": "a",
-		"B": "b",
-		"C": "c",
+	data := TemplateData{
+		Input: map[string]any{
+			"A": "a",
+			"B": "b",
+			"C": "c",
+		},
 	}
 	moreEnviron := []string{
 		"D=d",
@@ -284,8 +296,8 @@ func TestCommandSetCmd_IsPure(t *testing.T) {
 				Shell: []string{"/bin/sh"},
 				Run:   "foobaz",
 				Env: map[string]string{
-					"A": "{{.A}}",
-					"B": "{{.B}}",
+					"A": "{{.Input.A}}",
+					"B": "{{.Input.B}}",
 				},
 			},
 			{
@@ -293,7 +305,7 @@ func TestCommandSetCmd_IsPure(t *testing.T) {
 				Run:   "foobar",
 				Env: map[string]string{
 					"A": "aa",
-					"C": "{{.C}}",
+					"C": "{{.Input.C}}",
 				},
 				Pure: true,
 			},
@@ -311,10 +323,12 @@ func TestCommandSetCmd_IsPure(t *testing.T) {
 }
 
 func TestCommandSetCmd_NotPure(t *testing.T) {
-	data := map[string]any{
-		"A": "a",
-		"B": "b",
-		"C": "c",
+	data := TemplateData{
+		Input: map[string]any{
+			"A": "a",
+			"B": "b",
+			"C": "c",
+		},
 	}
 	moreEnviron := []string{
 		"D=d",
@@ -325,8 +339,8 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 				Shell: []string{"/bin/sh"},
 				Run:   "foobaz",
 				Env: map[string]string{
-					"A": "{{.A}}",
-					"B": "{{.B}}",
+					"A": "{{.Input.A}}",
+					"B": "{{.Input.B}}",
 				},
 			},
 			{
@@ -334,7 +348,7 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 				Run:   "foobar",
 				Env: map[string]string{
 					"A": "aa",
-					"C": "{{.C}}",
+					"C": "{{.Input.C}}",
 				},
 			},
 		},
