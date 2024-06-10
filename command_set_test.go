@@ -438,6 +438,53 @@ func TestCommandSetParseEnv(t *testing.T) {
 	assertDeepEqual(t, expected, actual, "CommandSet.ParseEnv() returned unexpected results")
 }
 
+func TestCommandSetRunnable_True(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Run: "",
+			},
+			{
+				Run: "true",
+			},
+		},
+	}
+	assertEqual(t, true, cs.Runnable(), "CommandSet.Runnable() expected to return true")
+}
+
+func TestCommandSetRunnable_False(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Run: "",
+			},
+		},
+	}
+	assertEqual(t, false, cs.Runnable(), "CommandSet.Runnable() expected to return false")
+}
+
+func TestCommandSetSelected_True(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{},
+		},
+	}
+	assertEqual(t, true, cs.Selected(), "CommandSet.Selected() expected to return true")
+}
+
+func TestCommandSetSelected_False(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Commands: []ConfigCommand{
+					{},
+				},
+			},
+		},
+	}
+	assertEqual(t, false, cs.Selected(), "CommandSet.Selected() expected to return false")
+}
+
 func TestNewCommandSet_PreselectedFromArgs(t *testing.T) {
 	config := Config{
 		Commands: ConfigCommands{

@@ -28,6 +28,7 @@ func main() {
 		return nil
 	})
 	debug := mainFlagSet.Bool("debug", false, "Print debug information")
+	nonInteractive := mainFlagSet.Bool("non-interactive", false, "Disable interactivity")
 	mainFlagSet.Parse(os.Args[1:])
 	args := mainFlagSet.Args()
 	if len(args) == 0 {
@@ -46,6 +47,7 @@ func main() {
 	}
 
 	runner := NewRunner(config, args[1:])
+	runner.NonInteractive = *nonInteractive
 	runner.Entrypoint = getEntrypoint(args[0])
 	err = runner.Run()
 	if err != nil {

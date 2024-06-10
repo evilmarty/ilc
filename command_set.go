@@ -209,59 +209,82 @@ func (cs CommandSet) Cmd(data TemplateData, moreEnviron []string) (*exec.Cmd, er
 	return cmd, nil
 }
 
+func (cs CommandSet) Runnable() bool {
+	for i := len(cs.Commands) - 1; i >= 0; {
+		command := cs.Commands[i]
+		return command.Run != ""
+	}
+	return false
+}
+
+func (cs CommandSet) Selected() bool {
+	for i := len(cs.Commands) - 1; i >= 0; {
+		command := cs.Commands[i]
+		return len(command.Commands) == 0
+	}
+	return false
+}
+
+func (cs CommandSet) AskCommands() (CommandSet, error) {
+	for i := len(cs.Commands) - 1; i >= 0 && !cs.Selected(); i = len(cs.Commands) - 1 {
+		command := cs.Commands[i]
+		if subcommand, err := selectCommand(command); err != nil {
+			return cs, err
+		} else {
+			cs.Commands = append(cs.Commands, subcommand)
+		}
+	}
+	return cs, nil
+}
+
 func NewCommandSet(config Config, args []string) (CommandSet, error) {
 	var cursor ConfigCommand
-	help := false
-	rootCommand := ConfigCommand{
-		Name:        "",
-		Description: config.Description,
-		Run:         config.Run,
-		Shell:       config.Shell,
-		Env:         config.Env,
-		Pure:        config.Pure,
-		Inputs:      config.Inputs,
-		Commands:    config.Commands,
+	cs := CommandSet{
+		Config: config,
+		Args:   args,
+		Commands: []ConfigCommand{
+			{
+				Name:        "",
+				Description: config.Description,
+				Run:         config.Run,
+				Shell:       config.Shell,
+				Env:         config.Env,
+				Pure:        config.Pure,
+				Inputs:      config.Inputs,
+				Commands:    config.Commands,
+			},
+		},
+		ErrorHandling: flag.ContinueOnError,
 	}
-	cc := []ConfigCommand{rootCommand}
 
-	for len(args) > 0 {
-		cursor = cc[len(cc)-1]
+	for len(cs.Args) > 0 {
+		cursor = cs.Commands[len(cs.Commands)-1]
 		if cursor.Run != "" || len(cursor.Commands) == 0 {
 			break
 		}
-		if args[0][0] == '-' {
-			arg := args[0][1:]
-			// Is double dashed argument
-			if arg[0] == '-' {
-				arg = arg[1:]
-			}
-			help = arg == "help" || arg == "h"
+		if cs.Args[0][0] == '-' {
 			break
 		}
-		next := cursor.Commands.Get(args[0])
+		next := cursor.Commands.Get(cs.Args[0])
 		if next == nil {
-			return CommandSet{}, fmt.Errorf("invalid subcommand: %s", args[0])
+			return cs, fmt.Errorf("invalid subcommand: %s", args[0])
 		}
-		cc = append(cc, *next)
-		args = args[1:]
+		cs.Commands = append(cs.Commands, *next)
+		cs.Args = cs.Args[1:]
 	}
-	// Now we ask to select any remaining commands
-	if help {
+	if hasHelp(cs.Args) {
 		logger.Println("Detected help flag whilst parsing arguments for command")
+		return cs, flag.ErrHelp
 	} else {
-		for cursor = cc[len(cc)-1]; cursor.Run == ""; cursor = cc[len(cc)-1] {
-			if subcommand, err := selectCommand(cursor); err != nil {
-				break
-			} else {
-				cc = append(cc, subcommand)
-			}
+		return cs, nil
+	}
+}
+
+func hasHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--h" || arg == "-help" || arg == "--help" {
+			return true
 		}
 	}
-	cs := CommandSet{
-		Config:        config,
-		Commands:      cc,
-		Args:          args,
-		ErrorHandling: flag.ExitOnError,
-	}
-	return cs, nil
+	return false
 }
