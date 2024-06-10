@@ -72,6 +72,17 @@ commands: ooops
 	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
 }
 
+func TestParseConfig_CommandName(t *testing.T) {
+	content := `
+commands:
+  _foobar: ooops
+`
+	expected := "line 3: invalid command name"
+	_, err := ParseConfig([]byte(content))
+	actual := fmt.Sprintf("%s", err)
+	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+}
+
 func TestParseConfig_CommandInvalid(t *testing.T) {
 	content := `
 commands:
@@ -218,6 +229,19 @@ run: ooops
 inputs: nope
 `
 	expected := "line 3: cannot unmarshal inputs into map"
+	_, err := ParseConfig([]byte(content))
+	actual := fmt.Sprintf("%s", err)
+	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+}
+
+func TestParseConfig_InputNames(t *testing.T) {
+	content := `
+run: ooops
+inputs:
+  _invalid:
+    default: Nope
+`
+	expected := "line 5: invalid input name"
 	_, err := ParseConfig([]byte(content))
 	actual := fmt.Sprintf("%s", err)
 	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")

@@ -107,20 +107,24 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 			return fmt.Errorf("line %d: unexpected node type", keyNode.Line)
 		}
 
+		var input ConfigInput
 		switch valueNode.Kind {
 		case yaml.ScalarNode:
-			inputs = append(inputs, ConfigInput{Name: keyNode.Value})
+			input.Name = keyNode.Value
 		case yaml.MappingNode:
-			var input ConfigInput
 			if err := valueNode.Decode(&input); err != nil {
 				return err
 			}
 			input.Name = keyNode.Value
-			inputs = append(inputs, input)
 		default:
 			return fmt.Errorf("line %d: unexpected node type", valueNode.Line)
 		}
 
+		if !validName(input.Name) {
+			return fmt.Errorf("line %d: invalid input name", valueNode.Line)
+		}
+
+		inputs = append(inputs, input)
 		content = content[2:]
 	}
 
@@ -186,8 +190,12 @@ func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
 			}
 			command.Name = keyNode.Value
 		}
-		commands = append(commands, command)
 
+		if !validName(command.Name) {
+			return fmt.Errorf("line %d: invalid command name", valueNode.Line)
+		}
+
+		commands = append(commands, command)
 		content = content[2:]
 	}
 
@@ -227,4 +235,9 @@ func LoadConfig(path string) (Config, error) {
 	} else {
 		return ParseConfig(content)
 	}
+}
+
+func validName(s string) bool {
+	m, _ := regexp.MatchString("^[a-zA-Z0-9][a-zA-Z0-9-_]*$", s)
+	return m
 }
