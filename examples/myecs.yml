@@ -12,8 +12,8 @@ commands:
   services:
     description: Show all services in cluster
     run: |
-      aws ecs list-services --cluster {{ .Input.cluster }} --output json --query 'serviceArns.[]' | xargs -n 10 aws ecs describe-services --cluster {{ .Input.cluster }} --services
+      aws ecs list-services --cluster {{ .Input.cluster }} --output text --query 'serviceArns' | xargs -n 10 aws ecs describe-services --cluster {{ .Input.cluster }} --services
   tasks:
     description: Show all tasks in cluster
     run: |
-      aws ecs list-tasks --cluster {{ .Input.cluster }} --output json --query 'taskArns.[]' | xargs -n 100 aws ecs describe-tasks --cluster {{ .Input.cluster }} --tasks
+      aws ecs list-tasks --cluster {{ .Input.cluster }} --output text --query 'taskArns' | xargs -n 100 aws ecs describe-tasks --cluster {{ .Input.cluster }} --tasks
