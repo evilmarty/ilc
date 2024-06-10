@@ -13,8 +13,13 @@ type TemplateData struct {
 }
 
 func NewTemplateData(input map[string]any, env []string) TemplateData {
+	safeInputs := make(map[string]any)
+	for name, value := range input {
+		safeName := strings.ReplaceAll(name, "-", "_")
+		safeInputs[safeName] = value
+	}
 	return TemplateData{
-		Input: input,
+		Input: safeInputs,
 		Env:   EnvMap(env),
 	}
 }

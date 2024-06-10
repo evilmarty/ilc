@@ -15,6 +15,26 @@ func TestEnvMap(t *testing.T) {
 	assertDeepEqual(t, expected, actual, "EnvMap() returned unexpected results")
 }
 
+func TestNewTemplateData(t *testing.T) {
+	inputs := map[string]any{
+		"foo_bar": "foobar",
+		"foo-baz": "foobaz",
+	}
+	env := []string{"A=a", "B=b"}
+	expected := TemplateData{
+		Input: map[string]any{
+			"foo_bar": "foobar",
+			"foo_baz": "foobaz",
+		},
+		Env: map[string]string{
+			"A": "a",
+			"B": "b",
+		},
+	}
+	actual := NewTemplateData(inputs, env)
+	assertDeepEqual(t, expected, actual, "NewTemplateData() returned unexpected results")
+}
+
 func TestRenderTemplate(t *testing.T) {
 	template := "Input: {{ .Input.foobar }}, Input: {{ .Input.foobaz }}, Env: {{ .Env.FOOBAR }}, Env: {{ .Env.FOOBAZ }}"
 	data := TemplateData{
