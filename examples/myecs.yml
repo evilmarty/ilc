@@ -1,0 +1,19 @@
+#!/usr/bin/env ilc
+description: View my ECS clusters
+inputs:
+  env:
+    options:
+      development: dev-cluster
+      staging: staging-cluster
+      production: prod-cluster
+env:
+  AWS_DEFAULT_REGION: us-east-1
+commands:
+  services:
+    description: Show all services in cluster
+    run: |
+      aws ecs list-services --cluster {{ .Input.cluster }} --output json --query 'serviceArns.[]' | xargs -n 10 aws ecs describe-services --cluster {{ .Input.cluster }} --services
+  tasks:
+    description: Show all tasks in cluster
+    run: |
+      aws ecs list-tasks --cluster {{ .Input.cluster }} --output json --query 'taskArns.[]' | xargs -n 100 aws ecs describe-tasks --cluster {{ .Input.cluster }} --tasks
