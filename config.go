@@ -78,15 +78,14 @@ func (input *ConfigInput) Selectable() bool {
 	return input.Options.Len() > 0
 }
 
-func (input *ConfigInput) Valid(value string) bool {
+func (input *ConfigInput) Valid(value any) bool {
 	if input.Selectable() {
 		return input.Options.Contains(value)
-	} else if input.Pattern != "" {
-		matched, _ := regexp.MatchString(input.Pattern, value)
-		return matched
-	} else {
+	} else if input.Pattern == "" {
 		return true
 	}
+	matched, _ := regexp.MatchString(input.Pattern, fmt.Sprintf("%v", value))
+	return matched
 }
 
 type ConfigInputs []ConfigInput

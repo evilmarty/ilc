@@ -65,6 +65,9 @@ func (r *Runner) Run() error {
 			return fmt.Errorf("failed getting input values: %v", err)
 		}
 	}
+	if err = cs.Validate(values); err != nil {
+		return err
+	}
 	data := NewTemplateData(values, r.Env)
 	cmd, err := cs.Cmd(data, r.Env)
 	if err != nil {

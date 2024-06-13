@@ -145,6 +145,25 @@ func (cs CommandSet) ParseArgs(values *map[string]any) error {
 	return nil
 }
 
+func (cs CommandSet) Validate(values map[string]any) error {
+	for _, input := range cs.Inputs() {
+		found := false
+		for k, value := range values {
+			if input.Name == k {
+				found = true
+				if !input.Valid(value) {
+					return fmt.Errorf("invalid input: %s", input.Name)
+				}
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("missing input: %s", input.Name)
+		}
+	}
+	return nil
+}
+
 func (cs CommandSet) AskInputs(values *map[string]any) error {
 	for _, input := range cs.Inputs() {
 		found := false

@@ -438,6 +438,67 @@ func TestCommandSetParseEnv(t *testing.T) {
 	assertDeepEqual(t, expected, actual, "CommandSet.ParseEnv() returned unexpected results")
 }
 
+func TestCommandSetValidate_Empty(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{},
+			{},
+		},
+		Args: []string{},
+	}
+	actual := cs.Validate(map[string]any{})
+	assertEqual(t, nil, actual, "CommandSet.Validate() returned unexpected error")
+}
+
+func TestCommandSetValidate_Missing(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Inputs: []ConfigInput{
+					{Name: "A", DefaultValue: ""},
+				},
+			},
+		},
+		Args: []string{},
+	}
+	err := cs.Validate(map[string]any{})
+	expected := "missing input: A"
+	actual := fmt.Sprintf("%s", err)
+	assertEqual(t, expected, actual, "CommandSet.Validate() returned unexpected error")
+}
+
+func TestCommandSetValidate_Invalid(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Inputs: []ConfigInput{
+					{Name: "A", Pattern: "[a-z]+"},
+				},
+			},
+		},
+		Args: []string{},
+	}
+	err := cs.Validate(map[string]any{"A": "123"})
+	expected := "invalid input: A"
+	actual := fmt.Sprintf("%s", err)
+	assertEqual(t, expected, actual, "CommandSet.Validate() returned unexpected error")
+}
+
+func TestCommandSetValidate_Valid(t *testing.T) {
+	cs := CommandSet{
+		Commands: []ConfigCommand{
+			{
+				Inputs: []ConfigInput{
+					{Name: "A"},
+				},
+			},
+		},
+		Args: []string{},
+	}
+	actual := cs.Validate(map[string]any{"A": "123"})
+	assertEqual(t, nil, actual, "CommandSet.Validate() returned unexpected error")
+}
+
 func TestCommandSetRunnable_True(t *testing.T) {
 	cs := CommandSet{
 		Commands: []ConfigCommand{
