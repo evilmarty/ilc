@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 	"text/template"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEnvMap(t *testing.T) {
@@ -14,7 +15,7 @@ func TestEnvMap(t *testing.T) {
 	}
 	expected := map[string]string{"A": "a", "B": "", "C": ""}
 	actual := EnvMap(env)
-	assertDeepEqual(t, expected, actual, "EnvMap() returned unexpected results")
+	assert.Equal(t, expected, actual, "EnvMap() returned unexpected results")
 }
 
 func TestNewTemplateData(t *testing.T) {
@@ -34,7 +35,7 @@ func TestNewTemplateData(t *testing.T) {
 		},
 	}
 	actual := NewTemplateData(inputs, env)
-	assertDeepEqual(t, expected, actual, "NewTemplateData() returned unexpected results")
+	assert.Equal(t, expected, actual, "NewTemplateData() returned unexpected results")
 }
 
 func TestRenderTemplate(t *testing.T) {
@@ -46,30 +47,22 @@ func TestRenderTemplate(t *testing.T) {
 	expected := "Input: a, Input: <no value>, Env: b, Env: <no value>"
 	t.Run("given a string", func(t *testing.T) {
 		actual, err := RenderTemplate(text, data)
-		if err != nil {
-			t.Fatalf("RenderTemplate() returned unexpected error: %v", err)
-		}
-
-		assertEqual(t, expected, actual, "RenderTemplate() returned unexpected results")
+		assert.NoError(t, err, "RenderTemplate() returned unexpected error")
+		assert.Equal(t, expected, actual, "RenderTemplate() returned unexpected results")
 	})
 
 	t.Run("given a template object", func(t *testing.T) {
 		tmpl := template.New("")
-		if _, err := tmpl.Parse(text); err != nil {
-			t.Fatalf("Could not render template: %v", err)
-		}
+		_, err := tmpl.Parse(text)
+		assert.NoError(t, err, "Could not render template")
 		actual, err := RenderTemplate(tmpl, data)
-		if err != nil {
-			t.Fatalf("RenderTemplate() returned unexpected error: %v", err)
-		}
-
-		assertEqual(t, expected, actual, "RenderTemplate() returned unexpected results")
+		assert.NoError(t, err, "RenderTemplate() returned unexpected error")
+		assert.Equal(t, expected, actual, "RenderTemplate() returned unexpected results")
 	})
 
 	t.Run("given other", func(t *testing.T) {
-		_, err := RenderTemplate(nil, data)
-		actual := fmt.Sprintf("%s", err)
-		assertEqual(t, "unsupported type: <nil>", actual, "RenderTemplate() returned unexpected error")
+		_, actual := RenderTemplate(nil, data)
+		assert.EqualError(t, actual, "unsupported type: <nil>", "RenderTemplate() returned unexpected error")
 	})
 }
 
@@ -77,5 +70,5 @@ func TestDiffStrings(t *testing.T) {
 	a := []string{"a", "b", "c"}
 	b := []string{"a"}
 	expected := []string{"b", "c"}
-	assertDeepEqual(t, expected, DiffStrings(a, b), "DiffStrings() returned unexpected results")
+	assert.Equal(t, expected, DiffStrings(a, b), "DiffStrings() returned unexpected results")
 }

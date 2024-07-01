@@ -4,14 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCommandSetString_Empty(t *testing.T) {
 	cs := CommandSet{}
-	assertEqual(t, "", cs.String(), "CommandSet.String() to return an empty string")
+	assert.Empty(t, cs.String(), "CommandSet.String() to return an empty string")
 }
 
 func TestCommandSetString_One(t *testing.T) {
@@ -20,7 +21,7 @@ func TestCommandSetString_One(t *testing.T) {
 			{Name: "foobar"},
 		},
 	}
-	assertEqual(t, "foobar", cs.String(), "CommandSet.String() to return expected value")
+	assert.Equal(t, "foobar", cs.String(), "CommandSet.String() to return expected value")
 }
 
 func TestCommandSetString_Many(t *testing.T) {
@@ -31,14 +32,14 @@ func TestCommandSetString_Many(t *testing.T) {
 			{Name: "foobaz"},
 		},
 	}
-	assertEqual(t, "foobar foobaz", cs.String(), "CommandSet.String() to return expected value")
+	assert.Equal(t, "foobar foobaz", cs.String(), "CommandSet.String() to return expected value")
 }
 
 func TestCommandSetPure_Empty(t *testing.T) {
 	cs := CommandSet{
 		Commands: []ConfigCommand{},
 	}
-	assertEqual(t, false, cs.Pure(), "CommandSet.Pure() to return false")
+	assert.Equal(t, false, cs.Pure(), "CommandSet.Pure() to return false")
 }
 
 func TestCommandSetPure_One(t *testing.T) {
@@ -47,7 +48,7 @@ func TestCommandSetPure_One(t *testing.T) {
 			{Pure: true},
 		},
 	}
-	assertEqual(t, true, cs.Pure(), "CommandSet.Pure() to return true")
+	assert.True(t, cs.Pure(), "CommandSet.Pure() to return true")
 }
 
 func TestCommandSetPure_Many(t *testing.T) {
@@ -57,7 +58,7 @@ func TestCommandSetPure_Many(t *testing.T) {
 			{Pure: false},
 		},
 	}
-	assertEqual(t, false, cs.Pure(), "CommandSet.Pure() to return false")
+	assert.False(t, cs.Pure(), "CommandSet.Pure() to return false")
 }
 
 func TestCommandSetShell_Default(t *testing.T) {
@@ -67,7 +68,7 @@ func TestCommandSetShell_Default(t *testing.T) {
 			{Shell: []string{}},
 		},
 	}
-	assertDeepEqual(t, DefaultShell, cs.Shell(), "CommandSet.Shell() to return default")
+	assert.Equal(t, DefaultShell, cs.Shell(), "CommandSet.Shell() to return default")
 }
 
 func TestCommandSetShell_Latest(t *testing.T) {
@@ -77,7 +78,7 @@ func TestCommandSetShell_Latest(t *testing.T) {
 			{Shell: []string{"foobar"}},
 		},
 	}
-	assertDeepEqual(t, []string{"foobar"}, cs.Shell(), "CommandSet.Shell() to return the latest entry")
+	assert.Equal(t, []string{"foobar"}, cs.Shell(), "CommandSet.Shell() to return the latest entry")
 }
 
 func TestCommandSetShell_Parent(t *testing.T) {
@@ -87,7 +88,7 @@ func TestCommandSetShell_Parent(t *testing.T) {
 			{Shell: []string{}},
 		},
 	}
-	assertDeepEqual(t, []string{"foobaz"}, cs.Shell(), "CommandSet.Shell() to return the parent's entry")
+	assert.Equal(t, []string{"foobaz"}, cs.Shell(), "CommandSet.Shell() to return the parent's entry")
 }
 
 func TestCommandSetInputs(t *testing.T) {
@@ -111,7 +112,7 @@ func TestCommandSetInputs(t *testing.T) {
 		cs.Commands[0].Inputs[1],
 		cs.Commands[1].Inputs[0],
 	}
-	assertDeepEqual(t, expected, cs.Inputs(), "CommandSet.Inputs() returned unexpected results")
+	assert.Equal(t, expected, cs.Inputs(), "CommandSet.Inputs() returned unexpected results")
 }
 
 func TestCommandSetEnv(t *testing.T) {
@@ -136,7 +137,7 @@ func TestCommandSetEnv(t *testing.T) {
 		"B": "b",
 		"C": "c",
 	}
-	assertDeepEqual(t, expected, cs.Env(), "CommandSet.Env() returned unexpected results")
+	assert.Equal(t, expected, cs.Env(), "CommandSet.Env() returned unexpected results")
 }
 
 func TestCommandSetRenderEnv_NonError(t *testing.T) {
@@ -169,11 +170,8 @@ func TestCommandSetRenderEnv_NonError(t *testing.T) {
 		"C=c",
 	}
 	actual, err := cs.RenderEnv(data)
-	if err != nil {
-		t.Fatalf("CommandSet.RenderEnv() returned an unexpected error: %v", err)
-	}
-	sort.Strings(actual)
-	assertDeepEqual(t, expected, actual, "CommandSet.RenderEnv() returned unexpected results")
+	assert.NoError(t, err, "CommandSet.RenderEnv() returned an unexpected error")
+	assert.ElementsMatch(t, expected, actual, "CommandSet.RenderEnv() returned unexpected results")
 }
 
 func TestCommandSetRenderEnv_TemplateError(t *testing.T) {
@@ -191,10 +189,9 @@ func TestCommandSetRenderEnv_TemplateError(t *testing.T) {
 			},
 		},
 	}
-	_, err := cs.RenderEnv(data)
+	_, actual := cs.RenderEnv(data)
 	expected := "template error for environment variable: 'A' - template: :1: bad character U+007D '}'"
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "CommandSet.RenderEnv() returned unexpected error")
+	assert.EqualError(t, actual, expected, "CommandSet.RenderEnv() returned unexpected error")
 }
 
 func TestCommandSetRenderScript(t *testing.T) {
@@ -204,7 +201,7 @@ func TestCommandSetRenderScript(t *testing.T) {
 		_, err := cs.RenderScript(data)
 		expected := "no script present"
 		actual := fmt.Sprintf("%s", err)
-		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
 	})
 	t.Run("template error", func(t *testing.T) {
 		data := TemplateData{
@@ -223,7 +220,7 @@ func TestCommandSetRenderScript(t *testing.T) {
 		_, err := cs.RenderScript(data)
 		expected := "template error: template: foobar:1: bad character U+007D '}'"
 		actual := fmt.Sprintf("%s", err)
-		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
 	})
 	t.Run("script error", func(t *testing.T) {
 		data := TemplateData{
@@ -242,7 +239,7 @@ func TestCommandSetRenderScript(t *testing.T) {
 		_, err := cs.RenderScript(data)
 		expected := "script error: template: foobar:1:11: executing \"foobar\" at <{{template \"foobaz\"}}>: template \"foobaz\" not defined"
 		actual := fmt.Sprintf("%s", err)
-		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
 	})
 	t.Run("render single template", func(t *testing.T) {
 		data := TemplateData{
@@ -268,7 +265,7 @@ func TestCommandSetRenderScript(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CommandSet.RenderScript() returned an unexpected error: %v", err)
 		}
-		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
 	})
 	t.Run("render multiple templates", func(t *testing.T) {
 		data := TemplateData{
@@ -294,7 +291,7 @@ func TestCommandSetRenderScript(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CommandSet.RenderScript() returned an unexpected error: %v", err)
 		}
-		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
 	})
 	t.Run("latest command overrides existing template", func(t *testing.T) {
 		data := TemplateData{
@@ -321,10 +318,8 @@ func TestCommandSetRenderScript(t *testing.T) {
 		}
 		expected := "echo a echo b"
 		actual, err := cs.RenderScript(data)
-		if err != nil {
-			t.Fatalf("CommandSet.RenderScript() returned an unexpected error: %v", err)
-		}
-		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+		assert.NoError(t, err, "CommandSet.RenderScript() returned an unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
 	})
 }
 
@@ -348,10 +343,8 @@ func TestCommandSetRenderScriptToTemp(t *testing.T) {
 		t.Fatalf("CommandSet.RenderScriptToTemp() returned an unexpected error: %v", err)
 	}
 	actual, err := readTextFile(file)
-	if err != nil {
-		t.Fatalf("Could not read file containing rendered script: %v", err)
-	}
-	assertEqual(t, expected, actual, "CommandSet.RenderScriptToTemp() returned unexpected result")
+	assert.NoError(t, err, "Could not read file containing rendered script")
+	assert.Equal(t, expected, actual, "CommandSet.RenderScriptToTemp() returned unexpected result")
 }
 
 func TestCommandSetCmd_IsPure(t *testing.T) {
@@ -387,14 +380,10 @@ func TestCommandSetCmd_IsPure(t *testing.T) {
 		},
 	}
 	cmd, err := cs.Cmd(data, moreEnviron)
-	if err != nil {
-		t.Fatalf("CommandSet.Cmd() returned an unexpected error: %v", err)
-	}
-	env := cmd.Env
-	sort.Strings(env)
-	assertDeepEqual(t, []string{"A=aa", "B=b", "C=c"}, env, "CommandSet.Cmd() did not set cmd.Env with correct values")
-	assertEqual(t, "/bin/bash", cmd.Path, "CommandSet.Cmd() did not set cmd.Path to the shell path")
-	assertDeepEqual(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
+	assert.NoError(t, err, "CommandSet.Cmd() returned an unexpected error")
+	assert.ElementsMatch(t, []string{"A=aa", "B=b", "C=c"}, cmd.Env, "CommandSet.Cmd() did not set cmd.Env with correct values")
+	assert.Equal(t, "/bin/bash", cmd.Path, "CommandSet.Cmd() did not set cmd.Path to the shell path")
+	assert.Equal(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
 }
 
 func TestCommandSetCmd_NotPure(t *testing.T) {
@@ -429,14 +418,10 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 		},
 	}
 	cmd, err := cs.Cmd(data, moreEnviron)
-	if err != nil {
-		t.Fatalf("CommandSet.Cmd() returned an unexpected error: %v", err)
-	}
-	env := cmd.Env
-	sort.Strings(env)
-	assertDeepEqual(t, []string{"A=aa", "B=b", "C=c", "D=d"}, env, "CommandSet.Cmd() did not set cmd.Env with correct values")
-	assertEqual(t, "/bin/bash", cmd.Path, "CommandSet.Cmd() did not set cmd.Path to the shell path")
-	assertDeepEqual(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
+	assert.NoError(t, err, "CommandSet.Cmd() returned an unexpected error")
+	assert.ElementsMatch(t, []string{"A=aa", "B=b", "C=c", "D=d"}, cmd.Env, "CommandSet.Cmd() did not set cmd.Env with correct values")
+	assert.Equal(t, "/bin/bash", cmd.Path, "CommandSet.Cmd() did not set cmd.Path to the shell path")
+	assert.Equal(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
 }
 
 func TestCommandSetParseArgs_Valid(t *testing.T) {
@@ -461,10 +446,9 @@ func TestCommandSetParseArgs_Valid(t *testing.T) {
 		"C": "cc",
 	}
 	actual := make(map[string]any)
-	if err := cs.ParseArgs(&actual); err != nil {
-		t.Fatalf("CommandSet.ParseArgs() returned unexpected error: %v", err)
-	}
-	assertDeepEqual(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
+	err := cs.ParseArgs(&actual)
+	assert.NoError(t, err, "CommandSet.ParseArgs() returned unexpected error")
+	assert.Equal(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
 }
 
 func TestCommandSetParseArgs_Help(t *testing.T) {
@@ -486,7 +470,7 @@ func TestCommandSetParseArgs_Help(t *testing.T) {
 	}
 	values := make(map[string]any)
 	actual := cs.ParseArgs(&values)
-	assertDeepEqual(t, flag.ErrHelp, actual, "CommandSet.ParseArgs() did not acknowledge help")
+	assert.Equal(t, flag.ErrHelp, actual, "CommandSet.ParseArgs() did not acknowledge help")
 }
 
 func TestCommandSetParseEnv(t *testing.T) {
@@ -510,7 +494,7 @@ func TestCommandSetParseEnv(t *testing.T) {
 	expected := map[string]any{"A": "a=a", "C": ""}
 	actual := make(map[string]any)
 	cs.ParseEnv(&actual, env)
-	assertDeepEqual(t, expected, actual, "CommandSet.ParseEnv() returned unexpected results")
+	assert.Equal(t, expected, actual, "CommandSet.ParseEnv() returned unexpected results")
 }
 
 func TestCommandSetValidate_Empty(t *testing.T) {
@@ -522,7 +506,7 @@ func TestCommandSetValidate_Empty(t *testing.T) {
 		Args: []string{},
 	}
 	actual := cs.Validate(map[string]any{})
-	assertEqual(t, nil, actual, "CommandSet.Validate() returned unexpected error")
+	assert.Nil(t, actual, "CommandSet.Validate() returned unexpected error")
 }
 
 func TestCommandSetValidate_Missing(t *testing.T) {
@@ -536,10 +520,9 @@ func TestCommandSetValidate_Missing(t *testing.T) {
 		},
 		Args: []string{},
 	}
-	err := cs.Validate(map[string]any{})
+	actual := cs.Validate(map[string]any{})
 	expected := "missing input: A"
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "CommandSet.Validate() returned unexpected error")
+	assert.EqualError(t, actual, expected, "CommandSet.Validate() returned unexpected error")
 }
 
 func TestCommandSetValidate_Invalid(t *testing.T) {
@@ -553,10 +536,9 @@ func TestCommandSetValidate_Invalid(t *testing.T) {
 		},
 		Args: []string{},
 	}
-	err := cs.Validate(map[string]any{"A": "123"})
+	actual := cs.Validate(map[string]any{"A": "123"})
 	expected := "invalid input: A"
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "CommandSet.Validate() returned unexpected error")
+	assert.EqualError(t, actual, expected, "CommandSet.Validate() returned unexpected error")
 }
 
 func TestCommandSetValidate_Valid(t *testing.T) {
@@ -571,7 +553,7 @@ func TestCommandSetValidate_Valid(t *testing.T) {
 		Args: []string{},
 	}
 	actual := cs.Validate(map[string]any{"A": "123"})
-	assertEqual(t, nil, actual, "CommandSet.Validate() returned unexpected error")
+	assert.Nil(t, actual, "CommandSet.Validate() returned unexpected error")
 }
 
 func TestCommandSetRunnable_True(t *testing.T) {
@@ -585,7 +567,7 @@ func TestCommandSetRunnable_True(t *testing.T) {
 			},
 		},
 	}
-	assertEqual(t, true, cs.Runnable(), "CommandSet.Runnable() expected to return true")
+	assert.True(t, cs.Runnable(), "CommandSet.Runnable() expected to return true")
 }
 
 func TestCommandSetRunnable_False(t *testing.T) {
@@ -596,7 +578,7 @@ func TestCommandSetRunnable_False(t *testing.T) {
 			},
 		},
 	}
-	assertEqual(t, false, cs.Runnable(), "CommandSet.Runnable() expected to return false")
+	assert.False(t, cs.Runnable(), "CommandSet.Runnable() expected to return false")
 }
 
 func TestCommandSetSelected_True(t *testing.T) {
@@ -605,7 +587,7 @@ func TestCommandSetSelected_True(t *testing.T) {
 			{},
 		},
 	}
-	assertEqual(t, true, cs.Selected(), "CommandSet.Selected() expected to return true")
+	assert.True(t, cs.Selected(), "CommandSet.Selected() expected to return true")
 }
 
 func TestCommandSetSelected_False(t *testing.T) {
@@ -618,7 +600,7 @@ func TestCommandSetSelected_False(t *testing.T) {
 			},
 		},
 	}
-	assertEqual(t, false, cs.Selected(), "CommandSet.Selected() expected to return false")
+	assert.False(t, cs.Selected(), "CommandSet.Selected() expected to return false")
 }
 
 func TestNewCommandSet_PreselectedFromArgs(t *testing.T) {
@@ -628,11 +610,9 @@ func TestNewCommandSet_PreselectedFromArgs(t *testing.T) {
 		},
 	}
 	cs, err := NewCommandSet(config, []string{"foobar", "-a", "1"})
-	if err != nil {
-		t.Fatalf("NewCommandSet() returned unexpected error: %v", err)
-	}
-	assertDeepEqual(t, cs.Config, config, "NewCommandSet() did not set config")
-	assertDeepEqual(t, cs.Args, []string{"-a", "1"}, "NewCommandSet() has unexpected args")
+	assert.NoError(t, err, "NewCommandSet() returned unexpected error")
+	assert.Equal(t, cs.Config, config, "NewCommandSet() did not set config")
+	assert.Equal(t, cs.Args, []string{"-a", "1"}, "NewCommandSet() has unexpected args")
 }
 
 func TestNewCommandSet_Invalid(t *testing.T) {
@@ -641,10 +621,9 @@ func TestNewCommandSet_Invalid(t *testing.T) {
 			ConfigCommand{Name: "foobar", Run: "true"},
 		},
 	}
-	_, err := NewCommandSet(config, []string{"foobaz", "-a", "1"})
+	_, actual := NewCommandSet(config, []string{"foobaz", "-a", "1"})
 	expected := "invalid subcommand: foobaz"
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "NewCommandSet() returned unexpected error")
+	assert.EqualError(t, actual, expected, "NewCommandSet() returned unexpected error")
 }
 
 func readTextFile(name string) (string, error) {

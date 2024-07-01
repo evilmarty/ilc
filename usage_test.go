@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestUsage_EmptyCommands(t *testing.T) {
 	u := usageFixture()
@@ -18,7 +22,7 @@ INPUTS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func TestUsage_EmptyInputs(t *testing.T) {
@@ -37,7 +41,7 @@ COMMANDS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func TestUsage_Entrypoint_Empty(t *testing.T) {
@@ -60,7 +64,7 @@ INPUTS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func TestUsage_Entrypoint_One(t *testing.T) {
@@ -83,7 +87,7 @@ INPUTS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func TestUsage_Entrypoint_Two(t *testing.T) {
@@ -106,7 +110,7 @@ INPUTS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func TestUsage_Entrypoint_Many(t *testing.T) {
@@ -129,7 +133,7 @@ INPUTS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func TestUsage_Title_Blank(t *testing.T) {
@@ -150,7 +154,7 @@ INPUTS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func TestUsage_Description_Blank(t *testing.T) {
@@ -171,7 +175,7 @@ INPUTS
 
 
 `
-	assertDeepEqual(t, expected, u.String(), "Usage.String() should not include entrypoint")
+	assert.Equal(t, expected, u.String(), "Usage.String() should not include entrypoint")
 }
 
 func usageFixture() Usage {
