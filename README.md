@@ -1,8 +1,9 @@
-## ILC - The simple way to create a command-line utility
+# ILC - The simple way to create a command-line utility
 
 [![CI](https://github.com/evilmarty/ilc/actions/workflows/ci.yml/badge.svg)](https://github.com/evilmarty/ilc/actions/workflows/ci.yml)
 
-Create an easy to use interactive CLI to simplify your workflow with a single YAML file.
+Create an easy to use interactive CLI to simplify your workflow with a single
+YAML file.
 
 ## Installation
 
@@ -48,11 +49,17 @@ The best way to use `ilc` is to include it in the shebang of your config, like s
 
 ### Commands
 
-If the configuration has defined `commands` they can either be passed as arguments or an interactive prompt will allow you to choose a command. If the command specified in the arguments has itself subcommands the interactive prompt will appear to complete the selection process.
+If the configuration has defined `commands` they can either be passed as
+arguments or an interactive prompt will allow you to choose a command. If the
+command specified in the arguments has itself subcommands the interactive
+prompt will appear to complete the selection process.
 
 ### Inputs
 
-After a command is specified or selected an interactive prompt will ask for input before the command will be executed. Inputs can be passed as arguments or as environment variables that are prefixed with `ILC_INPUT_`. Inputs that have been passed as arguments will not be asked, only for the inputs that have yet a value.
+After a command is specified or selected an interactive prompt will ask for
+input before the command will be executed. Inputs can be passed as arguments or
+as environment variables that are prefixed with `ILC_INPUT_`. Inputs that have
+been passed as arguments will not be asked, only for the inputs that have yet a value.
 
 #### Example of passing inputs as arguments
 
@@ -84,15 +91,21 @@ The shell to run the command in. Must be in JSON array format. Defaults to `["/b
 
 ### `run`
 
-Runs command-line programs using the specified shell. See [[Templating]] for more information.
+Runs command-line programs using the specified shell. If `commands` is also
+defined then `run` cannot be invoked directly and becomes a template accessible
+to all nested commands. See [Templating](#templating) for more information.
 
 ### `pure`
 
-Setting `pure` to `true` to not pass through environment variables and only use environment variables that have been specified or inherited. Subcommands do not inherit this option and must be set for each command.
+Setting `pure` to `true` to not pass through environment variables and only use
+environment variables that have been specified or inherited. Subcommands do not
+inherit this option and must be set for each command.
 
 ### `inputs`
 
-Optionally specify inputs to be used in `run` and `env` values. Inputs can be passed as arguments or will be asked when invoking a command. Nested commands inherit inputs and cascade down.
+Optionally specify inputs to be used in `run` and `env` values. Inputs can be
+passed as arguments or will be asked when invoking a command. Nested commands
+inherit inputs and cascade down.
 
 ### `inputs.<input_name>`
 
@@ -110,7 +123,7 @@ Limit the value to a list of acceptable values. Options can be a list of values
 or a map, with the keys presented as labels and the corresponding values the
 resulting value.
 
-#### Example
+#### Example of option types
 
 - A list of options:
 
@@ -147,7 +160,7 @@ inputs:
 
 A regex pattern to validate the input's value. Default is to allow any input.
 
-#### Example
+#### Example setting an input pattern
 
 ```yaml
 inputs:
@@ -161,26 +174,6 @@ Set the default value for the input. It is overwritten when a value is given as
 an argument or changed when prompted. If a default value is not defined then a
 value is required.
 
-### `run`
-
-Runs command-line programs using the specified `shell`. See [[Templating]] for more information.
-
-#### Example
-
-- A single-line command:
-
-```yaml
-run: cal
-```
-
-- A multi-line command:
-
-```yaml
-run: |
-  cal
-  date
-```
-
 ### `commands`
 
 The commands defined are then available to be invoked from the command line
@@ -193,7 +186,7 @@ Use `commands.<command_name>` to give your command a unique name. The key
 `command_name` is a string and its value is a map of the command's configuration
 data. A string value can be used as a shorthand for the `run` attribute.
 
-#### Example
+#### Example defining an inline command
 
 ```yaml
 commands:
@@ -206,7 +199,7 @@ Optionally describe the command's purpose or outcome.
 
 ### `commands.<command_name>.run`
 
-See [`run`] for more information.
+See [`run`](#run) for more information.
 
 ### `commands.<command_name>.commands`
 
@@ -216,9 +209,9 @@ defined cascade to all sub-commands. Cannot be used in conjunction with `run`.
 ### `commands.<command_name>.env`
 
 Optionally set environment variables for the command. Cascades to descending
-commands and subcommands. See [[Templating]] for more information.
+commands and subcommands. See [Templating](#templating) for more information.
 
-#### Example
+#### Example of templating an environment variable
 
 ```yaml
 commands:
@@ -230,15 +223,23 @@ commands:
 
 ### `commands.<command_name>.pure`
 
-Setting `pure` to `true` to not pass through environment variables and only use environment variables that have been specified or inherited. Subcommands do not inherit this option and must be set for each command.
+Setting `pure` to `true` to not pass through environment variables and only use
+environment variables that have been specified or inherited. Subcommands do not
+inherit this option and must be set for each command.
 
 ### `commands.<command_name>.inputs`
 
-Optionally specify inputs to be used in `run` and `env` values. Inputs can be passed as arguments or will be asked when invoking a command. Nested commands inherit inputs and cascade down. See [`inputs`] for more information.
+Optionally specify inputs to be used in `run` and `env` values. Inputs can be
+passed as arguments or will be asked when invoking a command. Nested commands
+inherit inputs and cascade down. See [`inputs`](#inputs-1) for more information.
 
 ## Templating
 
-Go's [templating](https://pkg.go.dev/text/template) is available for `run` and `env` values to construct complex entries. Templates are evaluated after inputs are collected but before script execution. Along with inputs, templates can access environment variables that are present and regardless whether `pure` is enabled or not.
+Go's [template language](https://pkg.go.dev/text/template) is available for
+`run` and `env` values to construct complex entries. Templates are evaluated
+after inputs are collected but before script execution. Along with inputs,
+templates can access environment variables that are present and regardless
+whether `pure` is enabled or not.
 
 ### .Input.<input_name>
 
@@ -314,5 +315,4 @@ commands:
 
 ## TODO
 
-- [ ] Better help output
-- [ ] Support dynamic options
+- [ ] Aliases
