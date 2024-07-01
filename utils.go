@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"text/template"
 )
@@ -37,11 +38,22 @@ func EnvMap(env []string) map[string]string {
 	return m
 }
 
-func RenderTemplate(text string, data TemplateData) (string, error) {
+func RenderTemplate(text interface{}, data TemplateData) (string, error) {
+	var tmpl *template.Template
+	var err error
 	b := strings.Builder{}
-	if tmpl, err := renderTemplate.Parse(text); err != nil {
-		return "", err
-	} else if tmpl.Execute(&b, data); err != nil {
+	switch t := text.(type) {
+	case *template.Template:
+		tmpl = t
+	case string:
+		tmpl, err = renderTemplate.Parse(t)
+		if err != nil {
+			return "", err
+		}
+	default:
+		return "", fmt.Errorf("unsupported type: %v", t)
+	}
+	if err = tmpl.Execute(&b, data); err != nil {
 		return "", err
 	} else {
 		return b.String(), nil

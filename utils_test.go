@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"testing"
+	"text/template"
 )
 
 func TestEnvMap(t *testing.T) {
@@ -36,18 +38,39 @@ func TestNewTemplateData(t *testing.T) {
 }
 
 func TestRenderTemplate(t *testing.T) {
-	template := "Input: {{ .Input.foobar }}, Input: {{ .Input.foobaz }}, Env: {{ .Env.FOOBAR }}, Env: {{ .Env.FOOBAZ }}"
+	text := "Input: {{ .Input.foobar }}, Input: {{ .Input.foobaz }}, Env: {{ .Env.FOOBAR }}, Env: {{ .Env.FOOBAZ }}"
 	data := TemplateData{
 		Input: map[string]any{"foobar": "a"},
 		Env:   map[string]string{"FOOBAR": "b"},
 	}
 	expected := "Input: a, Input: <no value>, Env: b, Env: <no value>"
-	actual, err := RenderTemplate(template, data)
-	if err != nil {
-		t.Fatalf("RenderTemplate() returned unexpected error: %v", err)
-	}
+	t.Run("given a string", func(t *testing.T) {
+		actual, err := RenderTemplate(text, data)
+		if err != nil {
+			t.Fatalf("RenderTemplate() returned unexpected error: %v", err)
+		}
 
-	assertEqual(t, expected, actual, "RenderTemplate() returned unexpected results")
+		assertEqual(t, expected, actual, "RenderTemplate() returned unexpected results")
+	})
+
+	t.Run("given a template object", func(t *testing.T) {
+		tmpl := template.New("")
+		if _, err := tmpl.Parse(text); err != nil {
+			t.Fatalf("Could not render template: %v", err)
+		}
+		actual, err := RenderTemplate(tmpl, data)
+		if err != nil {
+			t.Fatalf("RenderTemplate() returned unexpected error: %v", err)
+		}
+
+		assertEqual(t, expected, actual, "RenderTemplate() returned unexpected results")
+	})
+
+	t.Run("given other", func(t *testing.T) {
+		_, err := RenderTemplate(nil, data)
+		actual := fmt.Sprintf("%s", err)
+		assertEqual(t, "unsupported type: <nil>", actual, "RenderTemplate() returned unexpected error")
+	})
 }
 
 func TestDiffStrings(t *testing.T) {

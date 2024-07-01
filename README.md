@@ -240,6 +240,9 @@ Optionally specify inputs to be used in `run` and `env` values. Inputs can be pa
 
 Go's [templating](https://pkg.go.dev/text/template) is available for `run` and `env` values to construct complex entries. Templates are evaluated after inputs are collected but before script execution. Along with inputs, templates can access environment variables that are present and regardless whether `pure` is enabled or not.
 
+Nested commands can include the run scripts from their parent commands.
+ie. `{{template "<command_name>"}}`
+
 ### .Input.<input_name>
 
 The expression to reference an input value. ie. '{{ .Input.my_input }}'
