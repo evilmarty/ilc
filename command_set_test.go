@@ -197,60 +197,135 @@ func TestCommandSetRenderEnv_TemplateError(t *testing.T) {
 	assertEqual(t, expected, actual, "CommandSet.RenderEnv() returned unexpected error")
 }
 
-func TestCommandSetRenderScript_Empty(t *testing.T) {
-	data := TemplateData{}
-	cs := CommandSet{}
-	_, err := cs.RenderScript(data)
-	expected := "no script present"
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
-}
-
-func TestCommandSetRenderScript_TemplateError(t *testing.T) {
-	data := TemplateData{
-		Input: map[string]any{
-			"A": "a",
-		},
-	}
-	cs := CommandSet{
-		Commands: []ConfigCommand{
-			{
-				Name: "foobar",
-				Run:  "{{.Input.A}",
+func TestCommandSetRenderScript(t *testing.T) {
+	t.Run("empty command set", func(t *testing.T) {
+		data := TemplateData{}
+		cs := CommandSet{}
+		_, err := cs.RenderScript(data)
+		expected := "no script present"
+		actual := fmt.Sprintf("%s", err)
+		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
+	})
+	t.Run("template error", func(t *testing.T) {
+		data := TemplateData{
+			Input: map[string]any{
+				"A": "a",
 			},
-		},
-	}
-	_, err := cs.RenderScript(data)
-	expected := "template error for command: 'foobar' - template: :1: bad character U+007D '}'"
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
-}
-
-func TestCommandSetRenderScript_NonError(t *testing.T) {
-	data := TemplateData{
-		Input: map[string]any{
-			"A": "a",
-			"B": "b",
-		},
-	}
-	cs := CommandSet{
-		Commands: []ConfigCommand{
-			{
-				Name: "foobaz",
-				Run:  "echo {{.Input.B}}",
+		}
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Name: "foobar",
+					Run:  "{{.Input.A}",
+				},
 			},
-			{
-				Name: "foobar",
-				Run:  "echo {{.Input.A}}",
+		}
+		_, err := cs.RenderScript(data)
+		expected := "template error: template: foobar:1: bad character U+007D '}'"
+		actual := fmt.Sprintf("%s", err)
+		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
+	})
+	t.Run("script error", func(t *testing.T) {
+		data := TemplateData{
+			Input: map[string]any{
+				"A": "a",
 			},
-		},
-	}
-	expected := "echo a"
-	actual, err := cs.RenderScript(data)
-	if err != nil {
-		t.Fatalf("CommandSet.RenderScript() returned an unexpected error: %v", err)
-	}
-	assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+		}
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Name: "foobar",
+					Run:  "{{template \"foobaz\"}}",
+				},
+			},
+		}
+		_, err := cs.RenderScript(data)
+		expected := "script error: template: foobar:1:11: executing \"foobar\" at <{{template \"foobaz\"}}>: template \"foobaz\" not defined"
+		actual := fmt.Sprintf("%s", err)
+		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected error")
+	})
+	t.Run("render single template", func(t *testing.T) {
+		data := TemplateData{
+			Input: map[string]any{
+				"A": "a",
+				"B": "b",
+			},
+		}
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Name: "foobaz",
+					Run:  "echo {{.Input.B}}",
+				},
+				{
+					Name: "foobar",
+					Run:  "echo {{.Input.A}}",
+				},
+			},
+		}
+		expected := "echo a"
+		actual, err := cs.RenderScript(data)
+		if err != nil {
+			t.Fatalf("CommandSet.RenderScript() returned an unexpected error: %v", err)
+		}
+		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+	})
+	t.Run("render multiple templates", func(t *testing.T) {
+		data := TemplateData{
+			Input: map[string]any{
+				"A": "a",
+				"B": "b",
+			},
+		}
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Name: "foobaz",
+					Run:  "echo {{.Input.B}}",
+				},
+				{
+					Name: "foobar",
+					Run:  "echo {{.Input.A}} {{template \"foobaz\" .}}",
+				},
+			},
+		}
+		expected := "echo a echo b"
+		actual, err := cs.RenderScript(data)
+		if err != nil {
+			t.Fatalf("CommandSet.RenderScript() returned an unexpected error: %v", err)
+		}
+		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+	})
+	t.Run("latest command overrides existing template", func(t *testing.T) {
+		data := TemplateData{
+			Input: map[string]any{
+				"A": "a",
+				"B": "b",
+			},
+		}
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Name: "foobar",
+					Run:  "echo {{.Input.A}}",
+				},
+				{
+					Name: "foobaz",
+					Run:  "echo {{.Input.B}}",
+				},
+				{
+					Name: "foobar",
+					Run:  "echo {{.Input.A}} {{template \"foobaz\" .}}",
+				},
+			},
+		}
+		expected := "echo a echo b"
+		actual, err := cs.RenderScript(data)
+		if err != nil {
+			t.Fatalf("CommandSet.RenderScript() returned an unexpected error: %v", err)
+		}
+		assertEqual(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+	})
 }
 
 func TestCommandSetRenderScriptToTemp(t *testing.T) {

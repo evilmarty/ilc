@@ -241,6 +241,9 @@ after inputs are collected but before script execution. Along with inputs,
 templates can access environment variables that are present and regardless
 whether `pure` is enabled or not.
 
+Nested commands can include the run scripts from their parent commands.
+ie. `{{template "<command_name>"}}`
+
 ### .Input.<input_name>
 
 The expression to reference an input value. ie. '{{ .Input.my_input }}'

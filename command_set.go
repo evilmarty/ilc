@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 )
 
 var (
@@ -95,15 +96,30 @@ func (cs CommandSet) RenderEnv(data TemplateData) ([]string, error) {
 }
 
 func (cs CommandSet) RenderScript(data TemplateData) (string, error) {
-	for i := len(cs.Commands) - 1; i >= 0; {
-		command := cs.Commands[i]
-		if script, err := RenderTemplate(command.Run, data); err != nil {
-			return script, fmt.Errorf("template error for command: '%s' - %v", command.Name, err)
+	var tmpl *template.Template
+	for _, command := range cs.Commands {
+		var err error
+		if command.Run == "" {
+			continue
+		}
+		if tmpl == nil {
+			tmpl = template.New(command.Name)
 		} else {
-			return script, nil
+			tmpl = tmpl.New(command.Name)
+		}
+		tmpl, err = tmpl.Parse(command.Run)
+		if err != nil {
+			return "", fmt.Errorf("template error: %v", err)
 		}
 	}
-	return "", fmt.Errorf("no script present")
+	if tmpl == nil {
+		return "", fmt.Errorf("no script present")
+	}
+	if script, err := RenderTemplate(tmpl, data); err != nil {
+		return script, fmt.Errorf("script error: %v", err)
+	} else {
+		return script, err
+	}
 }
 
 func (cs CommandSet) RenderScriptToTemp(data TemplateData) (string, error) {

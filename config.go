@@ -184,8 +184,6 @@ func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
 			}
 			if numCommands := len(command.Commands); command.Run == "" && numCommands == 0 {
 				return fmt.Errorf("line %d: command '%s' must have either 'run' or 'commands' attribute", keyNode.Line, keyNode.Value)
-			} else if command.Run != "" && numCommands > 0 {
-				return fmt.Errorf("line %d: command '%s' must only have 'run' or 'commands' attribute", keyNode.Line, keyNode.Value)
 			}
 			command.Name = keyNode.Value
 		}

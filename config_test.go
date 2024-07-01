@@ -106,20 +106,6 @@ commands:
 	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
 }
 
-func TestParseConfig_CommandWithRunAndSubcommands(t *testing.T) {
-	content := `
-commands:
-  invalidCommand:
-    run: ooops
-    commands:
-      shouldNotExist: bugger
-`
-	expected := "line 3: command 'invalidCommand' must only have 'run' or 'commands' attribute"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
-}
-
 func TestParseConfig_InputOptionsIsMap(t *testing.T) {
 	content := `
 run: ok
