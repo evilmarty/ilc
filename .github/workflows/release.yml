@@ -25,10 +25,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get Go version
+        id: version
+        run: awk '{if($1 == "go") print "version=" $2}' go.mod >> "$GITHUB_OUTPUT"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22
+          go-version: ${{steps.version.outputs.version}}
 
       - name: Tag version
         if: github.event_name == 'workflow_dispatch'
