@@ -1,65 +1,66 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigInputOptionsLen(t *testing.T) {
 	options := ConfigInputOptions{}
-	assertEqual(t, 0, options.Len(), "ConfigInputOptions.Len() expected to return zero")
+	assert.Equal(t, 0, options.Len(), "ConfigInputOptions.Len() expected to return zero")
 
 	options = ConfigInputOptions{
 		{Label: "A", Value: "A"},
 	}
-	assertEqual(t, 1, options.Len(), "ConfigInputOptions.Len() expected to return one")
+	assert.Equal(t, 1, options.Len(), "ConfigInputOptions.Len() expected to return one")
 }
 
 func TestConfigInputOptionsContains(t *testing.T) {
 	options := ConfigInputOptions{}
-	assertEqual(t, false, options.Contains("foobar"), "ConfigInputOptions.Contains() with no items expected to return false")
+	assert.Equal(t, false, options.Contains("foobar"), "ConfigInputOptions.Contains() with no items expected to return false")
 
 	options = ConfigInputOptions{
 		{Label: "Foobar", Value: "foobar"},
 	}
-	assertEqual(t, true, options.Contains("foobar"), "ConfigInputOptions.Contains() that has value expected to return true")
+	assert.Equal(t, true, options.Contains("foobar"), "ConfigInputOptions.Contains() that has value expected to return true")
 }
 
 func TestConfigInputSelectable(t *testing.T) {
 	input := ConfigInput{
 		Options: ConfigInputOptions{},
 	}
-	assertEqual(t, false, input.Selectable(), "ConfigInput.Selectable() with no options expected to return false")
+	assert.Equal(t, false, input.Selectable(), "ConfigInput.Selectable() with no options expected to return false")
 
 	input = ConfigInput{
 		Options: ConfigInputOptions{
 			{Label: "A", Value: "A"},
 		},
 	}
-	assertEqual(t, true, input.Selectable(), "ConfigInput.Selectable() with options expected to return true")
+	assert.Equal(t, true, input.Selectable(), "ConfigInput.Selectable() with options expected to return true")
 }
 
 func TestConfigInputValid(t *testing.T) {
 	input := ConfigInput{
 		Options: ConfigInputOptions{},
 	}
-	assertEqual(t, true, input.Valid(""), "ConfigInput.Valid() with empty string expected to return true")
+	assert.Equal(t, true, input.Valid(""), "ConfigInput.Valid() with empty string expected to return true")
 
 	input = ConfigInput{
 		Options: ConfigInputOptions{
 			{Label: "A", Value: "A"},
 		},
 	}
-	assertEqual(t, false, input.Valid("foobar"), "ConfigInput.Valid() with no matching options expected to return false")
-	assertEqual(t, true, input.Valid("A"), "ConfigInput.Valid() with matching options expected to return true")
+	assert.Equal(t, false, input.Valid("foobar"), "ConfigInput.Valid() with no matching options expected to return false")
+	assert.Equal(t, true, input.Valid("A"), "ConfigInput.Valid() with matching options expected to return true")
 
 	input = ConfigInput{
 		Options: ConfigInputOptions{},
 		Pattern: "^foo",
 	}
-	assertEqual(t, false, input.Valid("booboo"), "ConfigInput.Valid() when pattern does not match expected to return false")
-	assertEqual(t, true, input.Valid("foobar"), "ConfigInput.Valid() when pattern does match expected to return true")
+	assert.Equal(t, false, input.Valid("booboo"), "ConfigInput.Valid() when pattern does not match expected to return false")
+	assert.Equal(t, true, input.Valid("foobar"), "ConfigInput.Valid() when pattern does match expected to return true")
 }
 
 func TestParseConfig_CommandsNotAMap(t *testing.T) {
@@ -67,9 +68,8 @@ func TestParseConfig_CommandsNotAMap(t *testing.T) {
 commands: ooops
 `
 	expected := "line 2: cannot unmarshal commands into map"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_CommandName(t *testing.T) {
@@ -78,9 +78,8 @@ commands:
   _foobar: ooops
 `
 	expected := "line 3: invalid command name"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_CommandInvalid(t *testing.T) {
@@ -89,9 +88,8 @@ commands:
   invalidCommand: []
 `
 	expected := "line 3: invalid definition for command 'invalidCommand'"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_CommandNoRunOrSubcommands(t *testing.T) {
@@ -101,9 +99,8 @@ commands:
     name: ooops
 `
 	expected := "line 3: command 'invalidCommand' must have either 'run' or 'commands' attribute"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_InputOptionsIsMap(t *testing.T) {
@@ -128,10 +125,8 @@ inputs:
 		},
 	}
 	actual, err := ParseConfig([]byte(content))
-	if err != nil {
-		t.Fatalf("ParseConfig() returned unexpected error: %v", err)
-	}
-	assertDeepEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	assert.NoError(t, err, "ParseConfig() returned unexpected error")
+	assert.Equal(t, expected, actual, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_InputOptionsIsSequence(t *testing.T) {
@@ -156,10 +151,8 @@ inputs:
 		},
 	}
 	actual, err := ParseConfig([]byte(content))
-	if err != nil {
-		t.Fatalf("ParseConfig() returned unexpected error: %v", err)
-	}
-	assertDeepEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	assert.NoError(t, err, "ParseConfig() returned unexpected error")
+	assert.Equal(t, expected, actual, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_InputOptionsIsScaler(t *testing.T) {
@@ -170,9 +163,8 @@ inputs:
     options: ooops
 `
 	expected := "line 5: unexpected node type"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_InputsIsMap(t *testing.T) {
@@ -192,10 +184,8 @@ inputs:
 		},
 	}
 	actual, err := ParseConfig([]byte(content))
-	if err != nil {
-		t.Fatalf("ParseConfig() returned unexpected error: %v", err)
-	}
-	assertDeepEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	assert.NoError(t, err, "ParseConfig() returned unexpected error")
+	assert.Equal(t, expected, actual, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_InputsIsSequence(t *testing.T) {
@@ -204,9 +194,8 @@ run: ooops
 inputs: []
 `
 	expected := "line 3: cannot unmarshal inputs into map"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_InputsIsScalar(t *testing.T) {
@@ -215,9 +204,8 @@ run: ooops
 inputs: nope
 `
 	expected := "line 3: cannot unmarshal inputs into map"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestParseConfig_InputNames(t *testing.T) {
@@ -228,9 +216,8 @@ inputs:
     default: Nope
 `
 	expected := "line 5: invalid input name"
-	_, err := ParseConfig([]byte(content))
-	actual := fmt.Sprintf("%s", err)
-	assertEqual(t, expected, actual, "ParseConfig() returned unexpected error")
+	_, actual := ParseConfig([]byte(content))
+	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -271,17 +258,12 @@ commands:
 		},
 	}
 	tempFile, err := os.CreateTemp("", "")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	if _, err := tempFile.Write([]byte(content)); err != nil {
-		t.Fatalf("Failed to write config to temp file: %v", err)
-	}
+	assert.NoError(t, err, "Failed to create temp file")
+
+	_, err = tempFile.Write([]byte(content))
+	assert.NoError(t, err, "Failed to write config to temp file")
 
 	actual, err := LoadConfig(tempFile.Name())
-	if err != nil {
-		t.Fatalf("LoadConfig() returned an unexpected error: %v", err)
-	}
-
-	assertDeepEqual(t, expected, actual, "LoadConfig() returned unexpected results")
+	assert.NoError(t, err, "LoadConfig() returned an unexpected error")
+	assert.Equal(t, expected, actual, "LoadConfig() returned unexpected results")
 }
