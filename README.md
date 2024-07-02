@@ -233,6 +233,31 @@ Optionally specify inputs to be used in `run` and `env` values. Inputs can be
 passed as arguments or will be asked when invoking a command. Nested commands
 inherit inputs and cascade down. See [`inputs`](#inputs-1) for more information.
 
+### `commands.<command_name>.aliases`
+
+Optionally include additional aliases to reference the command. Aliases must be
+unique within the same parent.
+
+#### Example of defining aliases
+
+```yaml
+commands:
+  files:
+    commands:
+      list:
+        aliases:
+          - ls
+        run: ls -lf
+  directories:
+    aliases:
+      - dir
+    commands:
+      list:
+        aliases:
+          - ls
+        run: ls -ld
+```
+
 ## Templating
 
 Go's [template language](https://pkg.go.dev/text/template) is available for

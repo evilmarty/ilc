@@ -63,6 +63,54 @@ func TestConfigInputValid(t *testing.T) {
 	assert.Equal(t, true, input.Valid("foobar"), "ConfigInput.Valid() when pattern does match expected to return true")
 }
 
+func TestConfigCommandsGet(t *testing.T) {
+	a := ConfigCommand{Name: "a", Aliases: []string{"A"}}
+	b := ConfigCommand{Name: "b", Aliases: []string{"B"}}
+	commands := ConfigCommands{a, b}
+	t.Run("matches name", func(t *testing.T) {
+		actual := commands.Get("b")
+		assert.Equal(t, &b, actual, "ConfigCommands.Get() did not find command")
+	})
+	t.Run("matches alias", func(t *testing.T) {
+		actual := commands.Get("B")
+		assert.Equal(t, &b, actual, "ConfigCommands.Get() did not find command")
+	})
+	t.Run("no match", func(t *testing.T) {
+		var expected *ConfigCommand
+		actual := commands.Get("c")
+		assert.Equal(t, expected, actual, "ConfigCommands.Get() returned unexpected result")
+	})
+}
+
+func TestParseConfig_CommandsAliases(t *testing.T) {
+	t.Run("duplicate aliases", func(t *testing.T) {
+		content := `
+commands:
+  foobar:
+    run: true
+  foobaz:
+    run: true
+    aliases:
+      - foobar
+`
+		expected := "line 6: alias 'foobar' already defined by command 'foobar'"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
+	t.Run("invalid alias", func(t *testing.T) {
+		content := `
+commands:
+  foobar:
+    run: true
+    aliases:
+      - _foobar
+`
+		expected := "line 4: invalid command alias '_foobar'"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
+}
+
 func TestParseConfig_CommandsNotAMap(t *testing.T) {
 	content := `
 commands: ooops
@@ -77,7 +125,7 @@ func TestParseConfig_CommandName(t *testing.T) {
 commands:
   _foobar: ooops
 `
-	expected := "line 3: invalid command name"
+	expected := "line 3: invalid command name '_foobar'"
 	_, actual := ParseConfig([]byte(content))
 	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
