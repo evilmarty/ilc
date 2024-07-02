@@ -3,8 +3,18 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - "**.go"
+      - go.sum
+      - go.mod
+      - .github/workflows/ci.yml
   pull_request:
     branches: [main]
+    paths:
+      - "**.go"
+      - go.sum
+      - go.mod
+      - .github/workflows/ci.yml
 
 jobs:
   build:
@@ -12,10 +22,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get Go version
+        id: version
+        run: awk '{if($1 == "go") print "version=" $2}' go.mod >> "$GITHUB_OUTPUT"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22
+          go-version: ${{steps.version.outputs.version}}
 
       - name: Build
         run: go build -v ./...
