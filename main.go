@@ -29,6 +29,7 @@ func main() {
 	})
 	debug := mainFlagSet.Bool("debug", false, "Print debug information")
 	nonInteractive := mainFlagSet.Bool("non-interactive", false, "Disable interactivity")
+	validateConfig := mainFlagSet.Bool("validate", false, "Validate configuration")
 	mainFlagSet.Parse(os.Args[1:])
 	args := mainFlagSet.Args()
 	if len(args) == 0 {
@@ -44,6 +45,9 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(mainFlagSet.Output(), "error loading configuration: %v\n", err)
 		os.Exit(2)
+	} else if *validateConfig {
+		fmt.Fprintf(mainFlagSet.Output(), "configuration is valid\n")
+		os.Exit(0)
 	}
 
 	runner := NewRunner(config, args[1:])
