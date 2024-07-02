@@ -141,6 +141,7 @@ type ConfigCommand struct {
 	Pure        bool
 	Inputs      ConfigInputs
 	Commands    ConfigCommands `yaml:",flow"`
+	Aliases     []string
 }
 
 func (command ConfigCommand) String() string {
@@ -153,6 +154,11 @@ func (commands *ConfigCommands) Get(name string) *ConfigCommand {
 	for _, command := range *commands {
 		if command.Name == name {
 			return &command
+		}
+		for _, alias := range command.Aliases {
+			if alias == name {
+				return &command
+			}
 		}
 	}
 	return nil
@@ -189,7 +195,15 @@ func (x *ConfigCommands) UnmarshalYAML(value *yaml.Node) error {
 		}
 
 		if !validName(command.Name) {
-			return fmt.Errorf("line %d: invalid command name", valueNode.Line)
+			return fmt.Errorf("line %d: invalid command name '%s'", valueNode.Line, command.Name)
+		}
+		for _, alias := range command.Aliases {
+			if !validName(alias) {
+				return fmt.Errorf("line %d: invalid command alias '%s'", valueNode.Line, alias)
+			}
+			if c := commands.Get(alias); c != nil {
+				return fmt.Errorf("line %d: alias '%s' already defined by command '%s'", valueNode.Line, alias, c.Name)
+			}
 		}
 
 		commands = append(commands, command)
