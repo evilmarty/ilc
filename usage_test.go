@@ -41,7 +41,7 @@ USAGE
   ilc config.yaml subcommand <commands>
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 
@@ -62,7 +62,7 @@ USAGE
   <config> <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -87,7 +87,7 @@ USAGE
   ilc <config> <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -112,7 +112,7 @@ USAGE
   ilc config.yaml <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -137,7 +137,7 @@ USAGE
   ilc config.yaml command subcommand <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -160,7 +160,7 @@ USAGE
   ilc config.yaml subcommand <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -183,7 +183,7 @@ USAGE
   ilc config.yaml subcommand <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -197,7 +197,7 @@ INPUTS
 
 func usageFixture() Usage {
 	commands := []ConfigCommand{
-		{Name: "a", Description: "a subcommand"},
+		{Name: "a", Description: "a subcommand", Aliases: []string{"aa"}},
 		{Name: "b", Description: "b subcommand"},
 	}
 	inputs := []ConfigInput{

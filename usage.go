@@ -30,16 +30,19 @@ func (u Usage) printSection(b io.Writer, header, content string) {
 }
 
 func (u Usage) printInstructions(b io.Writer, entries [][]string, header, prefix string) {
-	var s strings.Builder
+	// Each entry in entries begins with the description followed by additional names
+	s := strings.Builder{}
 	col := 15
-	for _, entry := range entries {
-		col = max(col, len([]rune(entry[0])))
+	for i, entry := range entries {
+		name := strings.Join(entry[1:], ", ")
+		col = max(col, len([]rune(name)))
+		entries[i] = []string{entry[0], name}
 	}
 	col = col + 5
 	format := fmt.Sprintf("%%-%ds %%s\n", col)
 	for _, entry := range entries {
-		desc := entry[1]
-		name := fmt.Sprintf("%s%s", prefix, entry[0])
+		desc := entry[0]
+		name := fmt.Sprintf("%s%s", prefix, entry[1])
 		fmt.Fprintf(&s, format, name, desc)
 	}
 	u.printSection(b, header, s.String())
@@ -68,7 +71,7 @@ func (u Usage) usage() string {
 }
 
 func (u Usage) String() string {
-	var b strings.Builder
+	b := strings.Builder{}
 	o := u.output
 	fmt.Fprintf(&b, "\n")
 	if s := u.Title; s != "" {
@@ -106,14 +109,14 @@ func (u Usage) Print() error {
 
 func (u Usage) ImportCommands(commands []ConfigCommand) Usage {
 	for _, command := range commands {
-		u.commands = append(u.commands, append([]string{command.Name, command.Description}, command.Aliases...))
+		u.commands = append(u.commands, append([]string{command.Description, command.Name}, command.Aliases...))
 	}
 	return u
 }
 
 func (u Usage) ImportInputs(inputs []ConfigInput) Usage {
 	for _, input := range inputs {
-		u.inputs = append(u.inputs, []string{input.Name, input.Description})
+		u.inputs = append(u.inputs, []string{input.Description, input.Name})
 	}
 	return u
 }
@@ -128,7 +131,7 @@ func NewUsage(tty io.Writer) Usage {
 		output: termenv.NewOutput(tty),
 	}
 	mainFlagSet.VisitAll(func(f *flag.Flag) {
-		u.flags = append(u.flags, []string{f.Name, f.Usage})
+		u.flags = append(u.flags, []string{f.Usage, f.Name})
 	})
 	return u
 }

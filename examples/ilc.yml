@@ -10,6 +10,8 @@ commands:
           Los Angeles International Airport: lax
           Munich International Airport: muc
   calendar:
+    aliases:
+      - cal
     description: Display a calendar for the month
     inputs:
       month:
