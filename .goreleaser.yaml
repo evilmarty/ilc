@@ -27,6 +27,8 @@ brews:
     homepage: "https://github.com/evilmarty/ilc"
     description: "Simplify creating command-line utilities"
     license: "GPL"
+    custom_block: |
+      head "https://github.com/evilmarty/ilc.git", branch: "main"
     install: |
       bin.install Dir["*"].first => "ilc"
     test: |
