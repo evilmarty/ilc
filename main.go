@@ -18,7 +18,8 @@ var (
 
 func main() {
 	mainFlagSet.Usage = func() {
-		u := NewUsage(os.Args[0:1], "ILC", "")
+		u := NewUsage()
+		u.Entrypoint = os.Args[0:1]
 		fmt.Printf("%s", u.String())
 		os.Exit(0)
 	}

@@ -27,8 +27,9 @@ type Runner struct {
 
 func (r *Runner) printUsage(cs CommandSet) {
 	entrypoint := append([]string{}, r.Entrypoint...)
-	entrypoint = append(entrypoint, cs.String())
-	u := NewUsage(entrypoint, "ILC", cs.Description()).ImportCommandSet(cs)
+	u := NewUsage().ImportCommandSet(cs)
+	u.Entrypoint = append(entrypoint, cs.String())
+	u.Description = cs.Description()
 	fmt.Fprint(r.Stderr, u.String())
 	os.Exit(0)
 }

@@ -103,12 +103,8 @@ func (u Usage) ImportCommandSet(cs CommandSet) Usage {
 	return u.ImportCommands(cs.Subcommands()).ImportInputs(cs.Inputs())
 }
 
-func NewUsage(entrypoint []string, title, desc string) Usage {
-	u := Usage{
-		Title:       title,
-		Description: desc,
-		Entrypoint:  entrypoint,
-	}
+func NewUsage() Usage {
+	u := Usage{Title: "ILC"}
 	mainFlagSet.VisitAll(func(f *flag.Flag) {
 		u.flags = append(u.flags, []string{f.Name, f.Usage})
 	})

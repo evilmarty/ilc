@@ -187,6 +187,9 @@ func usageFixture() Usage {
 		{Name: "c", Description: "c input"},
 		{Name: "d", Description: "d input"},
 	}
-	entrypoint := []string{"ilc", "config.yaml", "subcommand"}
-	return NewUsage(entrypoint, "test", "this is a fixture").ImportCommands(commands).ImportInputs(inputs)
+	u := NewUsage().ImportCommands(commands).ImportInputs(inputs)
+	u.Entrypoint = []string{"ilc", "config.yaml", "subcommand"}
+	u.Title = "test"
+	u.Description = "this is a fixture"
+	return u
 }
