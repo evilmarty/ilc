@@ -27,10 +27,10 @@ type Runner struct {
 
 func (r *Runner) printUsage(cs CommandSet) {
 	entrypoint := append([]string{}, r.Entrypoint...)
-	u := NewUsage().ImportCommandSet(cs)
+	u := NewUsage(mainFlagSet.Output()).ImportCommandSet(cs)
 	u.Entrypoint = append(entrypoint, cs.String())
 	u.Description = cs.Description()
-	fmt.Fprint(r.Stderr, u.String())
+	u.Print()
 	os.Exit(0)
 }
 

@@ -18,9 +18,9 @@ var (
 
 func main() {
 	mainFlagSet.Usage = func() {
-		u := NewUsage()
+		u := NewUsage(mainFlagSet.Output())
 		u.Entrypoint = os.Args[0:1]
-		fmt.Printf("%s", u.String())
+		u.Print()
 		os.Exit(0)
 	}
 	mainFlagSet.BoolFunc("version", "Displays the version", func(_ string) error {

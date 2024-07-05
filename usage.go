@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/muesli/termenv"
 )
 
 type Usage struct {
@@ -14,12 +16,17 @@ type Usage struct {
 	inputs      [][]string
 	flags       [][]string
 	Entrypoint  []string
+	output      *termenv.Output
 }
 
 func (u Usage) printSection(b io.Writer, header, content string) {
+	o := u.output
 	content = strings.ReplaceAll(content, "\n", "\n  ")
 	content = strings.TrimSuffix(content, "  ")
-	fmt.Fprintf(b, "%s\n  %s\n", header, content)
+	fmt.Fprintf(b, "%s\n  %s\n",
+		o.String(header).Bold(),
+		content,
+	)
 }
 
 func (u Usage) printInstructions(b io.Writer, entries [][]string, header, prefix string) {
@@ -62,11 +69,18 @@ func (u Usage) usage() string {
 
 func (u Usage) String() string {
 	var b strings.Builder
+	o := u.output
+	fmt.Fprintf(&b, "\n")
 	if s := u.Title; s != "" {
-		fmt.Fprintf(&b, "%s\n\n", s)
+		fmt.Fprintf(&b, "%s\n\n",
+			o.String(s).Underline(),
+		)
 	}
 	if s := u.Description; s != "" {
 		fmt.Fprintf(&b, "%s\n\n", s)
+	}
+	if b.Len() > 0 {
+		fmt.Fprintf(&b, "\n")
 	}
 	if s := u.usage(); s != "" {
 		u.printSection(&b, "USAGE", s)
@@ -83,6 +97,11 @@ func (u Usage) String() string {
 	}
 	b.WriteString("\n")
 	return b.String()
+}
+
+func (u Usage) Print() error {
+	_, err := u.output.WriteString(u.String())
+	return err
 }
 
 func (u Usage) ImportCommands(commands []ConfigCommand) Usage {
@@ -103,8 +122,11 @@ func (u Usage) ImportCommandSet(cs CommandSet) Usage {
 	return u.ImportCommands(cs.Subcommands()).ImportInputs(cs.Inputs())
 }
 
-func NewUsage() Usage {
-	u := Usage{Title: "ILC"}
+func NewUsage(tty io.Writer) Usage {
+	u := Usage{
+		Title:  "ILC",
+		output: termenv.NewOutput(tty),
+	}
 	mainFlagSet.VisitAll(func(f *flag.Flag) {
 		u.flags = append(u.flags, []string{f.Name, f.Usage})
 	})
