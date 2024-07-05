@@ -12,6 +12,7 @@ import (
 var (
 	Version     = "No version provided"
 	BuildDate   = "Unknown build date"
+	Commit      = ""
 	mainFlagSet = flag.NewFlagSet("ILC", flag.ExitOnError)
 	logger      = log.New(io.Discard, "DEBUG: ", log.Lshortfile)
 )
@@ -25,6 +26,9 @@ func main() {
 	}
 	mainFlagSet.BoolFunc("version", "Displays the version", func(_ string) error {
 		fmt.Printf("ILC - %s\nVersion: %s\n", BuildDate, Version)
+		if Commit != "" {
+			fmt.Printf("Commit: %s\n", Commit)
+		}
 		os.Exit(0)
 		return nil
 	})
