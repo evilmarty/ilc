@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,10 +9,12 @@ import (
 
 func TestUsage_EmptyCommands(t *testing.T) {
 	u := usageFixture()
-	u.commandNames = []string{}
-	expected := `test
+	u.commands = [][]string{}
+	expected := `
+test
 
 this is a fixture
+
 
 USAGE
   ilc config.yaml subcommand [inputs]
@@ -27,16 +30,18 @@ INPUTS
 
 func TestUsage_EmptyInputs(t *testing.T) {
 	u := usageFixture()
-	u.inputNames = []string{}
-	expected := `test
+	u.inputs = [][]string{}
+	expected := `
+test
 
 this is a fixture
+
 
 USAGE
   ilc config.yaml subcommand <commands>
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 
@@ -47,15 +52,17 @@ COMMANDS
 func TestUsage_Entrypoint_Empty(t *testing.T) {
 	u := usageFixture()
 	u.Entrypoint = []string{}
-	expected := `test
+	expected := `
+test
 
 this is a fixture
+
 
 USAGE
   <config> <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -70,15 +77,17 @@ INPUTS
 func TestUsage_Entrypoint_One(t *testing.T) {
 	u := usageFixture()
 	u.Entrypoint = []string{"ilc"}
-	expected := `test
+	expected := `
+test
 
 this is a fixture
+
 
 USAGE
   ilc <config> <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -93,15 +102,17 @@ INPUTS
 func TestUsage_Entrypoint_Two(t *testing.T) {
 	u := usageFixture()
 	u.Entrypoint = []string{"ilc", "config.yaml"}
-	expected := `test
+	expected := `
+test
 
 this is a fixture
+
 
 USAGE
   ilc config.yaml <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -116,15 +127,17 @@ INPUTS
 func TestUsage_Entrypoint_Many(t *testing.T) {
 	u := usageFixture()
 	u.Entrypoint = []string{"ilc", "config.yaml", "command", "subcommand"}
-	expected := `test
+	expected := `
+test
 
 this is a fixture
+
 
 USAGE
   ilc config.yaml command subcommand <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -139,13 +152,15 @@ INPUTS
 func TestUsage_Title_Blank(t *testing.T) {
 	u := usageFixture()
 	u.Title = ""
-	expected := `this is a fixture
+	expected := `
+this is a fixture
+
 
 USAGE
   ilc config.yaml subcommand <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -160,13 +175,15 @@ INPUTS
 func TestUsage_Description_Blank(t *testing.T) {
 	u := usageFixture()
 	u.Description = ""
-	expected := `test
+	expected := `
+test
+
 
 USAGE
   ilc config.yaml subcommand <commands> [inputs]
 
 COMMANDS
-  a                    a subcommand
+  a, aa                a subcommand
   b                    b subcommand
 
 INPUTS
@@ -180,13 +197,16 @@ INPUTS
 
 func usageFixture() Usage {
 	commands := []ConfigCommand{
-		{Name: "a", Description: "a subcommand"},
+		{Name: "a", Description: "a subcommand", Aliases: []string{"aa"}},
 		{Name: "b", Description: "b subcommand"},
 	}
 	inputs := []ConfigInput{
 		{Name: "c", Description: "c input"},
 		{Name: "d", Description: "d input"},
 	}
-	entrypoint := []string{"ilc", "config.yaml", "subcommand"}
-	return NewUsage(entrypoint, "test", "this is a fixture").ImportCommands(commands).ImportInputs(inputs)
+	u := NewUsage(os.Stdout).ImportCommands(commands).ImportInputs(inputs)
+	u.Entrypoint = []string{"ilc", "config.yaml", "subcommand"}
+	u.Title = "test"
+	u.Description = "this is a fixture"
+	return u
 }

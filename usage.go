@@ -5,37 +5,44 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/muesli/termenv"
 )
 
 type Usage struct {
-	Title        string
-	Description  string
-	commandNames []string
-	commandDescs []string
-	inputNames   []string
-	inputDescs   []string
-	flagNames    []string
-	flagDescs    []string
-	Entrypoint   []string
+	Title       string
+	Description string
+	commands    [][]string
+	inputs      [][]string
+	flags       [][]string
+	Entrypoint  []string
+	output      *termenv.Output
 }
 
 func (u Usage) printSection(b io.Writer, header, content string) {
+	o := u.output
 	content = strings.ReplaceAll(content, "\n", "\n  ")
 	content = strings.TrimSuffix(content, "  ")
-	fmt.Fprintf(b, "%s\n  %s\n", header, content)
+	fmt.Fprintf(b, "%s\n  %s\n",
+		o.String(header).Bold(),
+		content,
+	)
 }
 
-func (u Usage) printInstructions(b io.Writer, names, descs []string, header, prefix string) {
-	var s strings.Builder
+func (u Usage) printInstructions(b io.Writer, entries [][]string, header, prefix string) {
+	// Each entry in entries begins with the description followed by additional names
+	s := strings.Builder{}
 	col := 15
-	for _, name := range names {
+	for i, entry := range entries {
+		name := strings.Join(entry[1:], ", ")
 		col = max(col, len([]rune(name)))
+		entries[i] = []string{entry[0], name}
 	}
 	col = col + 5
 	format := fmt.Sprintf("%%-%ds %%s\n", col)
-	for i, name := range names {
-		desc := descs[i]
-		name = fmt.Sprintf("%s%s", prefix, name)
+	for _, entry := range entries {
+		desc := entry[0]
+		name := fmt.Sprintf("%s%s", prefix, entry[1])
 		fmt.Fprintf(&s, format, name, desc)
 	}
 	u.printSection(b, header, s.String())
@@ -46,7 +53,7 @@ func (u Usage) usage() string {
 	if len(u.Entrypoint) > 0 {
 		params = append(params, u.Entrypoint[0])
 	}
-	if len(u.flagNames) > 0 {
+	if len(u.flags) > 0 {
 		params = append(params, "[flags]")
 	}
 	if len(u.Entrypoint) > 1 {
@@ -54,52 +61,62 @@ func (u Usage) usage() string {
 	} else {
 		params = append(params, "<config>")
 	}
-	if len(u.commandNames) > 0 {
+	if len(u.commands) > 0 {
 		params = append(params, "<commands>")
 	}
-	if len(u.inputNames) > 0 {
+	if len(u.inputs) > 0 {
 		params = append(params, "[inputs]")
 	}
 	return strings.Join(params, " ")
 }
 
 func (u Usage) String() string {
-	var b strings.Builder
+	b := strings.Builder{}
+	o := u.output
+	fmt.Fprintf(&b, "\n")
 	if s := u.Title; s != "" {
-		fmt.Fprintf(&b, "%s\n\n", s)
+		fmt.Fprintf(&b, "%s\n\n",
+			o.String(s).Underline(),
+		)
 	}
 	if s := u.Description; s != "" {
 		fmt.Fprintf(&b, "%s\n\n", s)
+	}
+	if b.Len() > 0 {
+		fmt.Fprintf(&b, "\n")
 	}
 	if s := u.usage(); s != "" {
 		u.printSection(&b, "USAGE", s)
 		b.WriteString("\n")
 	}
-	if len(u.commandNames) > 0 {
-		u.printInstructions(&b, u.commandNames, u.commandDescs, "COMMANDS", "")
+	if len(u.commands) > 0 {
+		u.printInstructions(&b, u.commands, "COMMANDS", "")
 	}
-	if len(u.inputNames) > 0 {
-		u.printInstructions(&b, u.inputNames, u.inputDescs, "INPUTS", "-")
+	if len(u.inputs) > 0 {
+		u.printInstructions(&b, u.inputs, "INPUTS", "-")
 	}
-	if len(u.flagNames) > 0 {
-		u.printInstructions(&b, u.flagNames, u.flagDescs, "FLAGS", "-")
+	if len(u.flags) > 0 {
+		u.printInstructions(&b, u.flags, "FLAGS", "-")
 	}
 	b.WriteString("\n")
 	return b.String()
 }
 
+func (u Usage) Print() error {
+	_, err := u.output.WriteString(u.String())
+	return err
+}
+
 func (u Usage) ImportCommands(commands []ConfigCommand) Usage {
 	for _, command := range commands {
-		u.commandNames = append(u.commandNames, command.Name)
-		u.commandDescs = append(u.commandDescs, command.Description)
+		u.commands = append(u.commands, append([]string{command.Description, command.Name}, command.Aliases...))
 	}
 	return u
 }
 
 func (u Usage) ImportInputs(inputs []ConfigInput) Usage {
 	for _, input := range inputs {
-		u.inputNames = append(u.inputNames, input.Name)
-		u.inputDescs = append(u.inputDescs, input.Description)
+		u.inputs = append(u.inputs, []string{input.Description, input.Name})
 	}
 	return u
 }
@@ -108,15 +125,13 @@ func (u Usage) ImportCommandSet(cs CommandSet) Usage {
 	return u.ImportCommands(cs.Subcommands()).ImportInputs(cs.Inputs())
 }
 
-func NewUsage(entrypoint []string, title, desc string) Usage {
+func NewUsage(tty io.Writer) Usage {
 	u := Usage{
-		Title:       title,
-		Description: desc,
-		Entrypoint:  entrypoint,
+		Title:  "ILC",
+		output: termenv.NewOutput(tty),
 	}
 	mainFlagSet.VisitAll(func(f *flag.Flag) {
-		u.flagNames = append(u.flagNames, f.Name)
-		u.flagDescs = append(u.flagDescs, f.Usage)
+		u.flags = append(u.flags, []string{f.Usage, f.Name})
 	})
 	return u
 }
