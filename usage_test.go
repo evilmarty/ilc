@@ -8,7 +8,7 @@ import (
 
 func TestUsage_EmptyCommands(t *testing.T) {
 	u := usageFixture()
-	u.commandNames = []string{}
+	u.commands = [][]string{}
 	expected := `test
 
 this is a fixture
@@ -27,7 +27,7 @@ INPUTS
 
 func TestUsage_EmptyInputs(t *testing.T) {
 	u := usageFixture()
-	u.inputNames = []string{}
+	u.inputs = [][]string{}
 	expected := `test
 
 this is a fixture
