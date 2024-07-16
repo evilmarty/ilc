@@ -277,6 +277,14 @@ The expression to reference an input value. ie. '{{ .Input.my_input }}'
 
 The expression to reference an environment variable. ie. '{{ .Env.HOME }}'
 
+### input "input_name"
+
+A function to retrieve the input by its name. ie. '{{input "my_input"}}'
+
+### env "variable_name"
+
+A function to retrieve the environment variable by its name. ie. '{{env "HOME"}}'
+
 ## Example config with single command
 
 ```yaml

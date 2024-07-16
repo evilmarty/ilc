@@ -103,7 +103,7 @@ func (cs CommandSet) RenderScript(data TemplateData) (string, error) {
 			continue
 		}
 		if tmpl == nil {
-			tmpl = template.New(command.Name)
+			tmpl = template.New(command.Name).Funcs(data.Funcs())
 		} else {
 			tmpl = tmpl.New(command.Name)
 		}
