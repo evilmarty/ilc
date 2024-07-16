@@ -321,6 +321,30 @@ func TestCommandSetRenderScript(t *testing.T) {
 		assert.NoError(t, err, "CommandSet.RenderScript() returned an unexpected error")
 		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
 	})
+	t.Run("helper functions", func(t *testing.T) {
+		data := TemplateData{
+			Input: map[string]any{
+				"A": "a",
+				"B": "b",
+			},
+			Env: map[string]string{
+				"C": "c",
+				"D": "d",
+			},
+		}
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Name: "foobar",
+					Run:  "echo {{input \"A\"}} {{env \"C\"}}",
+				},
+			},
+		}
+		expected := "echo a c"
+		actual, err := cs.RenderScript(data)
+		assert.NoError(t, err, "CommandSet.RenderScript() returned an unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.RenderScript() returned unexpected result")
+	})
 }
 
 func TestCommandSetRenderScriptToTemp(t *testing.T) {

@@ -13,6 +13,29 @@ type TemplateData struct {
 	Env   map[string]string
 }
 
+func (td TemplateData) getInput(name string) any {
+	if v, ok := td.Input[name]; ok {
+		return v
+	} else {
+		return nil
+	}
+}
+
+func (td TemplateData) getEnv(name string) any {
+	if v, ok := td.Env[name]; ok {
+		return v
+	} else {
+		return nil
+	}
+}
+
+func (td *TemplateData) Funcs() template.FuncMap {
+	return template.FuncMap{
+		"input": td.getInput,
+		"env":   td.getEnv,
+	}
+}
+
 func NewTemplateData(input map[string]any, env []string) TemplateData {
 	safeInputs := make(map[string]any)
 	for name, value := range input {
