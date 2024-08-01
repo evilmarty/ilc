@@ -1,3 +1,5 @@
+![ILC](assets/logo.svg)
+
 # ILC - The simple way to create a command-line utility
 
 [![CI](https://github.com/evilmarty/ilc/actions/workflows/ci.yml/badge.svg)](https://github.com/evilmarty/ilc/actions/workflows/ci.yml)
