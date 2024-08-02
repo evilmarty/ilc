@@ -1,8 +1,8 @@
 ![ILC](assets/logo.svg)
 
-# ILC - The simple way to create a command-line utility
+# The simple way to create a command-line utility
 
-[![CI](https://github.com/evilmarty/ilc/actions/workflows/ci.yml/badge.svg)](https://github.com/evilmarty/ilc/actions/workflows/ci.yml)
+[![CI](https://github.com/evilmarty/ilc/actions/workflows/ci.yml/badge.svg)](https://github.com/evilmarty/ilc/actions/workflows/ci.yml) [![GitHub Release](https://img.shields.io/github/v/release/evilmarty/ilc)](https://github.com/evilmarty/ilc/releases/latest) ![GitHub License](https://img.shields.io/github/license/evilmarty/ilc)
 
 Create an easy to use interactive CLI to simplify your workflow with a single
 YAML file.
@@ -350,7 +350,3 @@ commands:
       NAME: "{{ .Input.name }}"
       GREETING: "{{ .Input.greeting }}"
 ```
-
-## TODO
-
-- [ ] Aliases
