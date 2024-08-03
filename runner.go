@@ -4,14 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
-	"github.com/erikgeiser/promptkit/selection"
-	"github.com/erikgeiser/promptkit/textinput"
 	// "os/exec"
-)
-
-const (
-	minChoiceFiltering = 5
 )
 
 type Runner struct {
@@ -92,57 +85,4 @@ func NewRunner(config Config, args []string) *Runner {
 		Stderr: os.Stderr,
 	}
 	return &r
-}
-
-func selectCommand(command ConfigCommand) (ConfigCommand, error) {
-	commandsLength := len(command.Commands)
-
-	sp := selection.New("Choose command", command.Commands)
-
-	if commandsLength <= minChoiceFiltering {
-		sp.Filter = nil
-	}
-
-	if choice, err := sp.RunPrompt(); err != nil {
-		return command, err
-	} else {
-		return choice, nil
-	}
-}
-
-func askInput(input ConfigInput) (string, error) {
-	if input.Selectable() {
-		return selectInput(input)
-	} else {
-		return getInput(input)
-	}
-}
-
-func selectInput(input ConfigInput) (string, error) {
-	prompt := fmt.Sprintf("Choose a %s", input.Name)
-	sp := selection.New(prompt, input.Options)
-
-	if len(input.Options) <= minChoiceFiltering {
-		sp.Filter = nil
-	}
-
-	if option, err := sp.RunPrompt(); err == nil {
-		return option.Value, err
-	} else {
-		return "", err
-	}
-}
-
-func getInput(input ConfigInput) (string, error) {
-	prompt := fmt.Sprintf("Please specify a %s", input.Name)
-	ti := textinput.New(prompt)
-	ti.InitialValue = input.DefaultValue
-	ti.Validate = func(value string) error {
-		if input.Valid(value) {
-			return nil
-		} else {
-			return fmt.Errorf("invalid value")
-		}
-	}
-	return ti.RunPrompt()
 }
