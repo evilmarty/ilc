@@ -7,15 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEnvMap(t *testing.T) {
+func TestNewEnvMap(t *testing.T) {
 	env := []string{
 		"A=a",
 		"B=",
 		"C",
 	}
-	expected := map[string]string{"A": "a", "B": "", "C": ""}
-	actual := EnvMap(env)
-	assert.Equal(t, expected, actual, "EnvMap() returned unexpected results")
+	expected := EnvMap{"A": "a", "B": "", "C": ""}
+	actual := NewEnvMap(env)
+	assert.Equal(t, expected, actual, "NewEnvMap() returned unexpected results")
 }
 
 func TestNewTemplateData(t *testing.T) {

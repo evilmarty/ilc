@@ -44,12 +44,29 @@ func NewTemplateData(input map[string]any, env []string) TemplateData {
 	}
 	return TemplateData{
 		Input: safeInputs,
-		Env:   EnvMap(env),
+		Env:   NewEnvMap(env),
 	}
 }
 
-func EnvMap(env []string) map[string]string {
-	m := make(map[string]string, len(env))
+type EnvMap map[string]string
+
+func (em EnvMap) Merge(other map[string]string) EnvMap {
+	for name, value := range other {
+		em[name] = value
+	}
+	return em
+}
+
+func (em EnvMap) ToList() []string {
+	var env []string
+	for name, value := range em {
+		env = append(env, fmt.Sprintf("%s=%s", name, value))
+	}
+	return env
+}
+
+func NewEnvMap(env []string) EnvMap {
+	m := make(EnvMap, len(env))
 	for _, item := range env {
 		entry := strings.SplitN(item, "=", 2)
 		if len(entry) > 1 {

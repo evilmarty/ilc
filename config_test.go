@@ -41,6 +41,13 @@ func TestConfigInputSelectable(t *testing.T) {
 	assert.Equal(t, true, input.Selectable(), "ConfigInput.Selectable() with options expected to return true")
 }
 
+func TestConfigInputSafeName(t *testing.T) {
+	input := ConfigInput{
+		Name: "foo-bar",
+	}
+	assert.Equal(t, "foo_bar", input.SafeName(), "ConfigInput.SafeName() returned unexpected result")
+}
+
 func TestConfigInputValid(t *testing.T) {
 	input := ConfigInput{
 		Options: ConfigInputOptions{},
