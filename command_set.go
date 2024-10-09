@@ -73,26 +73,24 @@ func (cs CommandSet) Inputs() []ConfigInput {
 	return inputs
 }
 
-func (cs CommandSet) Env() map[string]string {
-	envs := make(map[string]string)
+func (cs CommandSet) Env() EnvMap {
+	em := NewEnvMap([]string{})
 	for _, command := range cs.Commands {
-		for name, value := range command.Env {
-			envs[name] = value
-		}
+		em = em.Merge(command.Env)
 	}
-	return envs
+	return em
 }
 
-func (cs CommandSet) RenderEnv(data TemplateData) ([]string, error) {
-	var renderedEnvs []string
-	for name, template := range cs.Env() {
+func (cs CommandSet) RenderEnv(data TemplateData) (EnvMap, error) {
+	env := cs.Env()
+	for name, template := range env {
 		if value, err := RenderTemplate(template, data); err != nil {
-			return renderedEnvs, fmt.Errorf("template error for environment variable: '%s' - %v", name, err)
+			return env, fmt.Errorf("template error for environment variable: '%s' - %v", name, err)
 		} else {
-			renderedEnvs = append(renderedEnvs, fmt.Sprintf("%s=%s", name, value))
+			env[name] = value
 		}
 	}
-	return renderedEnvs, nil
+	return env, nil
 }
 
 func (cs CommandSet) RenderScript(data TemplateData) (string, error) {
@@ -222,9 +220,20 @@ func (cs CommandSet) ParseEnv(values *map[string]any, environ []string) {
 	}
 }
 
+func (cs CommandSet) getInputsEnv(data TemplateData) EnvMap {
+	inputs := cs.Inputs()
+	env := make(EnvMap, len(inputs))
+	for _, input := range inputs {
+		value := data.getInput(input.Name)
+		key := fmt.Sprintf("%s%s", EnvVarPrefix, input.SafeName())
+		env[key] = fmt.Sprintf("%s", value)
+	}
+	return env
+}
+
 func (cs CommandSet) Cmd(data TemplateData, moreEnviron []string) (*exec.Cmd, error) {
 	var scriptFile string
-	var env []string
+	var env EnvMap
 	var err error
 	shell := cs.Shell()
 	scriptFile, err = cs.RenderScriptToTemp(data)
@@ -235,12 +244,13 @@ func (cs CommandSet) Cmd(data TemplateData, moreEnviron []string) (*exec.Cmd, er
 	if err != nil {
 		return nil, err
 	}
+	env = cs.getInputsEnv(data).Merge(env)
 	if !cs.Pure() {
-		env = append(moreEnviron, env...)
+		env = NewEnvMap(moreEnviron).Merge(env)
 	}
 	shell = append(shell, scriptFile)
 	cmd := exec.Command(shell[0], shell[1:]...)
-	cmd.Env = env
+	cmd.Env = env.ToList()
 	return cmd, nil
 }
 

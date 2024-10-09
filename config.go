@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -72,6 +73,10 @@ type ConfigInput struct {
 	Pattern      string
 	Options      ConfigInputOptions
 	Description  string
+}
+
+func (input *ConfigInput) SafeName() string {
+	return strings.ReplaceAll(input.Name, "-", "_")
 }
 
 func (input *ConfigInput) Selectable() bool {

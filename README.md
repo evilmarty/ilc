@@ -63,6 +63,8 @@ input before the command will be executed. Inputs can be passed as arguments or
 as environment variables that are prefixed with `ILC_INPUT_`. Inputs that have
 been passed as arguments will not be asked, only for the inputs that have yet a value.
 
+All inputs will also be accessible via environment variables prefixed with `ILC_INPUT_`.
+
 #### Example of passing inputs as arguments
 
 ```shell

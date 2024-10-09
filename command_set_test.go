@@ -132,7 +132,7 @@ func TestCommandSetEnv(t *testing.T) {
 			},
 		},
 	}
-	expected := map[string]string{
+	expected := EnvMap{
 		"A": "aa",
 		"B": "b",
 		"C": "c",
@@ -164,14 +164,14 @@ func TestCommandSetRenderEnv_NonError(t *testing.T) {
 			},
 		},
 	}
-	expected := []string{
-		"A=aa",
-		"B=b",
-		"C=c",
+	expected := EnvMap{
+		"A": "aa",
+		"B": "b",
+		"C": "c",
 	}
 	actual, err := cs.RenderEnv(data)
 	assert.NoError(t, err, "CommandSet.RenderEnv() returned an unexpected error")
-	assert.ElementsMatch(t, expected, actual, "CommandSet.RenderEnv() returned unexpected results")
+	assert.Equal(t, expected, actual, "CommandSet.RenderEnv() returned unexpected results")
 }
 
 func TestCommandSetRenderEnv_TemplateError(t *testing.T) {
@@ -391,6 +391,10 @@ func TestCommandSetCmd_IsPure(t *testing.T) {
 					"A": "{{.Input.A}}",
 					"B": "{{.Input.B}}",
 				},
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "A"},
+					ConfigInput{Name: "B"},
+				},
 			},
 			{
 				Shell: []string{"/bin/bash", "-x"},
@@ -399,13 +403,21 @@ func TestCommandSetCmd_IsPure(t *testing.T) {
 					"A": "aa",
 					"C": "{{.Input.C}}",
 				},
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "C"},
+				},
 				Pure: true,
 			},
 		},
 	}
 	cmd, err := cs.Cmd(data, moreEnviron)
 	assert.NoError(t, err, "CommandSet.Cmd() returned an unexpected error")
-	assert.ElementsMatch(t, []string{"A=aa", "B=b", "C=c"}, cmd.Env, "CommandSet.Cmd() did not set cmd.Env with correct values")
+	assert.ElementsMatch(
+		t,
+		[]string{"ILC_INPUT_A=a", "ILC_INPUT_B=b", "ILC_INPUT_C=c", "A=aa", "B=b", "C=c"},
+		cmd.Env,
+		"CommandSet.Cmd() did not set cmd.Env with correct values",
+	)
 	assert.Equal(t, "/bin/bash", cmd.Path, "CommandSet.Cmd() did not set cmd.Path to the shell path")
 	assert.Equal(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
 }
@@ -419,6 +431,7 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 		},
 	}
 	moreEnviron := []string{
+		"C=x",
 		"D=d",
 	}
 	cs := CommandSet{
@@ -430,6 +443,10 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 					"A": "{{.Input.A}}",
 					"B": "{{.Input.B}}",
 				},
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "A"},
+					ConfigInput{Name: "B"},
+				},
 			},
 			{
 				Shell: []string{"/bin/bash", "-x"},
@@ -438,12 +455,20 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 					"A": "aa",
 					"C": "{{.Input.C}}",
 				},
+				Inputs: ConfigInputs{
+					ConfigInput{Name: "C"},
+				},
 			},
 		},
 	}
 	cmd, err := cs.Cmd(data, moreEnviron)
 	assert.NoError(t, err, "CommandSet.Cmd() returned an unexpected error")
-	assert.ElementsMatch(t, []string{"A=aa", "B=b", "C=c", "D=d"}, cmd.Env, "CommandSet.Cmd() did not set cmd.Env with correct values")
+	assert.ElementsMatch(
+		t,
+		[]string{"ILC_INPUT_A=a", "ILC_INPUT_B=b", "ILC_INPUT_C=c", "A=aa", "B=b", "C=c", "D=d"},
+		cmd.Env,
+		"CommandSet.Cmd() did not set cmd.Env with correct values",
+	)
 	assert.Equal(t, "/bin/bash", cmd.Path, "CommandSet.Cmd() did not set cmd.Path to the shell path")
 	assert.Equal(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
 }
