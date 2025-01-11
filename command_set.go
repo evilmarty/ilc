@@ -101,11 +101,11 @@ func (cs CommandSet) RenderScript(data TemplateData) (string, error) {
 			continue
 		}
 		if tmpl == nil {
-			tmpl = template.New(command.Name).Funcs(data.Funcs())
+			tmpl = template.New(command.Name)
 		} else {
 			tmpl = tmpl.New(command.Name)
 		}
-		tmpl, err = tmpl.Parse(command.Run)
+		tmpl, err = tmpl.Funcs(data.Funcs()).Parse(command.Run)
 		if err != nil {
 			return "", fmt.Errorf("template error: %v", err)
 		}
