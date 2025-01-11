@@ -39,19 +39,20 @@ func TestNewTemplateData(t *testing.T) {
 }
 
 func TestRenderTemplate(t *testing.T) {
-	text := "Input: {{ .Input.foobar }}, Input: {{ .Input.foobaz }}, Env: {{ .Env.FOOBAR }}, Env: {{ .Env.FOOBAZ }}"
 	data := TemplateData{
 		Input: map[string]any{"foobar": "a"},
 		Env:   map[string]string{"FOOBAR": "b"},
 	}
 	expected := "Input: a, Input: <no value>, Env: b, Env: <no value>"
 	t.Run("given a string", func(t *testing.T) {
+		text := "Input: {{input \"foobar\"}}, Input: {{input \"foobaz\"}}, Env: {{env \"FOOBAR\"}}, Env: {{env \"FOOBAZ\"}}"
 		actual, err := RenderTemplate(text, data)
 		assert.NoError(t, err, "RenderTemplate() returned unexpected error")
 		assert.Equal(t, expected, actual, "RenderTemplate() returned unexpected results")
 	})
 
 	t.Run("given a template object", func(t *testing.T) {
+		text := "Input: {{.Input.foobar}}, Input: {{.Input.foobaz}}, Env: {{.Env.FOOBAR}}, Env: {{.Env.FOOBAZ}}"
 		tmpl := template.New("")
 		_, err := tmpl.Parse(text)
 		assert.NoError(t, err, "Could not render template")

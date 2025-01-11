@@ -86,7 +86,7 @@ func RenderTemplate(text interface{}, data TemplateData) (string, error) {
 	case *template.Template:
 		tmpl = t
 	case string:
-		tmpl, err = renderTemplate.Parse(t)
+		tmpl, err = renderTemplate.Funcs(data.Funcs()).Parse(t)
 		if err != nil {
 			return "", err
 		}
