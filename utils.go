@@ -6,7 +6,12 @@ import (
 	"text/template"
 )
 
-var renderTemplate = template.New("")
+var defaultTemplateFuncs = template.FuncMap{
+	"contains":   strings.Contains,
+	"startswith": strings.HasPrefix,
+	"endswith":   strings.HasSuffix,
+}
+var renderTemplate = template.New("").Funcs(defaultTemplateFuncs)
 
 type TemplateData struct {
 	Input map[string]any
