@@ -70,7 +70,7 @@ func (x *ConfigInputOptions) UnmarshalYAML(node *yaml.Node) error {
 type ConfigInput struct {
 	Name         string `yaml:"-"`
 	Type         string
-	DefaultValue string `yaml:"default"`
+	DefaultValue any `yaml:"default"`
 	Pattern      string
 	Options      ConfigInputOptions
 	Description  string
@@ -102,7 +102,7 @@ func (input *ConfigInput) match(value any) bool {
 	if input.Pattern == "" {
 		return true
 	}
-	matched, _ := regexp.MatchString(input.Pattern, fmt.Sprintf("%v", value))
+	matched, _ := regexp.MatchString(input.Pattern, fmt.Sprint(value))
 	return matched
 }
 
@@ -148,6 +148,9 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 			input.Type = "string"
 		default:
 			return fmt.Errorf("line %d: unsupported input type '%s'", valueNode.Line, input.Type)
+		}
+		if !validValue(input.DefaultValue, input.Type) {
+			return fmt.Errorf("line %d: default value type mismatch", valueNode.Line)
 		}
 
 		inputs = append(inputs, input)
@@ -278,4 +281,15 @@ func LoadConfig(path string) (Config, error) {
 func validName(s string) bool {
 	m, _ := regexp.MatchString("^[a-zA-Z0-9][a-zA-Z0-9-_]*$", s)
 	return m
+}
+
+func validValue(v any, t string) bool {
+	switch v.(type) {
+	case string:
+		return t == "string"
+	case nil:
+		return true
+	default:
+		return false
+	}
 }

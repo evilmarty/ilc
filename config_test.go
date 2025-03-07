@@ -311,7 +311,7 @@ inputs:
 }
 
 func TestParseConfig_InputType(t *testing.T) {
-	t.Run("set type", func(t *testing.T) {
+	t.Run("valid string type", func(t *testing.T) {
 		content := `
 run: ok
 inputs:
