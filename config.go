@@ -69,6 +69,7 @@ func (x *ConfigInputOptions) UnmarshalYAML(node *yaml.Node) error {
 
 type ConfigInput struct {
 	Name         string `yaml:"-"`
+	Type         string
 	DefaultValue string `yaml:"default"`
 	Pattern      string
 	Options      ConfigInputOptions
@@ -86,7 +87,19 @@ func (input *ConfigInput) Selectable() bool {
 func (input *ConfigInput) Valid(value any) bool {
 	if input.Selectable() {
 		return input.Options.Contains(value)
-	} else if input.Pattern == "" {
+	}
+	switch input.Type {
+	case "": // In case type is empty assume string
+		return input.match(value)
+	case "string":
+		return input.match(value)
+	default:
+		return true
+	}
+}
+
+func (input *ConfigInput) match(value any) bool {
+	if input.Pattern == "" {
 		return true
 	}
 	matched, _ := regexp.MatchString(input.Pattern, fmt.Sprintf("%v", value))
@@ -115,6 +128,7 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 		switch valueNode.Kind {
 		case yaml.ScalarNode:
 			input.Name = keyNode.Value
+			input.Type = valueNode.Value
 		case yaml.MappingNode:
 			if err := valueNode.Decode(&input); err != nil {
 				return err
@@ -126,6 +140,14 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 
 		if !validName(input.Name) {
 			return fmt.Errorf("line %d: invalid input name", valueNode.Line)
+		}
+
+		switch input.Type {
+		case "string":
+		case "":
+			input.Type = "string"
+		default:
+			return fmt.Errorf("line %d: unsupported input type '%s'", valueNode.Line, input.Type)
 		}
 
 		inputs = append(inputs, input)

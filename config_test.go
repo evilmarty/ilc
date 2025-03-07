@@ -172,6 +172,7 @@ inputs:
 		Inputs: ConfigInputs{
 			ConfigInput{
 				Name: "foobar",
+				Type: "string",
 				Options: ConfigInputOptions{
 					{Label: "a", Value: "A"},
 					{Label: "b", Value: "B"},
@@ -198,6 +199,7 @@ inputs:
 		Inputs: ConfigInputs{
 			ConfigInput{
 				Name: "foobar",
+				Type: "string",
 				Options: ConfigInputOptions{
 					{Label: "A", Value: "A"},
 					{Label: "B", Value: "B"},
@@ -234,6 +236,7 @@ inputs:
 		Inputs: ConfigInputs{
 			ConfigInput{
 				Name:         "foobar",
+				Type:         "string",
 				DefaultValue: "Foobar",
 			},
 		},
@@ -275,6 +278,84 @@ inputs:
 	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
+func TestParseConfig_InputIsScalar(t *testing.T) {
+	t.Run("valid type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar: string
+`
+		expected := Config{
+			Run: "ok",
+			Inputs: ConfigInputs{
+				ConfigInput{
+					Name: "foobar",
+					Type: "string",
+				},
+			},
+		}
+		actual, error := ParseConfig([]byte(content))
+		assert.NoError(t, error, "ParseConfig() returned unexpected error")
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("invalid type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar: unknown
+`
+		expected := "line 4: unsupported input type 'unknown'"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
+}
+
+func TestParseConfig_InputType(t *testing.T) {
+	t.Run("set type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: string
+`
+		expected := Config{
+			Run: "ok",
+			Inputs: ConfigInputs{
+				ConfigInput{
+					Name: "foobar",
+					Type: "string",
+				},
+			},
+		}
+		actual, error := ParseConfig([]byte(content))
+		assert.NoError(t, error, "ParseConfig() returned unexpected error")
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("invalid string type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: string
+    default: 123
+`
+		expected := "line 5: default value type mismatch"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
+	t.Run("unsupported type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: unknown
+`
+		expected := "line 5: unsupported input type 'unknown'"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
+}
+
 func TestLoadConfig(t *testing.T) {
 	content := `
 commands:
@@ -296,6 +377,7 @@ commands:
 				Inputs: ConfigInputs{
 					{
 						Name: "sequence",
+						Type: "string",
 						Options: ConfigInputOptions{
 							{Label: "A", Value: "A"},
 							{Label: "B", Value: "B"},
@@ -303,6 +385,7 @@ commands:
 					},
 					{
 						Name: "map",
+						Type: "string",
 						Options: ConfigInputOptions{
 							{Label: "a", Value: "A"},
 							{Label: "b", Value: "B"},
