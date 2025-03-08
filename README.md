@@ -115,7 +115,11 @@ inherit inputs and cascade down.
 
 The key `input_name` is a string and its value is a map of the input's
 configuration. The name can be used as an argument in the form `-<input_name>`
-or `--<input_name>` followed by a value. The input's value is a string.
+or `--<input_name>` followed by a value. The value can be omitted for boolean types.
+
+### `inputs.<input_name>.type`
+
+The type of input. Defaults to `string` but can also be `boolean`.
 
 ### `inputs.<input_name>.description`
 
