@@ -371,6 +371,32 @@ inputs:
 		_, actual := ParseConfig([]byte(content))
 		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 	})
+	t.Run("valid boolean type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: boolean
+    default: false
+`
+		expected := Config{
+			Run: "ok",
+			Inputs: ConfigInputs{
+				ConfigInput{
+					Name:         "foobar",
+					Type:         "boolean",
+					DefaultValue: false,
+					Options: ConfigInputOptions{
+						ConfigInputOption{Label: "yes", Value: true},
+						ConfigInputOption{Label: "no", Value: false},
+					},
+				},
+			},
+		}
+		actual, error := ParseConfig([]byte(content))
+		assert.NoError(t, error, "ParseConfig() returned unexpected error")
+		assert.Equal(t, expected, actual)
+	})
 	t.Run("unsupported type", func(t *testing.T) {
 		content := `
 run: ok
@@ -390,6 +416,7 @@ commands:
   test:
     run: go test
     inputs:
+      bool: boolean
       sequence:
         options: [A, B]
       map:
@@ -403,6 +430,15 @@ commands:
 				Name: "test",
 				Run:  "go test",
 				Inputs: ConfigInputs{
+					{
+						Name:         "bool",
+						Type:         "boolean",
+						DefaultValue: false,
+						Options: ConfigInputOptions{
+							{Label: "yes", Value: true},
+							{Label: "no", Value: false},
+						},
+					},
 					{
 						Name: "sequence",
 						Type: "string",

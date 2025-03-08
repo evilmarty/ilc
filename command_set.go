@@ -146,7 +146,16 @@ func (cs CommandSet) ParseArgs(values *map[string]any) error {
 		// Don't do anything here. We just want the error.
 	}
 	for _, input := range cs.Inputs() {
-		fs.String(input.Name, fmt.Sprint(input.DefaultValue), input.Description)
+		switch input.Type {
+		case "boolean":
+			b, ok := input.DefaultValue.(bool)
+			if !ok {
+				b = false
+			}
+			fs.Bool(input.Name, b, input.Description)
+		default:
+			fs.String(input.Name, input.DefaultValue.(string), input.Description)
+		}
 	}
 	if err := fs.Parse(cs.Args); err != nil {
 		return err

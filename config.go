@@ -9,6 +9,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var defaultBooleanOptions = ConfigInputOptions{
+	ConfigInputOption{Label: "yes", Value: true},
+	ConfigInputOption{Label: "no", Value: false},
+}
+
 type ConfigInputOption struct {
 	Label string
 	Value any
@@ -146,6 +151,13 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 
 		switch input.Type {
 		case "string":
+		case "boolean":
+			if input.DefaultValue == nil {
+				input.DefaultValue = false
+			}
+			if input.Options == nil {
+				input.Options = defaultBooleanOptions
+			}
 		case "":
 			input.Type = "string"
 		default:
@@ -296,6 +308,8 @@ func validValue(v any, t string) bool {
 	switch v.(type) {
 	case string:
 		return t == "string"
+	case bool:
+		return t == "boolean"
 	case nil:
 		return true
 	default:
