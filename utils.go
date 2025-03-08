@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"text/template"
 )
@@ -117,4 +118,31 @@ func DiffStrings(a, b []string) []string {
 		}
 	}
 	return diff
+}
+
+func ToFloat64(value any) float64 {
+	switch v := value.(type) {
+	case uint:
+		return float64(v)
+	case int:
+		return float64(v)
+	case uint16:
+		return float64(v)
+	case int16:
+		return float64(v)
+	case uint32:
+		return float64(v)
+	case int32:
+		return float64(v)
+	case uint64:
+		return float64(v)
+	case int64:
+		return float64(v)
+	case float32:
+		return float64(v)
+	case float64:
+		return v
+	default:
+		return math.NaN()
+	}
 }

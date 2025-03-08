@@ -49,25 +49,50 @@ func TestConfigInputSafeName(t *testing.T) {
 }
 
 func TestConfigInputValid(t *testing.T) {
-	input := ConfigInput{
-		Options: ConfigInputOptions{},
-	}
-	assert.Equal(t, true, input.Valid(""), "ConfigInput.Valid() with empty string expected to return true")
-
-	input = ConfigInput{
-		Options: ConfigInputOptions{
-			{Label: "A", Value: "A"},
-		},
-	}
-	assert.Equal(t, false, input.Valid("foobar"), "ConfigInput.Valid() with no matching options expected to return false")
-	assert.Equal(t, true, input.Valid("A"), "ConfigInput.Valid() with matching options expected to return true")
-
-	input = ConfigInput{
-		Options: ConfigInputOptions{},
-		Pattern: "^foo",
-	}
-	assert.Equal(t, false, input.Valid("booboo"), "ConfigInput.Valid() when pattern does not match expected to return false")
-	assert.Equal(t, true, input.Valid("foobar"), "ConfigInput.Valid() when pattern does match expected to return true")
+	t.Run("empty string", func(t *testing.T) {
+		input := ConfigInput{}
+		assert.Equal(t, true, input.Valid(""), "ConfigInput.Valid() with empty string expected to return true")
+	})
+	t.Run("match string option", func(t *testing.T) {
+		input := ConfigInput{
+			Options: ConfigInputOptions{
+				{Label: "A", Value: "A"},
+			},
+		}
+		assert.Equal(t, false, input.Valid("foobar"), "ConfigInput.Valid() with no matching options expected to return false")
+		assert.Equal(t, true, input.Valid("A"), "ConfigInput.Valid() with matching options expected to return true")
+	})
+	t.Run("match number option", func(t *testing.T) {
+		input := ConfigInput{
+			Options: ConfigInputOptions{
+				{Label: "A", Value: 123},
+			},
+		}
+		assert.Equal(t, false, input.Valid(456), "ConfigInput.Valid() with no matching options expected to return false")
+		assert.Equal(t, true, input.Valid(123), "ConfigInput.Valid() with matching options expected to return true")
+	})
+	t.Run("match pattern", func(t *testing.T) {
+		input := ConfigInput{
+			Pattern: "^foo",
+		}
+		assert.Equal(t, false, input.Valid("booboo"), "ConfigInput.Valid() when pattern does not match expected to return false")
+		assert.Equal(t, true, input.Valid("foobar"), "ConfigInput.Valid() when pattern does match expected to return true")
+	})
+	t.Run("within bounds", func(t *testing.T) {
+		input := ConfigInput{
+			Type:     "number",
+			MinValue: 10.0,
+			MaxValue: 20.0,
+		}
+		assert.Equal(t, false, input.Valid(5), "ConfigInput.Valid() when is outside of bounds expected to return false")
+		assert.Equal(t, true, input.Valid(15), "ConfigInput.Valid() when is inside of bounds expected to return true")
+	})
+	t.Run("no bounds", func(t *testing.T) {
+		input := ConfigInput{
+			Type: "number",
+		}
+		assert.Equal(t, true, input.Valid(5), "ConfigInput.Valid() when no bounds expected to return true")
+	})
 }
 
 func TestConfigCommandsGet(t *testing.T) {
@@ -371,6 +396,40 @@ inputs:
 		_, actual := ParseConfig([]byte(content))
 		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 	})
+	t.Run("valid number type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: number
+    default: 1
+`
+		expected := Config{
+			Run: "ok",
+			Inputs: ConfigInputs{
+				ConfigInput{
+					Name:         "foobar",
+					Type:         "number",
+					DefaultValue: 1,
+				},
+			},
+		}
+		actual, error := ParseConfig([]byte(content))
+		assert.NoError(t, error, "ParseConfig() returned unexpected error")
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("invalid number type", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: number
+    default: "123"
+`
+		expected := "line 5: default value type mismatch"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
 	t.Run("valid boolean type", func(t *testing.T) {
 		content := `
 run: ok
@@ -417,6 +476,10 @@ commands:
     run: go test
     inputs:
       bool: boolean
+      num:
+        type: number
+        min: -1
+        max: 10
       sequence:
         options: [A, B]
       map:
@@ -438,6 +501,12 @@ commands:
 							{Label: "yes", Value: true},
 							{Label: "no", Value: false},
 						},
+					},
+					{
+						Name:     "num",
+						Type:     "number",
+						MinValue: -1.0,
+						MaxValue: 10.0,
 					},
 					{
 						Name: "sequence",

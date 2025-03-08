@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"regexp"
 	"strings"
@@ -77,7 +78,9 @@ func (x *ConfigInputOptions) UnmarshalYAML(node *yaml.Node) error {
 type ConfigInput struct {
 	Name         string `yaml:"-"`
 	Type         string
-	DefaultValue any `yaml:"default"`
+	DefaultValue any     `yaml:"default"`
+	MinValue     float64 `yaml:"min"`
+	MaxValue     float64 `yaml:"max"`
 	Pattern      string
 	Options      ConfigInputOptions
 	Description  string
@@ -88,7 +91,7 @@ func (input *ConfigInput) SafeName() string {
 }
 
 func (input *ConfigInput) Selectable() bool {
-	return input.Options.Len() > 0
+	return input.Options != nil && input.Options.Len() > 0
 }
 
 func (input *ConfigInput) Valid(value any) bool {
@@ -100,6 +103,8 @@ func (input *ConfigInput) Valid(value any) bool {
 		return input.match(value)
 	case "string":
 		return input.match(value)
+	case "number":
+		return input.bound(value)
 	default:
 		return true
 	}
@@ -111,6 +116,15 @@ func (input *ConfigInput) match(value any) bool {
 	}
 	matched, _ := regexp.MatchString(input.Pattern, fmt.Sprint(value))
 	return matched
+}
+
+func (input *ConfigInput) bound(value any) bool {
+	// If min and max are the same then just ignore them
+	if input.MinValue == input.MaxValue {
+		return true
+	}
+	n := ToFloat64(value)
+	return !math.IsNaN(n) && input.MinValue <= n && input.MaxValue >= n
 }
 
 type ConfigInputs []ConfigInput
@@ -151,6 +165,7 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 
 		switch input.Type {
 		case "string":
+		case "number":
 		case "boolean":
 			if input.DefaultValue == nil {
 				input.DefaultValue = false
@@ -308,6 +323,8 @@ func validValue(v any, t string) bool {
 	switch v.(type) {
 	case string:
 		return t == "string"
+	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64:
+		return t == "number"
 	case bool:
 		return t == "boolean"
 	case nil:
