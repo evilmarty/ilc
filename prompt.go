@@ -41,7 +41,7 @@ func selectCommand(command ConfigCommand) (ConfigCommand, error) {
 	}
 }
 
-func askInput(input ConfigInput) (string, error) {
+func askInput(input ConfigInput) (any, error) {
 	if input.Selectable() {
 		return selectInput(input)
 	} else {
@@ -49,7 +49,7 @@ func askInput(input ConfigInput) (string, error) {
 	}
 }
 
-func selectInput(input ConfigInput) (string, error) {
+func selectInput(input ConfigInput) (any, error) {
 	prompt := input.Description
 	if prompt == "" {
 		prompt = fmt.Sprintf("Choose a %s", termenv.String(input.Name).Underline().String())
@@ -67,7 +67,7 @@ func selectInput(input ConfigInput) (string, error) {
 	}
 }
 
-func getInput(input ConfigInput) (string, error) {
+func getInput(input ConfigInput) (any, error) {
 	prompt := input.Description
 	if prompt == "" {
 		prompt = fmt.Sprintf("Please specify a %s", termenv.String(input.Name).Underline().String())

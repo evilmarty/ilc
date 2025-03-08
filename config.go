@@ -11,7 +11,7 @@ import (
 
 type ConfigInputOption struct {
 	Label string
-	Value string
+	Value any
 }
 
 func (option ConfigInputOption) String() string {
@@ -39,24 +39,26 @@ func (x *ConfigInputOptions) UnmarshalYAML(node *yaml.Node) error {
 
 	switch node.Kind {
 	case yaml.SequenceNode:
-		var seqValue []string
+		var seqValue []interface{}
 		if err := node.Decode(&seqValue); err != nil {
 			return err
 		}
 		for _, option := range seqValue {
 			options = append(options, ConfigInputOption{
-				Label: option,
+				Label: fmt.Sprint(option),
 				Value: option,
 			})
 		}
 	case yaml.MappingNode:
-		content := node.Content
-		for len(content) > 0 {
+		var mapValue map[string]any
+		if err := node.Decode(&mapValue); err != nil {
+			return err
+		}
+		for label, value := range mapValue {
 			options = append(options, ConfigInputOption{
-				Label: content[0].Value,
-				Value: content[1].Value,
+				Label: label,
+				Value: value,
 			})
-			content = content[2:]
 		}
 	default:
 		return fmt.Errorf("line %d: unexpected node type", node.Line)
@@ -151,6 +153,13 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 		}
 		if !validValue(input.DefaultValue, input.Type) {
 			return fmt.Errorf("line %d: default value type mismatch", valueNode.Line)
+		}
+		if input.Options != nil {
+			for _, option := range input.Options {
+				if !validValue(option.Value, input.Type) {
+					return fmt.Errorf("line %d: option value type mismatch", valueNode.Line)
+				}
+			}
 		}
 
 		inputs = append(inputs, input)

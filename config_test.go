@@ -158,8 +158,9 @@ commands:
 	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
 }
 
-func TestParseConfig_InputOptionsIsMap(t *testing.T) {
-	content := `
+func TestParseConfig_InputOptions(t *testing.T) {
+	t.Run("valid map", func(t *testing.T) {
+		content := `
 run: ok
 inputs:
   foobar:
@@ -167,26 +168,39 @@ inputs:
       a: A
       b: B
 `
-	expected := Config{
-		Run: "ok",
-		Inputs: ConfigInputs{
-			ConfigInput{
-				Name: "foobar",
-				Type: "string",
-				Options: ConfigInputOptions{
-					{Label: "a", Value: "A"},
-					{Label: "b", Value: "B"},
+		expected := Config{
+			Run: "ok",
+			Inputs: ConfigInputs{
+				ConfigInput{
+					Name: "foobar",
+					Type: "string",
+					Options: ConfigInputOptions{
+						{Label: "a", Value: "A"},
+						{Label: "b", Value: "B"},
+					},
 				},
 			},
-		},
-	}
-	actual, err := ParseConfig([]byte(content))
-	assert.NoError(t, err, "ParseConfig() returned unexpected error")
-	assert.Equal(t, expected, actual, "ParseConfig() returned unexpected error")
-}
-
-func TestParseConfig_InputOptionsIsSequence(t *testing.T) {
-	content := `
+		}
+		actual, err := ParseConfig([]byte(content))
+		assert.NoError(t, err, "ParseConfig() returned unexpected error")
+		assert.Equal(t, expected, actual, "ParseConfig() returned unexpected error")
+	})
+	t.Run("invalid map", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: string
+    options:
+      a: 1
+      b: 2
+`
+		expected := "line 5: option value type mismatch"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
+	t.Run("valid sequence", func(t *testing.T) {
+		content := `
 run: ok
 inputs:
   foobar:
@@ -194,34 +208,48 @@ inputs:
       - A
       - B
 `
-	expected := Config{
-		Run: "ok",
-		Inputs: ConfigInputs{
-			ConfigInput{
-				Name: "foobar",
-				Type: "string",
-				Options: ConfigInputOptions{
-					{Label: "A", Value: "A"},
-					{Label: "B", Value: "B"},
+		expected := Config{
+			Run: "ok",
+			Inputs: ConfigInputs{
+				ConfigInput{
+					Name: "foobar",
+					Type: "string",
+					Options: ConfigInputOptions{
+						{Label: "A", Value: "A"},
+						{Label: "B", Value: "B"},
+					},
 				},
 			},
-		},
-	}
-	actual, err := ParseConfig([]byte(content))
-	assert.NoError(t, err, "ParseConfig() returned unexpected error")
-	assert.Equal(t, expected, actual, "ParseConfig() returned unexpected error")
-}
-
-func TestParseConfig_InputOptionsIsScaler(t *testing.T) {
-	content := `
+		}
+		actual, err := ParseConfig([]byte(content))
+		assert.NoError(t, err, "ParseConfig() returned unexpected error")
+		assert.Equal(t, expected, actual, "ParseConfig() returned unexpected error")
+	})
+	t.Run("invalid sequence", func(t *testing.T) {
+		content := `
+run: ok
+inputs:
+  foobar:
+    type: string
+    options:
+      - 1
+      - 2
+`
+		expected := "line 5: option value type mismatch"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
+	t.Run("invalid scaler", func(t *testing.T) {
+		content := `
 run: ok
 inputs:
   foobar:
     options: ooops
 `
-	expected := "line 5: unexpected node type"
-	_, actual := ParseConfig([]byte(content))
-	assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+		expected := "line 5: unexpected node type"
+		_, actual := ParseConfig([]byte(content))
+		assert.EqualError(t, actual, expected, "ParseConfig() returned unexpected error")
+	})
 }
 
 func TestParseConfig_InputsIsMap(t *testing.T) {
