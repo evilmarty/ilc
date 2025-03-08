@@ -222,9 +222,12 @@ func (cs CommandSet) ParseEnv(values *map[string]any, environ []string) {
 		name := strings.TrimPrefix(entry[0], EnvVarPrefix)
 		if input, ok := inputsMap[name]; !ok {
 			continue
+		} else if value, ok := input.Parse(entry[1]); !ok {
+			logger.Printf("Invalid value for input in environment: %s\n", input.Name)
+			continue
 		} else {
 			logger.Printf("Found value for input in environment: %s\n", input.Name)
-			(*values)[input.Name] = entry[1]
+			(*values)[input.Name] = value
 		}
 	}
 }

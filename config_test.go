@@ -41,6 +41,57 @@ func TestConfigInputSelectable(t *testing.T) {
 	assert.Equal(t, true, input.Selectable(), "ConfigInput.Selectable() with options expected to return true")
 }
 
+func TestConfigInputParse(t *testing.T) {
+	t.Run("number integer", func(t *testing.T) {
+		input := ConfigInput{Type: "number"}
+		result, ok := input.Parse("123")
+		assert.True(t, ok, "ConfigInput.Parse() failed to convert value")
+		assert.Equal(t, int64(123), result, "ConfigInput.Parse() returned unexpected result")
+	})
+	t.Run("number float", func(t *testing.T) {
+		input := ConfigInput{Type: "number"}
+		result, ok := input.Parse("12.3")
+		assert.True(t, ok, "ConfigInput.Parse() failed to convert value")
+		assert.Equal(t, float64(12.3), result, "ConfigInput.Parse() returned unexpected result")
+	})
+	t.Run("boolean true", func(t *testing.T) {
+		input := ConfigInput{Type: "boolean"}
+		result, ok := input.Parse("true")
+		assert.True(t, ok, "ConfigInput.Parse() failed to convert value")
+		assert.Equal(t, true, result, "ConfigInput.Parse() returned unexpected result")
+	})
+	t.Run("boolean false", func(t *testing.T) {
+		input := ConfigInput{Type: "boolean"}
+		result, ok := input.Parse("false")
+		assert.True(t, ok, "ConfigInput.Parse() failed to convert value")
+		assert.Equal(t, false, result, "ConfigInput.Parse() returned unexpected result")
+	})
+	t.Run("boolean one", func(t *testing.T) {
+		input := ConfigInput{Type: "boolean"}
+		result, ok := input.Parse("1")
+		assert.True(t, ok, "ConfigInput.Parse() failed to convert value")
+		assert.Equal(t, true, result, "ConfigInput.Parse() returned unexpected result")
+	})
+	t.Run("boolean zero", func(t *testing.T) {
+		input := ConfigInput{Type: "boolean"}
+		result, ok := input.Parse("0")
+		assert.True(t, ok, "ConfigInput.Parse() failed to convert value")
+		assert.Equal(t, false, result, "ConfigInput.Parse() returned unexpected result")
+	})
+	t.Run("string", func(t *testing.T) {
+		input := ConfigInput{Type: "string"}
+		result, ok := input.Parse("foobar")
+		assert.True(t, ok, "ConfigInput.Parse() failed to convert value")
+		assert.Equal(t, "foobar", result, "ConfigInput.Parse() returned unexpected result")
+	})
+	t.Run("unknown type", func(t *testing.T) {
+		input := ConfigInput{}
+		result, ok := input.Parse("foobar")
+		assert.False(t, ok, "ConfigInput.Parse() was expected to fail parsing")
+		assert.Equal(t, "foobar", result, "ConfigInput.Parse() returned unexpected result")
+	})
+}
+
 func TestConfigInputSafeName(t *testing.T) {
 	input := ConfigInput{
 		Name: "foo-bar",

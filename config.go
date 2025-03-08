@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -84,6 +85,26 @@ type ConfigInput struct {
 	Pattern      string
 	Options      ConfigInputOptions
 	Description  string
+}
+
+func (input *ConfigInput) Parse(s string) (any, bool) {
+	switch input.Type {
+	case "number":
+		if strings.Contains(s, ".") {
+			n, err := strconv.ParseFloat(s, 64)
+			return n, err == nil
+		} else {
+			n, err := strconv.ParseInt(s, 10, 64)
+			return n, err == nil
+		}
+	case "boolean":
+		b, err := strconv.ParseBool(s)
+		return b, err == nil
+	case "string":
+		return s, true
+	default:
+		return s, false
+	}
 }
 
 func (input *ConfigInput) SafeName() string {

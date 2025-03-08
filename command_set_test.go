@@ -550,20 +550,21 @@ func TestCommandSetParseEnv(t *testing.T) {
 		Commands: []ConfigCommand{
 			{
 				Inputs: ConfigInputs{
-					ConfigInput{Name: "A", DefaultValue: ""},
-					ConfigInput{Name: "B", DefaultValue: "b"},
+					ConfigInput{Name: "A", Type: "string", DefaultValue: ""},
+					ConfigInput{Name: "B", Type: "string", DefaultValue: "b"},
 				},
 			},
 			{
 				Inputs: ConfigInputs{
-					ConfigInput{Name: "C", DefaultValue: "c"},
+					ConfigInput{Name: "C", Type: "string", DefaultValue: "c"},
+					ConfigInput{Name: "D", Type: "number"},
 				},
 			},
 		},
 		Args: []string{"-help"},
 	}
-	env := []string{"ILC_INPUT_A=a=a", "ILC_INPUT_C=", "ILC_INPUT_D=dd"}
-	expected := map[string]any{"A": "a=a", "C": ""}
+	env := []string{"ILC_INPUT_A=a=a", "ILC_INPUT_C=", "ILC_INPUT_D=123", "ILC_INPUT_E=ee"}
+	expected := map[string]any{"A": "a=a", "C": "", "D": int64(123)}
 	actual := make(map[string]any)
 	cs.ParseEnv(&actual, env)
 	assert.Equal(t, expected, actual, "CommandSet.ParseEnv() returned unexpected results")
