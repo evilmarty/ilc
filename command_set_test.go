@@ -493,7 +493,31 @@ func TestCommandSetParseArgs(t *testing.T) {
 		}
 		expected := map[string]any{
 			"A": "aa",
+			"B": "b",
 			"C": "cc",
+		}
+		actual := make(map[string]any)
+		err := cs.ParseArgs(&actual)
+		assert.NoError(t, err, "CommandSet.ParseArgs() returned unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
+	})
+	t.Run("number", func(t *testing.T) {
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Inputs: ConfigInputs{
+						ConfigInput{Name: "A", Type: "number"},
+						ConfigInput{Name: "B", Type: "number", DefaultValue: float64(456)},
+						ConfigInput{Name: "C", Type: "number", DefaultValue: float64(456)},
+					},
+				},
+			},
+			Args: []string{"--A", "123", "-B", "123"},
+		}
+		expected := map[string]any{
+			"A": float64(123),
+			"B": float64(123),
+			"C": float64(456),
 		}
 		actual := make(map[string]any)
 		err := cs.ParseArgs(&actual)
@@ -515,6 +539,7 @@ func TestCommandSetParseArgs(t *testing.T) {
 		}
 		expected := map[string]any{
 			"A": true,
+			"B": false,
 			"C": false,
 		}
 		actual := make(map[string]any)
