@@ -76,7 +76,9 @@ func getInput(input ConfigInput) (any, error) {
 		prompt = fmt.Sprintf("Please specify a %s", termenv.String(input.Name).Underline().String())
 	}
 	ti := textinput.New(prompt)
-	ti.InitialValue = fmt.Sprint(input.DefaultValue)
+	if input.DefaultValue != nil {
+		ti.InitialValue = fmt.Sprint(input.DefaultValue)
+	}
 	ti.Validate = func(s string) error {
 		if _, ok := input.Parse(s); ok {
 			return nil
