@@ -473,53 +473,101 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 	assert.Equal(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1], "CommandSet.Cmd() did not set cmd.Args with the correct values")
 }
 
-func TestCommandSetParseArgs_Valid(t *testing.T) {
-	cs := CommandSet{
-		Commands: []ConfigCommand{
-			{
-				Inputs: ConfigInputs{
-					ConfigInput{Name: "A", DefaultValue: ""},
-					ConfigInput{Name: "B", DefaultValue: "b"},
+func TestCommandSetParseArgs(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Inputs: ConfigInputs{
+						ConfigInput{Name: "A", DefaultValue: ""},
+						ConfigInput{Name: "B", DefaultValue: "b"},
+					},
+				},
+				{
+					Inputs: ConfigInputs{
+						ConfigInput{Name: "C", DefaultValue: "c"},
+					},
 				},
 			},
-			{
-				Inputs: ConfigInputs{
-					ConfigInput{Name: "C", DefaultValue: "c"},
+			Args: []string{"-A", "aa", "--C", "cc"},
+		}
+		expected := map[string]any{
+			"A": "aa",
+			"B": "b",
+			"C": "cc",
+		}
+		actual := make(map[string]any)
+		err := cs.ParseArgs(&actual)
+		assert.NoError(t, err, "CommandSet.ParseArgs() returned unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
+	})
+	t.Run("number", func(t *testing.T) {
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Inputs: ConfigInputs{
+						ConfigInput{Name: "A", Type: "number"},
+						ConfigInput{Name: "B", Type: "number", DefaultValue: float64(456)},
+						ConfigInput{Name: "C", Type: "number", DefaultValue: float64(456)},
+					},
 				},
 			},
-		},
-		Args: []string{"-A", "aa", "--C", "cc"},
-	}
-	expected := map[string]any{
-		"A": "aa",
-		"C": "cc",
-	}
-	actual := make(map[string]any)
-	err := cs.ParseArgs(&actual)
-	assert.NoError(t, err, "CommandSet.ParseArgs() returned unexpected error")
-	assert.Equal(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
-}
-
-func TestCommandSetParseArgs_Help(t *testing.T) {
-	cs := CommandSet{
-		Commands: []ConfigCommand{
-			{
-				Inputs: ConfigInputs{
-					ConfigInput{Name: "A", DefaultValue: ""},
-					ConfigInput{Name: "B", DefaultValue: "b"},
+			Args: []string{"--A", "123", "-B", "123"},
+		}
+		expected := map[string]any{
+			"A": float64(123),
+			"B": float64(123),
+			"C": float64(456),
+		}
+		actual := make(map[string]any)
+		err := cs.ParseArgs(&actual)
+		assert.NoError(t, err, "CommandSet.ParseArgs() returned unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
+	})
+	t.Run("boolean", func(t *testing.T) {
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Inputs: ConfigInputs{
+						ConfigInput{Name: "A", Type: "boolean", DefaultValue: false},
+						ConfigInput{Name: "B", Type: "boolean", DefaultValue: false},
+						ConfigInput{Name: "C", Type: "boolean", DefaultValue: true},
+					},
 				},
 			},
-			{
-				Inputs: ConfigInputs{
-					ConfigInput{Name: "C", DefaultValue: "c"},
+			Args: []string{"--A", "-C=false"},
+		}
+		expected := map[string]any{
+			"A": true,
+			"B": false,
+			"C": false,
+		}
+		actual := make(map[string]any)
+		err := cs.ParseArgs(&actual)
+		assert.NoError(t, err, "CommandSet.ParseArgs() returned unexpected error")
+		assert.Equal(t, expected, actual, "CommandSet.ParseArgs() returned unexpected results")
+	})
+	t.Run("help", func(t *testing.T) {
+		cs := CommandSet{
+			Commands: []ConfigCommand{
+				{
+					Inputs: ConfigInputs{
+						ConfigInput{Name: "A", DefaultValue: ""},
+						ConfigInput{Name: "B", DefaultValue: "b"},
+					},
+				},
+				{
+					Inputs: ConfigInputs{
+						ConfigInput{Name: "C", DefaultValue: "c"},
+					},
 				},
 			},
-		},
-		Args: []string{"-help"},
-	}
-	values := make(map[string]any)
-	actual := cs.ParseArgs(&values)
-	assert.Equal(t, flag.ErrHelp, actual, "CommandSet.ParseArgs() did not acknowledge help")
+			Args: []string{"-help"},
+		}
+		values := make(map[string]any)
+		actual := cs.ParseArgs(&values)
+		assert.Equal(t, flag.ErrHelp, actual, "CommandSet.ParseArgs() did not acknowledge help")
+	})
 }
 
 func TestCommandSetParseEnv(t *testing.T) {
@@ -527,20 +575,21 @@ func TestCommandSetParseEnv(t *testing.T) {
 		Commands: []ConfigCommand{
 			{
 				Inputs: ConfigInputs{
-					ConfigInput{Name: "A", DefaultValue: ""},
-					ConfigInput{Name: "B", DefaultValue: "b"},
+					ConfigInput{Name: "A", Type: "string", DefaultValue: ""},
+					ConfigInput{Name: "B", Type: "string", DefaultValue: "b"},
 				},
 			},
 			{
 				Inputs: ConfigInputs{
-					ConfigInput{Name: "C", DefaultValue: "c"},
+					ConfigInput{Name: "C", Type: "string", DefaultValue: "c"},
+					ConfigInput{Name: "D", Type: "number"},
 				},
 			},
 		},
 		Args: []string{"-help"},
 	}
-	env := []string{"ILC_INPUT_A=a=a", "ILC_INPUT_C=", "ILC_INPUT_D=dd"}
-	expected := map[string]any{"A": "a=a", "C": ""}
+	env := []string{"ILC_INPUT_A=a=a", "ILC_INPUT_C=", "ILC_INPUT_D=123", "ILC_INPUT_E=ee"}
+	expected := map[string]any{"A": "a=a", "C": "", "D": int64(123)}
 	actual := make(map[string]any)
 	cs.ParseEnv(&actual, env)
 	assert.Equal(t, expected, actual, "CommandSet.ParseEnv() returned unexpected results")

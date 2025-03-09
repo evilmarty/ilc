@@ -2,16 +2,23 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
+var defaultBooleanOptions = ConfigInputOptions{
+	ConfigInputOption{Label: "yes", Value: true},
+	ConfigInputOption{Label: "no", Value: false},
+}
+
 type ConfigInputOption struct {
 	Label string
-	Value string
+	Value any
 }
 
 func (option ConfigInputOption) String() string {
@@ -39,24 +46,26 @@ func (x *ConfigInputOptions) UnmarshalYAML(node *yaml.Node) error {
 
 	switch node.Kind {
 	case yaml.SequenceNode:
-		var seqValue []string
+		var seqValue []interface{}
 		if err := node.Decode(&seqValue); err != nil {
 			return err
 		}
 		for _, option := range seqValue {
 			options = append(options, ConfigInputOption{
-				Label: option,
+				Label: fmt.Sprint(option),
 				Value: option,
 			})
 		}
 	case yaml.MappingNode:
-		content := node.Content
-		for len(content) > 0 {
+		var mapValue map[string]any
+		if err := node.Decode(&mapValue); err != nil {
+			return err
+		}
+		for label, value := range mapValue {
 			options = append(options, ConfigInputOption{
-				Label: content[0].Value,
-				Value: content[1].Value,
+				Label: label,
+				Value: value,
 			})
-			content = content[2:]
 		}
 	default:
 		return fmt.Errorf("line %d: unexpected node type", node.Line)
@@ -69,10 +78,33 @@ func (x *ConfigInputOptions) UnmarshalYAML(node *yaml.Node) error {
 
 type ConfigInput struct {
 	Name         string `yaml:"-"`
-	DefaultValue string `yaml:"default"`
+	Type         string
+	DefaultValue any     `yaml:"default"`
+	MinValue     float64 `yaml:"min"`
+	MaxValue     float64 `yaml:"max"`
 	Pattern      string
 	Options      ConfigInputOptions
 	Description  string
+}
+
+func (input *ConfigInput) Parse(s string) (any, bool) {
+	switch input.Type {
+	case "number":
+		if strings.Contains(s, ".") {
+			n, err := strconv.ParseFloat(s, 64)
+			return n, err == nil
+		} else {
+			n, err := strconv.ParseInt(s, 10, 64)
+			return n, err == nil
+		}
+	case "boolean":
+		b, err := strconv.ParseBool(s)
+		return b, err == nil
+	case "string":
+		return s, true
+	default:
+		return s, false
+	}
 }
 
 func (input *ConfigInput) SafeName() string {
@@ -80,17 +112,40 @@ func (input *ConfigInput) SafeName() string {
 }
 
 func (input *ConfigInput) Selectable() bool {
-	return input.Options.Len() > 0
+	return input.Options != nil && input.Options.Len() > 0
 }
 
 func (input *ConfigInput) Valid(value any) bool {
 	if input.Selectable() {
 		return input.Options.Contains(value)
-	} else if input.Pattern == "" {
+	}
+	switch input.Type {
+	case "": // In case type is empty assume string
+		return input.match(value)
+	case "string":
+		return input.match(value)
+	case "number":
+		return input.bound(value)
+	default:
 		return true
 	}
-	matched, _ := regexp.MatchString(input.Pattern, fmt.Sprintf("%v", value))
+}
+
+func (input *ConfigInput) match(value any) bool {
+	if input.Pattern == "" {
+		return true
+	}
+	matched, _ := regexp.MatchString(input.Pattern, fmt.Sprint(value))
 	return matched
+}
+
+func (input *ConfigInput) bound(value any) bool {
+	// If min and max are the same then just ignore them
+	if input.MinValue == input.MaxValue {
+		return true
+	}
+	n := ToFloat64(value)
+	return !math.IsNaN(n) && input.MinValue <= n && input.MaxValue >= n
 }
 
 type ConfigInputs []ConfigInput
@@ -115,6 +170,7 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 		switch valueNode.Kind {
 		case yaml.ScalarNode:
 			input.Name = keyNode.Value
+			input.Type = valueNode.Value
 		case yaml.MappingNode:
 			if err := valueNode.Decode(&input); err != nil {
 				return err
@@ -126,6 +182,32 @@ func (x *ConfigInputs) UnmarshalYAML(value *yaml.Node) error {
 
 		if !validName(input.Name) {
 			return fmt.Errorf("line %d: invalid input name", valueNode.Line)
+		}
+
+		switch input.Type {
+		case "string":
+		case "number":
+		case "boolean":
+			if input.DefaultValue == nil {
+				input.DefaultValue = false
+			}
+			if input.Options == nil {
+				input.Options = defaultBooleanOptions
+			}
+		case "":
+			input.Type = "string"
+		default:
+			return fmt.Errorf("line %d: unsupported input type '%s'", valueNode.Line, input.Type)
+		}
+		if !validValue(input.DefaultValue, input.Type) {
+			return fmt.Errorf("line %d: default value type mismatch", valueNode.Line)
+		}
+		if input.Options != nil {
+			for _, option := range input.Options {
+				if !validValue(option.Value, input.Type) {
+					return fmt.Errorf("line %d: option value type mismatch", valueNode.Line)
+				}
+			}
 		}
 
 		inputs = append(inputs, input)
@@ -256,4 +338,19 @@ func LoadConfig(path string) (Config, error) {
 func validName(s string) bool {
 	m, _ := regexp.MatchString("^[a-zA-Z0-9][a-zA-Z0-9-_]*$", s)
 	return m
+}
+
+func validValue(v any, t string) bool {
+	switch v.(type) {
+	case string:
+		return t == "string"
+	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32, float64:
+		return t == "number"
+	case bool:
+		return t == "boolean"
+	case nil:
+		return true
+	default:
+		return false
+	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"testing"
 	"text/template"
 
@@ -72,4 +73,40 @@ func TestDiffStrings(t *testing.T) {
 	b := []string{"a"}
 	expected := []string{"b", "c"}
 	assert.Equal(t, expected, DiffStrings(a, b), "DiffStrings() returned unexpected results")
+}
+
+func TestToFloat64(t *testing.T) {
+	t.Run("int", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(int(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("uint", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(uint(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("int16", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(int16(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("uint16", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(uint16(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("int32", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(int32(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("uint32", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(uint32(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("int64", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(int64(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("uint64", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(uint64(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("float32", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(float32(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("float64", func(t *testing.T) {
+		assert.Equal(t, float64(1), ToFloat64(float64(1)), "toFloat64() returned unexpected result")
+	})
+	t.Run("string", func(t *testing.T) {
+		assert.True(t, math.IsNaN(ToFloat64("1")), "toFloat64() returned unexpected result")
+	})
 }

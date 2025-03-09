@@ -146,7 +146,18 @@ func (cs CommandSet) ParseArgs(values *map[string]any) error {
 		// Don't do anything here. We just want the error.
 	}
 	for _, input := range cs.Inputs() {
-		fs.String(input.Name, input.DefaultValue, input.Description)
+		// Set all default values
+		if input.DefaultValue != nil {
+			(*values)[input.Name] = input.DefaultValue
+		}
+		switch input.Type {
+		case "number":
+			fs.Float64(input.Name, 0.0, input.Description)
+		case "boolean":
+			fs.Bool(input.Name, false, input.Description)
+		default:
+			fs.String(input.Name, "", input.Description)
+		}
 	}
 	if err := fs.Parse(cs.Args); err != nil {
 		return err
@@ -213,9 +224,12 @@ func (cs CommandSet) ParseEnv(values *map[string]any, environ []string) {
 		name := strings.TrimPrefix(entry[0], EnvVarPrefix)
 		if input, ok := inputsMap[name]; !ok {
 			continue
+		} else if value, ok := input.Parse(entry[1]); !ok {
+			logger.Printf("Invalid value for input in environment: %s\n", input.Name)
+			continue
 		} else {
 			logger.Printf("Found value for input in environment: %s\n", input.Name)
-			(*values)[input.Name] = entry[1]
+			(*values)[input.Name] = value
 		}
 	}
 }
