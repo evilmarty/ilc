@@ -88,23 +88,26 @@ type ConfigInput struct {
 }
 
 func (input *ConfigInput) Parse(s string) (any, bool) {
+	var value any
+	var err error
 	switch input.Type {
 	case "number":
 		if strings.Contains(s, ".") {
-			n, err := strconv.ParseFloat(s, 64)
-			return n, err == nil
+			value, err = strconv.ParseFloat(s, 64)
 		} else {
-			n, err := strconv.ParseInt(s, 10, 64)
-			return n, err == nil
+			value, err = strconv.ParseInt(s, 10, 64)
 		}
 	case "boolean":
-		b, err := strconv.ParseBool(s)
-		return b, err == nil
+		value, err = strconv.ParseBool(s)
 	case "string":
-		return s, true
+		value = s
 	default:
 		return s, false
 	}
+	if err != nil {
+		return value, false
+	}
+	return value, input.Valid(value)
 }
 
 func (input *ConfigInput) SafeName() string {

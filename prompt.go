@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -15,6 +16,8 @@ const (
 	minChoiceFiltering = 5
 	accentColor        = termenv.ANSI256Color(32)
 )
+
+var ErrInvalidValue = errors.New("Invalid value")
 
 func selectCommand(command ConfigCommand) (ConfigCommand, error) {
 	commandsLength := len(command.Commands)
@@ -74,14 +77,20 @@ func getInput(input ConfigInput) (any, error) {
 	}
 	ti := textinput.New(prompt)
 	ti.InitialValue = fmt.Sprint(input.DefaultValue)
-	ti.Validate = func(value string) error {
-		if input.Valid(value) {
+	ti.Validate = func(s string) error {
+		if _, ok := input.Parse(s); ok {
 			return nil
 		} else {
-			return fmt.Errorf("invalid value")
+			return ErrInvalidValue
 		}
 	}
-	return ti.RunPrompt()
+	if s, err := ti.RunPrompt(); err != nil {
+		return s, err
+	} else if value, ok := input.Parse(s); ok {
+		return value, nil
+	} else {
+		return nil, ErrInvalidValue
+	}
 }
 
 func renderChoiceStyle(name, desc string, maxNameLength int, selected bool) string {
