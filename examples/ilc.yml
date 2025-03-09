@@ -45,6 +45,16 @@ commands:
     env:
       NAME: "{{ .Input.name }}"
       GREETING: "{{ .Input.greeting }}"
+  rate:
+    description: Rate a thing
+    inputs:
+      name:
+        description: The thing
+      rating:
+        type: number
+        min: 1
+        max: 5
+    run: echo You rated {{ .Input.rating }}/5 for {{ .Input.name }}
   foo:
     inputs:
       prefix:
