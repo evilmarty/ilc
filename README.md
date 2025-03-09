@@ -119,7 +119,7 @@ or `--<input_name>` followed by a value. The value can be omitted for boolean ty
 
 ### `inputs.<input_name>.type`
 
-The type of input. Defaults to `string` but can also be `boolean`.
+The type of input. Defaults to `string` but can also be `boolean` and `number`.
 
 ### `inputs.<input_name>.description`
 
@@ -167,6 +167,7 @@ inputs:
 ### `inputs.<input_name>.pattern`
 
 A regex pattern to validate the input's value. Default is to allow any input.
+Applies to `string` types only.
 
 #### Example setting an input pattern
 
@@ -181,6 +182,14 @@ inputs:
 Set the default value for the input. It is overwritten when a value is given as
 an argument or changed when prompted. If a default value is not defined then a
 value is required.
+
+### `inputs.<input_name>.min`
+
+The minimum value the input can be. Applies to `number` types only.
+
+### `inputs.<input_name>.max`
+
+The maximum value the input can be. Applies to `number` types only.
 
 ### `commands`
 
