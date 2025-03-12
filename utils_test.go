@@ -24,7 +24,7 @@ func TestNewTemplateData(t *testing.T) {
 		"foo_bar": "foobar",
 		"foo-baz": "foobaz",
 	}
-	env := []string{"A=a", "B=b"}
+	env := map[string]string{"A": "a", "B": "b"}
 	expected := TemplateData{
 		Input: map[string]any{
 			"foo_bar": "foobar",

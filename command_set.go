@@ -210,26 +210,25 @@ func (cs CommandSet) AskInputs(values *map[string]any) error {
 	return nil
 }
 
-func (cs CommandSet) ParseEnv(values *map[string]any, environ []string) {
+func (cs CommandSet) ParseEnv(values *map[string]any, env EnvMap) {
 	inputs := cs.Inputs()
 	inputsMap := make(map[string]*ConfigInput, len(inputs))
 	for _, input := range inputs {
 		inputsMap[input.Name] = &input
 	}
-	for _, item := range environ {
-		if !strings.HasPrefix(item, EnvVarPrefix) {
+	for key, val := range env {
+		if !strings.HasPrefix(key, EnvVarPrefix) {
 			continue
 		}
-		entry := strings.SplitN(item, "=", 2)
-		name := strings.TrimPrefix(entry[0], EnvVarPrefix)
+		name := strings.TrimPrefix(key, EnvVarPrefix)
 		if input, ok := inputsMap[name]; !ok {
 			continue
-		} else if value, ok := input.Parse(entry[1]); !ok {
+		} else if val, ok := input.Parse(val); !ok {
 			logger.Printf("Invalid value for input in environment: %s\n", input.Name)
 			continue
 		} else {
 			logger.Printf("Found value for input in environment: %s\n", input.Name)
-			(*values)[input.Name] = value
+			(*values)[input.Name] = val
 		}
 	}
 }
@@ -245,7 +244,7 @@ func (cs CommandSet) getInputsEnv(data TemplateData) EnvMap {
 	return env
 }
 
-func (cs CommandSet) Cmd(data TemplateData, moreEnviron []string) (*exec.Cmd, error) {
+func (cs CommandSet) Cmd(data TemplateData, moreEnv EnvMap) (*exec.Cmd, error) {
 	var scriptFile string
 	var env EnvMap
 	var err error
@@ -260,7 +259,7 @@ func (cs CommandSet) Cmd(data TemplateData, moreEnviron []string) (*exec.Cmd, er
 	}
 	env = cs.getInputsEnv(data).Merge(env)
 	if !cs.Pure() {
-		env = NewEnvMap(moreEnviron).Merge(env)
+		env = moreEnv.Merge(env)
 	}
 	shell = append(shell, scriptFile)
 	cmd := exec.Command(shell[0], shell[1:]...)

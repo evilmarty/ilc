@@ -10,7 +10,7 @@ import (
 type Runner struct {
 	Config         Config
 	Args           []string
-	Env            []string
+	Env            EnvMap
 	Stdin          *os.File
 	Stdout         *os.File
 	Stderr         *os.File
@@ -79,7 +79,7 @@ func NewRunner(config Config, args []string) *Runner {
 	r := Runner{
 		Config: config,
 		Args:   args,
-		Env:    os.Environ(),
+		Env:    NewEnvMap(os.Environ()),
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
