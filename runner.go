@@ -19,7 +19,7 @@ type Runner struct {
 }
 
 func (r *Runner) printUsage(cs CommandSet) {
-	u := NewUsage(mainFlagSet.Output()).ImportCommandSet(cs)
+	u := NewUsage(mainFlagSet.Output()).ImportCommandSet(cs).ImportFlags(mainFlagSet)
 	u.Entrypoint = append([]string{}, r.Entrypoint...)
 	if s := cs.String(); s != "" {
 		u.Entrypoint = append(u.Entrypoint, s)
