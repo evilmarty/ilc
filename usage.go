@@ -125,13 +125,13 @@ func (u Usage) ImportCommandSet(cs CommandSet) Usage {
 	return u.ImportCommands(cs.Subcommands()).ImportInputs(cs.Inputs())
 }
 
-func NewUsage(tty io.Writer) Usage {
-	u := Usage{
-		Title:  "ILC",
-		output: termenv.NewOutput(tty),
-	}
-	mainFlagSet.VisitAll(func(f *flag.Flag) {
+func (u Usage) ImportFlags(fs *flag.FlagSet) Usage {
+	fs.VisitAll(func(f *flag.Flag) {
 		u.flags = append(u.flags, []string{f.Usage, f.Name})
 	})
 	return u
+}
+
+func NewUsage(tty io.Writer) Usage {
+	return Usage{output: termenv.NewOutput(tty)}
 }

@@ -379,9 +379,7 @@ func TestCommandSetCmd_IsPure(t *testing.T) {
 			"C": "c",
 		},
 	}
-	moreEnviron := []string{
-		"D=d",
-	}
+	moreEnviron := map[string]string{"D": "d"}
 	cs := CommandSet{
 		Commands: []ConfigCommand{
 			{
@@ -430,9 +428,9 @@ func TestCommandSetCmd_NotPure(t *testing.T) {
 			"C": "c",
 		},
 	}
-	moreEnviron := []string{
-		"C=x",
-		"D=d",
+	moreEnviron := map[string]string{
+		"C": "x",
+		"D": "d",
 	}
 	cs := CommandSet{
 		Commands: []ConfigCommand{
@@ -588,7 +586,12 @@ func TestCommandSetParseEnv(t *testing.T) {
 		},
 		Args: []string{"-help"},
 	}
-	env := []string{"ILC_INPUT_A=a=a", "ILC_INPUT_C=", "ILC_INPUT_D=123", "ILC_INPUT_E=ee"}
+	env := map[string]string{
+		"ILC_INPUT_A": "a=a",
+		"ILC_INPUT_C": "",
+		"ILC_INPUT_D": "123",
+		"ILC_INPUT_E": "ee",
+	}
 	expected := map[string]any{"A": "a=a", "C": "", "D": int64(123)}
 	actual := make(map[string]any)
 	cs.ParseEnv(&actual, env)

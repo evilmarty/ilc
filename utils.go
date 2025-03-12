@@ -42,7 +42,7 @@ func (td *TemplateData) Funcs() template.FuncMap {
 	}
 }
 
-func NewTemplateData(input map[string]any, env []string) TemplateData {
+func NewTemplateData(input map[string]any, env EnvMap) TemplateData {
 	safeInputs := make(map[string]any)
 	for name, value := range input {
 		safeName := strings.ReplaceAll(name, "-", "_")
@@ -50,7 +50,7 @@ func NewTemplateData(input map[string]any, env []string) TemplateData {
 	}
 	return TemplateData{
 		Input: safeInputs,
-		Env:   NewEnvMap(env),
+		Env:   env,
 	}
 }
 
@@ -74,12 +74,8 @@ func (em EnvMap) ToList() []string {
 func NewEnvMap(env []string) EnvMap {
 	m := make(EnvMap, len(env))
 	for _, item := range env {
-		entry := strings.SplitN(item, "=", 2)
-		if len(entry) > 1 {
-			m[entry[0]] = entry[1]
-		} else {
-			m[entry[0]] = ""
-		}
+		key, val, _ := strings.Cut(item, "=")
+		m[key] = val
 	}
 	return m
 }
