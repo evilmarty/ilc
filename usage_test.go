@@ -196,15 +196,16 @@ INPUTS
 }
 
 func usageFixture() Usage {
-	commands := []ConfigCommand{
-		{Name: "a", Description: "a subcommand", Aliases: []string{"aa"}},
-		{Name: "b", Description: "b subcommand"},
+	commands := SubCommands{
+		{Command: Command{Name: "a", Description: "a subcommand"}, Aliases: CommandAliases{"aa"}},
+		{Command: Command{Name: "b", Description: "b subcommand"}},
 	}
-	inputs := []ConfigInput{
+	inputs := Inputs{
 		{Name: "c", Description: "c input"},
 		{Name: "d", Description: "d input"},
 	}
-	u := NewUsage(os.Stdout).ImportCommands(commands).ImportInputs(inputs)
+	u := NewUsage(os.Stdout)
+	u.ImportCommands(commands).ImportInputs(inputs)
 	u.Entrypoint = []string{"ilc", "config.yaml", "subcommand"}
 	u.Title = "test"
 	u.Description = "this is a fixture"

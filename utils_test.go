@@ -2,11 +2,50 @@ package main
 
 import (
 	"math"
+	"slices"
 	"testing"
 	"text/template"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestEnvMapMerge(t *testing.T) {
+	em1 := EnvMap{"A": "a", "B": "b"}
+	em2 := EnvMap{"B": "bb", "C": "c"}
+	expected := EnvMap{"A": "a", "B": "bb", "C": "c"}
+	actual := em1.Merge(em2)
+	assert.Equal(t, expected, actual)
+}
+
+func TestEnvMapPrefix(t *testing.T) {
+	em := EnvMap{"BAR": "foobar", "BAZ": "foobaz"}
+	expected := EnvMap{"FOOBAR": "foobar", "FOOBAZ": "foobaz"}
+	actual := em.Prefix("FOO")
+	assert.Equal(t, expected, actual)
+}
+
+func TestEnvMapTrimPrefix(t *testing.T) {
+	em := EnvMap{"FOOBAR": "foobar", "FOOBAZ": "foobaz"}
+	expected := EnvMap{"BAR": "foobar", "BAZ": "foobaz"}
+	actual := em.TrimPrefix("FOO")
+	assert.Equal(t, expected, actual)
+}
+
+func TestEnvMapFilterPrefix(t *testing.T) {
+	em := EnvMap{"FOO_BAR": "a", "FOO_BAZ": "b", "FOOBAR": "c"}
+	expected := EnvMap{"FOO_BAR": "a", "FOO_BAZ": "b"}
+	actual := em.FilterPrefix("FOO_")
+	assert.Equal(t, expected, actual)
+}
+
+func TestEnvMapToList(t *testing.T) {
+	em := EnvMap{"FOOBAR": "foobar", "FOOBAZ": "foobaz"}
+	expected := []string{"FOOBAR=foobar", "FOOBAZ=foobaz"}
+	actual := em.ToList()
+	slices.Sort(expected)
+	slices.Sort(actual)
+	assert.Equal(t, expected, actual)
+}
 
 func TestNewEnvMap(t *testing.T) {
 	env := []string{

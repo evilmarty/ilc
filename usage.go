@@ -107,27 +107,45 @@ func (u Usage) Print() error {
 	return err
 }
 
-func (u Usage) ImportCommands(commands []ConfigCommand) Usage {
+func (u *Usage) AddCommand(description, name string, aliases ...string) {
+	u.commands = append(u.commands, append([]string{description, name}, aliases...))
+}
+
+func (u *Usage) AddInput(description, name string) {
+	u.inputs = append(u.inputs, []string{description, name})
+}
+
+func (u *Usage) AddFlag(description, name string) {
+	u.flags = append(u.flags, []string{description, name})
+}
+
+func (u *Usage) ImportCommands(commands SubCommands) *Usage {
 	for _, command := range commands {
-		u.commands = append(u.commands, append([]string{command.Description, command.Name}, command.Aliases...))
+		u.AddCommand(command.Description, command.Name, command.Aliases...)
 	}
 	return u
 }
 
-func (u Usage) ImportInputs(inputs []ConfigInput) Usage {
+func (u *Usage) ImportInputs(inputs Inputs) *Usage {
 	for _, input := range inputs {
-		u.inputs = append(u.inputs, []string{input.Description, input.Name})
+		u.AddInput(input.Description, input.Name)
 	}
 	return u
 }
 
-func (u Usage) ImportCommandSet(cs CommandSet) Usage {
-	return u.ImportCommands(cs.Subcommands()).ImportInputs(cs.Inputs())
+func (u *Usage) ImportSelectedCommands(commands SelectedCommands) *Usage {
+	u.Description = commands.Description()
+	if s := commands.String(); s != "" {
+		u.Entrypoint = append(u.Entrypoint, s)
+	}
+	u.ImportInputs(commands.Inputs())
+	u.ImportCommands(commands.Commands())
+	return u
 }
 
-func (u Usage) ImportFlags(fs *flag.FlagSet) Usage {
+func (u *Usage) ImportFlags(fs *flag.FlagSet) *Usage {
 	fs.VisitAll(func(f *flag.Flag) {
-		u.flags = append(u.flags, []string{f.Usage, f.Name})
+		u.AddFlag(f.Usage, f.Name)
 	})
 	return u
 }

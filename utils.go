@@ -63,6 +63,36 @@ func (em EnvMap) Merge(other map[string]string) EnvMap {
 	return em
 }
 
+func (em EnvMap) Prefix(prefix string) EnvMap {
+	result := EnvMap{}
+	for key, value := range em {
+		var b strings.Builder
+		b.WriteString(prefix)
+		b.WriteString(key)
+		result[b.String()] = value
+	}
+	return result
+}
+
+func (em EnvMap) TrimPrefix(prefix string) EnvMap {
+	result := EnvMap{}
+	for key, value := range em {
+		key = strings.TrimPrefix(key, prefix)
+		result[key] = value
+	}
+	return result
+}
+
+func (em EnvMap) FilterPrefix(prefix string) EnvMap {
+	result := EnvMap{}
+	for key, value := range em {
+		if strings.HasPrefix(key, prefix) {
+			result[key] = value
+		}
+	}
+	return result
+}
+
 func (em EnvMap) ToList() []string {
 	var env []string
 	for name, value := range em {

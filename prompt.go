@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -17,82 +16,67 @@ const (
 	accentColor        = termenv.ANSI256Color(32)
 )
 
-var ErrInvalidValue = errors.New("Invalid value")
-
-func selectCommand(command ConfigCommand) (ConfigCommand, error) {
-	commandsLength := len(command.Commands)
-	maxNameLength := maxStringLength(command.Commands, func(c ConfigCommand) string {
+func askCommands(commands SelectedCommands) (SelectedCommands, error) {
+	if len(commands) == 0 {
+		return commands, nil
+	}
+	command := commands[len(commands)-1]
+	numCommands := len(command.Commands)
+	maxNameLength := maxStringLength(command.Commands, func(c SubCommand) string {
 		return c.Name
 	})
-
 	sp := selection.New("Choose command", command.Commands)
-	sp.SelectedChoiceStyle = func(c *selection.Choice[ConfigCommand]) string {
+	sp.SelectedChoiceStyle = func(c *selection.Choice[SubCommand]) string {
 		return renderChoiceStyle(c.Value.Name, c.Value.Description, maxNameLength, true)
 	}
-	sp.UnselectedChoiceStyle = func(c *selection.Choice[ConfigCommand]) string {
+	sp.UnselectedChoiceStyle = func(c *selection.Choice[SubCommand]) string {
 		return renderChoiceStyle(c.Value.Name, c.Value.Description, maxNameLength, false)
 	}
 
-	if commandsLength <= minChoiceFiltering {
+	if numCommands <= minChoiceFiltering {
 		sp.Filter = nil
 	}
 
 	if choice, err := sp.RunPrompt(); err != nil {
-		return command, err
+		return commands, err
 	} else {
-		return choice, nil
+		logger.Printf("selected command: %s", choice)
+		return append(commands, choice.Command), nil
 	}
 }
 
-func askInput(input ConfigInput) (any, error) {
-	if input.Selectable() {
-		return selectInput(input)
-	} else {
-		return getInput(input)
-	}
-}
-
-func selectInput(input ConfigInput) (any, error) {
-	prompt := input.Description
-	if prompt == "" {
-		prompt = fmt.Sprintf("Choose a %s", termenv.String(input.Name).Underline().String())
-	}
-	sp := selection.New(prompt, input.Options)
-
-	if len(input.Options) <= minChoiceFiltering {
-		sp.Filter = nil
-	}
-
-	if option, err := sp.RunPrompt(); err == nil {
-		return option.Value, err
-	} else {
-		return "", err
-	}
-}
-
-func getInput(input ConfigInput) (any, error) {
-	prompt := input.Description
-	if prompt == "" {
-		prompt = fmt.Sprintf("Please specify a %s", termenv.String(input.Name).Underline().String())
-	}
-	ti := textinput.New(prompt)
-	if input.DefaultValue != nil {
-		ti.InitialValue = fmt.Sprint(input.DefaultValue)
-	}
-	ti.Validate = func(s string) error {
-		if _, ok := input.Parse(s); ok {
-			return nil
+func askInputs(inputs Inputs) error {
+	for _, input := range inputs {
+		prompt := input.Description
+		if prompt == "" {
+			inputName := termenv.String(input.Name).Underline().String()
+			if input.Selectable() {
+				prompt = fmt.Sprintf("Choose a %s", inputName)
+			} else {
+				prompt = fmt.Sprintf("Please specify a %s", inputName)
+			}
+		}
+		if input.Selectable() {
+			sp := selection.New(prompt, input.Options)
+			logger.Printf("choosing input: %s", input.Name)
+			if option, err := sp.RunPrompt(); err != nil {
+				return err
+			} else if err := input.Value.Set(option.Value); err != nil {
+				return err
+			}
 		} else {
-			return ErrInvalidValue
+			ti := textinput.New(prompt)
+			ti.InitialValue = input.Value.String()
+			ti.Validate = func(s string) error {
+				return input.Value.Set(s)
+			}
+			logger.Printf("asking input: %s", input.Name)
+			if _, err := ti.RunPrompt(); err != nil {
+				return err
+			}
 		}
 	}
-	if s, err := ti.RunPrompt(); err != nil {
-		return s, err
-	} else if value, ok := input.Parse(s); ok {
-		return value, nil
-	} else {
-		return nil, ErrInvalidValue
-	}
+	return nil
 }
 
 func renderChoiceStyle(name, desc string, maxNameLength int, selected bool) string {
