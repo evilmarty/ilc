@@ -22,32 +22,6 @@ builds:
 archives:
   - name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
     format: binary
-brews:
-  - directory: Formula
-    homepage: "https://github.com/evilmarty/ilc"
-    description: "Simplify creating command-line utilities"
-    license: "GPL"
-    custom_block: |
-      head do
-        url "https://github.com/evilmarty/ilc.git", branch: "main"
-        depends_on "go" => :build
-      end
-    install: |
-      if Dir[name].size
-        bin.install name
-      else
-        ldflags = %W[
-          -s -w -X main.BuildDate=#{time.iso8601} -X main.Version=#{version} -X main.Commit=#{Utils.git_head}
-        ]
-        system "go", "build", *std_go_args(ldflags:)
-      end
-    test: |
-      version_output = shell_output(bin/"ilc -version")
-      assert_match "Version: #{version}", version_output
-    repository:
-      owner: evilmarty
-      name: homebrew-ilc
-      branch: main
 release:
   name_template: "{{ .Tag }}"
   target_commitish: "{{ .Commit }}"
