@@ -49,3 +49,16 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
+
+      - uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: ilc
+          formula-path: Formula/ilc.rb
+          homebrew-tap: evilmarty/homebrew-ilc
+          base-branch: main
+          download-url: https://github.com/evilmarty/ilc/archive/${{github.ref}}.tar.gz
+          commit-message: |
+            {{formulaName}} {{version}}
+        env:
+          COMMITTER_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
