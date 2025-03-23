@@ -33,13 +33,13 @@ brews:
         depends_on "go" => :build
       end
     install: |
-      if Dir[name].size
-        bin.install name
-      else
+      if head?
         ldflags = %W[
           -s -w -X main.BuildDate=#{time.iso8601} -X main.Version=#{version} -X main.Commit=#{Utils.git_head}
         ]
         system "go", "build", *std_go_args(ldflags:)
+      else
+        bin.install Dir["#{name}-*"].first => name
       end
     test: |
       version_output = shell_output(bin/"ilc -version")
