@@ -133,7 +133,7 @@ func (u *Usage) ImportInputs(inputs Inputs) *Usage {
 	return u
 }
 
-func (u *Usage) ImportSelectedCommands(commands SelectedCommands) *Usage {
+func (u *Usage) ImportSelection(commands Selection) *Usage {
 	u.Description = commands.Description()
 	if s := commands.String(); s != "" {
 		u.Entrypoint = append(u.Entrypoint, s)

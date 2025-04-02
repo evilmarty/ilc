@@ -9,14 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSelectedCommandsString(t *testing.T) {
+func TestSelectionString(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		commands := SelectedCommands{}
+		commands := Selection{}
 		expected := ""
 		actual := commands.String()
 		assert.Equal(t, expected, actual)
 	})
-	commands := SelectedCommands{
+	commands := Selection{
 		Command{Name: ""},
 		Command{Name: "foo"},
 		Command{Name: ""},
@@ -29,27 +29,27 @@ func TestSelectedCommandsString(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestSelectedCommandsRunnable(t *testing.T) {
+func TestSelectionRunnable(t *testing.T) {
 	t.Run("when empty", func(t *testing.T) {
-		commands := SelectedCommands{}
+		commands := Selection{}
 		assert.False(t, commands.Runnable())
 	})
 	t.Run("when latest has run and no subcommands", func(t *testing.T) {
-		commands := SelectedCommands{{Run: "echo foobar"}}
+		commands := Selection{{Run: "echo foobar"}}
 		assert.True(t, commands.Runnable())
 	})
 	t.Run("when latest has run and subcommands", func(t *testing.T) {
-		commands := SelectedCommands{{Run: "echo foobar", Commands: SubCommands{SubCommand{}}}}
+		commands := Selection{{Run: "echo foobar", Commands: SubCommands{SubCommand{}}}}
 		assert.False(t, commands.Runnable())
 	})
 	t.Run("when latest has subcommands", func(t *testing.T) {
-		commands := SelectedCommands{{Commands: SubCommands{SubCommand{}}}}
+		commands := Selection{{Commands: SubCommands{SubCommand{}}}}
 		assert.False(t, commands.Runnable())
 	})
 }
 
-func TestSelectedCommandsDescription(t *testing.T) {
-	commands := SelectedCommands{
+func TestSelectionDescription(t *testing.T) {
+	commands := Selection{
 		Command{Description: "foobar"},
 		Command{Description: "foobaz"},
 	}
@@ -58,15 +58,15 @@ func TestSelectedCommandsDescription(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestSelectedCommandsRun(t *testing.T) {
+func TestSelectionRun(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		commands := SelectedCommands{}
+		commands := Selection{}
 		expected := ""
 		actual := commands.Run()
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("gets latest", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{Run: "foobar"},
 			Command{Run: "foobaz"},
 		}
@@ -75,7 +75,7 @@ func TestSelectedCommandsRun(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("gets latest even when blank", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{Run: "foobar"},
 			Command{Run: ""},
 		}
@@ -85,9 +85,9 @@ func TestSelectedCommandsRun(t *testing.T) {
 	})
 }
 
-func TestSelectedCommandsShell(t *testing.T) {
+func TestSelectionShell(t *testing.T) {
 	t.Run("uses latest", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{Shell: []string{"/bin/bash"}},
 			Command{Shell: []string{"/bin/zsh"}},
 		}
@@ -96,7 +96,7 @@ func TestSelectedCommandsShell(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("fallsback on preceding command", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{Shell: []string{"/bin/zsh"}},
 			Command{Shell: []string{"/bin/bash"}},
 			Command{},
@@ -106,7 +106,7 @@ func TestSelectedCommandsShell(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("default when none defined", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{},
 			Command{},
 		}
@@ -115,22 +115,22 @@ func TestSelectedCommandsShell(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("default when empty", func(t *testing.T) {
-		commands := SelectedCommands{}
+		commands := Selection{}
 		expected := DefaultShell
 		actual := commands.Shell()
 		assert.Equal(t, expected, actual)
 	})
 }
 
-func TestSelectedCommandsEnv(t *testing.T) {
+func TestSelectionEnv(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		commands := SelectedCommands{}
+		commands := Selection{}
 		expected := EnvMap{}
 		actual := commands.Env()
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("none", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{},
 			Command{},
 		}
@@ -139,7 +139,7 @@ func TestSelectedCommandsEnv(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("merged env", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{
 				Env: EnvMap{
 					"A": "a",
@@ -163,20 +163,20 @@ func TestSelectedCommandsEnv(t *testing.T) {
 	})
 }
 
-func TestSelectedCommandsPure(t *testing.T) {
+func TestSelectionPure(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		commands := SelectedCommands{}
+		commands := Selection{}
 		assert.False(t, commands.Pure())
 	})
 	t.Run("latest is set", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{},
 			Command{Pure: true},
 		}
 		assert.True(t, commands.Pure())
 	})
 	t.Run("does not inherit", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{Pure: true},
 			Command{},
 		}
@@ -184,15 +184,15 @@ func TestSelectedCommandsPure(t *testing.T) {
 	})
 }
 
-func TestSelectedCommandsInputs(t *testing.T) {
+func TestSelectionInputs(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		commands := SelectedCommands{}
+		commands := Selection{}
 		expected := Inputs{}
 		actual := commands.Inputs()
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("no inputs", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{},
 			Command{},
 		}
@@ -201,7 +201,7 @@ func TestSelectedCommandsInputs(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("merged inputs", func(t *testing.T) {
-		commands := SelectedCommands{
+		commands := Selection{
 			Command{
 				Inputs: Inputs{
 					Input{Name: "a", Value: &StringValue{}},
@@ -225,10 +225,10 @@ func TestSelectedCommandsInputs(t *testing.T) {
 	})
 }
 
-func TestSelectedCommandsRenderScript(t *testing.T) {
+func TestSelectionRenderScript(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		data := TemplateData{}
-		commands := SelectedCommands{}
+		commands := Selection{}
 		_, err := commands.RenderScript(data)
 		expected := "no script present"
 		actual := fmt.Sprintf("%s", err)
@@ -240,7 +240,7 @@ func TestSelectedCommandsRenderScript(t *testing.T) {
 				"A": "a",
 			},
 		}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Name: "foobar",
 				Run:  "{{.Input.A}",
@@ -255,7 +255,7 @@ func TestSelectedCommandsRenderScript(t *testing.T) {
 				"A": "a",
 			},
 		}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Name: "foobar",
 				Run:  "{{template \"foobaz\"}}",
@@ -271,7 +271,7 @@ func TestSelectedCommandsRenderScript(t *testing.T) {
 				"B": "b",
 			},
 		}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Name: "foobaz",
 				Run:  "echo {{.Input.B}}",
@@ -293,7 +293,7 @@ func TestSelectedCommandsRenderScript(t *testing.T) {
 				"B": "b",
 			},
 		}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Name: "foobaz",
 				Run:  "echo {{.Input.B}}",
@@ -315,7 +315,7 @@ func TestSelectedCommandsRenderScript(t *testing.T) {
 				"B": "b",
 			},
 		}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Name: "foobar",
 				Run:  "echo {{.Input.A}}",
@@ -345,7 +345,7 @@ func TestSelectedCommandsRenderScript(t *testing.T) {
 				"D": "d",
 			},
 		}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Name: "foobar",
 				Run:  "echo {{input \"A\"}} {{env \"C\"}}",
@@ -358,13 +358,13 @@ func TestSelectedCommandsRenderScript(t *testing.T) {
 	})
 }
 
-func TestSelectedCommandsRenderScriptToTemp(t *testing.T) {
+func TestSelectionRenderScriptToTemp(t *testing.T) {
 	data := TemplateData{
 		Input: map[string]any{
 			"A": "a",
 		},
 	}
-	commands := SelectedCommands{
+	commands := Selection{
 		{
 			Name: "foobar",
 			Run:  "echo {{.Input.A}}",
@@ -378,7 +378,7 @@ func TestSelectedCommandsRenderScriptToTemp(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestSelectedCommandsCmd(t *testing.T) {
+func TestSelectionCmd(t *testing.T) {
 	t.Run("is pure", func(t *testing.T) {
 		data := TemplateData{
 			Input: map[string]any{
@@ -388,7 +388,7 @@ func TestSelectedCommandsCmd(t *testing.T) {
 			},
 		}
 		moreEnviron := map[string]string{"D": "d"}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Shell: []string{"/bin/sh"},
 				Run:   "foobaz",
@@ -437,7 +437,7 @@ func TestSelectedCommandsCmd(t *testing.T) {
 			"C": "x",
 			"D": "d",
 		}
-		commands := SelectedCommands{
+		commands := Selection{
 			{
 				Shell: []string{"/bin/sh"},
 				Run:   "foobaz",

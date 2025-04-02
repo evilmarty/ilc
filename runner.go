@@ -133,7 +133,7 @@ func (r *Runner) run() error {
 	var values map[string]any
 	usageFunc := func() {
 		u := r.usage()
-		u.ImportSelectedCommands(selected).Print()
+		u.ImportSelection(selected).Print()
 		os.Exit(0)
 	}
 	for {

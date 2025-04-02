@@ -8,9 +8,9 @@ import (
 	"text/template"
 )
 
-type SelectedCommands []Command
+type Selection []Command
 
-func (commands SelectedCommands) String() string {
+func (commands Selection) String() string {
 	var names []string
 	for _, command := range commands {
 		if command.Name != "" {
@@ -20,28 +20,28 @@ func (commands SelectedCommands) String() string {
 	return strings.Join(names, " ")
 }
 
-func (commands SelectedCommands) Runnable() bool {
+func (commands Selection) Runnable() bool {
 	for i := len(commands) - 1; i >= 0; {
 		return commands[i].Runnable()
 	}
 	return false
 }
 
-func (commands SelectedCommands) Description() string {
+func (commands Selection) Description() string {
 	for i := len(commands) - 1; i >= 0; {
 		return commands[i].Description
 	}
 	return ""
 }
 
-func (commands SelectedCommands) Run() string {
+func (commands Selection) Run() string {
 	for i := len(commands) - 1; i >= 0; {
 		return commands[i].Run
 	}
 	return ""
 }
 
-func (commands SelectedCommands) Shell() []string {
+func (commands Selection) Shell() []string {
 	for i := len(commands) - 1; i >= 0; i-- {
 		command := commands[i]
 		if len(command.Shell) > 0 {
@@ -51,7 +51,7 @@ func (commands SelectedCommands) Shell() []string {
 	return DefaultShell
 }
 
-func (commands SelectedCommands) Env() EnvMap {
+func (commands Selection) Env() EnvMap {
 	env := EnvMap{}
 	for _, command := range commands {
 		env = env.Merge(command.Env)
@@ -59,14 +59,14 @@ func (commands SelectedCommands) Env() EnvMap {
 	return env
 }
 
-func (commands SelectedCommands) Pure() bool {
+func (commands Selection) Pure() bool {
 	for i := len(commands) - 1; i >= 0; {
 		return commands[i].Pure
 	}
 	return false
 }
 
-func (commands SelectedCommands) Inputs() Inputs {
+func (commands Selection) Inputs() Inputs {
 	inputs := Inputs{}
 	for _, command := range commands {
 		inputs = inputs.Merge(command.Inputs)
@@ -74,14 +74,14 @@ func (commands SelectedCommands) Inputs() Inputs {
 	return inputs
 }
 
-func (commands SelectedCommands) Commands() SubCommands {
+func (commands Selection) Commands() SubCommands {
 	for i := len(commands) - 1; i >= 0; {
 		return commands[i].Commands
 	}
 	return SubCommands{}
 }
 
-func (commands SelectedCommands) RenderScript(data TemplateData) (string, error) {
+func (commands Selection) RenderScript(data TemplateData) (string, error) {
 	var tmpl *template.Template
 	for _, command := range commands {
 		var err error
@@ -108,7 +108,7 @@ func (commands SelectedCommands) RenderScript(data TemplateData) (string, error)
 	}
 }
 
-func (commands SelectedCommands) RenderScriptToTemp(data TemplateData) (string, error) {
+func (commands Selection) RenderScriptToTemp(data TemplateData) (string, error) {
 	var file *os.File
 	script, err := commands.RenderScript(data)
 	if err != nil {
@@ -128,7 +128,7 @@ func (commands SelectedCommands) RenderScriptToTemp(data TemplateData) (string, 
 	return file.Name(), nil
 }
 
-func (commands SelectedCommands) RenderEnv(data TemplateData) (EnvMap, error) {
+func (commands Selection) RenderEnv(data TemplateData) (EnvMap, error) {
 	env := commands.Env()
 	for name, template := range env {
 		if value, err := RenderTemplate(template, data); err != nil {
@@ -140,7 +140,7 @@ func (commands SelectedCommands) RenderEnv(data TemplateData) (EnvMap, error) {
 	return env, nil
 }
 
-func (commands SelectedCommands) Cmd(data TemplateData, moreEnv EnvMap) (*exec.Cmd, error) {
+func (commands Selection) Cmd(data TemplateData, moreEnv EnvMap) (*exec.Cmd, error) {
 	var scriptFile string
 	var env EnvMap
 	var err error

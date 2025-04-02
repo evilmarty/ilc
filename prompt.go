@@ -16,7 +16,7 @@ const (
 	accentColor        = termenv.ANSI256Color(32)
 )
 
-func askCommands(commands SelectedCommands) (SelectedCommands, error) {
+func askCommands(commands Selection) (Selection, error) {
 	if len(commands) == 0 {
 		return commands, nil
 	}

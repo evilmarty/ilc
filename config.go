@@ -8,8 +8,8 @@ import (
 
 type Config Command
 
-func (config Config) Select(args []string) (SelectedCommands, []string) {
-	selected := SelectedCommands{Command(config)}
+func (config Config) Select(args []string) (Selection, []string) {
+	selected := Selection{Command(config)}
 	for len(args) > 0 {
 		if subcommand, found := selected[len(selected)-1].Get(args[0]); found {
 			selected = append(selected, subcommand.Command)
