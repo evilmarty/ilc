@@ -99,14 +99,12 @@ type yamlInputType struct {
 
 func (y yamlInputType) newValue() Value {
 	switch y.Type {
-	case "string", "":
-		return &StringValue{}
 	case "number":
 		return &NumberValue{}
 	case "boolean":
 		return &BooleanValue{}
 	default:
-		return nil
+		return &StringValue{}
 	}
 }
 
@@ -118,7 +116,7 @@ func (x *yamlInput) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind == yaml.ScalarNode {
 		inputType.Type = node.Value
 	} else if err := node.Decode(&inputType); err != nil {
-		return nil
+		return err
 	}
 	input.Value = inputType.newValue()
 	if node.Kind == yaml.MappingNode {
@@ -140,6 +138,11 @@ func (x *Inputs) UnmarshalYAML(node *yaml.Node) error {
 	}
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
 		pair.Value.Name = string(pair.Key)
+		// In some situations where the value is scalar it does not call UnmarshalYAML so it
+		// is set to the default values. If so then it should be defaulted to be a string value.
+		if pair.Value.Value == nil {
+			pair.Value.Value = &StringValue{}
+		}
 		*x = append(*x, Input(pair.Value))
 	}
 	return nil

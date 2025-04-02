@@ -173,4 +173,16 @@ boolean:
 		err := yaml.Unmarshal([]byte(content), &Inputs{})
 		assert.ErrorContains(t, err, "invalid input name")
 	})
+	t.Run("empty input", func(t *testing.T) {
+		content := `
+empty_input:
+`
+		expected := Inputs{
+			Input{Name: "empty_input", Value: &StringValue{Value: "", Pattern: ""}},
+		}
+		var actual Inputs
+		err := yaml.Unmarshal([]byte(content), &actual)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
 }
