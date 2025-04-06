@@ -125,9 +125,6 @@ func (r *Runner) getInputValuesFromEnv(inputs Inputs) map[string]string {
 
 func (r *Runner) run() error {
 	var err error
-	if r.NonInteractive {
-		logger.Println("Running in non-interactive mode")
-	}
 	selected, args := r.Config.Select(r.Args)
 	var inputs Inputs
 	var values map[string]any
@@ -204,6 +201,9 @@ func (r *Runner) Run() error {
 	if r.ValidateConfig {
 		r.Printf("configuration is valid\n")
 		return nil
+	}
+	if r.NonInteractive {
+		logger.Println("Running in non-interactive mode")
 	}
 	return r.run()
 }
