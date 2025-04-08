@@ -470,6 +470,34 @@ func TestSelectionCmd(t *testing.T) {
 	})
 }
 
+func TestSelectionToArgs(t *testing.T) {
+	commands := Selection{
+		{
+			Name: "",
+			Inputs: Inputs{
+				{Name: "arg1", Value: &StringValue{Value: "foobar"}},
+				{Name: "arg2", Value: &NumberValue{Value: 123}},
+			},
+		},
+		{
+			Name: "command1",
+			Inputs: Inputs{
+				{Name: "arg1", Value: &StringValue{Value: "foobar"}},
+				{Name: "arg2", Value: &NumberValue{Value: 123}},
+			},
+		},
+		{
+			Name: "command2",
+			Inputs: Inputs{
+				{Name: "arg3", Value: &BooleanValue{Value: true}},
+			},
+		},
+	}
+	expected := []string{"command1", "command2", "-arg1", "foobar", "-arg2", "123", "-arg3"}
+	actual := commands.ToArgs()
+	assert.Equal(t, expected, actual)
+}
+
 func readTextFile(name string) (string, error) {
 	var str strings.Builder
 	data, err := os.ReadFile(name)

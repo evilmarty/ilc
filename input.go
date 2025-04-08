@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"math"
 	"reflect"
 	"regexp"
@@ -223,11 +224,11 @@ func (inputs Inputs) Merge(other Inputs) Inputs {
 }
 
 func (inputs Inputs) FlagSet() *flag.FlagSet {
-	flag := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	for _, input := range inputs {
-		flag.Var(input.Value, input.Name, input.Description)
+		fs.Var(input.Value, input.Name, input.Description)
 	}
-	return flag
+	return fs
 }
 
 func (inputs Inputs) ToEnvMap() EnvMap {
@@ -236,4 +237,21 @@ func (inputs Inputs) ToEnvMap() EnvMap {
 		em[input.EnvName()] = input.Value.String()
 	}
 	return em
+}
+
+func (inputs Inputs) ToArgs() []string {
+	args := make([]string, 0, len(inputs))
+	for _, input := range inputs {
+		if v, ok := input.Value.(*BooleanValue); ok && v.IsBoolFlag() {
+			if v.Value {
+				args = append(args, fmt.Sprintf("-%s", input.Name))
+			} else {
+				args = append(args, fmt.Sprintf("-%s=%s", input.Name, v.String()))
+			}
+		} else {
+			args = append(args, fmt.Sprintf("-%s", input.Name))
+			args = append(args, input.Value.String())
+		}
+	}
+	return args
 }

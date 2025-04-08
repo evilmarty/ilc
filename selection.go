@@ -161,3 +161,14 @@ func (commands Selection) Cmd(data TemplateData, moreEnv EnvMap) (*exec.Cmd, err
 	cmd.Env = env.ToList()
 	return cmd, nil
 }
+
+func (commands Selection) ToArgs() []string {
+	inputArgs := commands.Inputs().ToArgs()
+	args := make([]string, 0, len(commands)+len(inputArgs))
+	for _, command := range commands {
+		if command.Name != "" {
+			args = append(args, command.Name)
+		}
+	}
+	return append(args, inputArgs...)
+}
