@@ -300,3 +300,15 @@ func TestInputsToEnvMap(t *testing.T) {
 	actual := inputs.ToEnvMap()
 	assert.Equal(t, expected, actual)
 }
+
+func TestInputsToArgs(t *testing.T) {
+	inputs := Inputs{
+		Input{Name: "s", Value: &StringValue{Value: "s"}},
+		Input{Name: "n", Value: &NumberValue{Value: 1.0}},
+		Input{Name: "t", Value: &BooleanValue{Value: true}},
+		Input{Name: "f", Value: &BooleanValue{Value: false}},
+	}
+	expected := []string{"-s", "s", "-n", "1", "-t", "-f=false"}
+	actual := inputs.ToArgs()
+	assert.Equal(t, expected, actual)
+}
