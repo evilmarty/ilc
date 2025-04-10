@@ -8,11 +8,34 @@ import (
 	"text/template"
 )
 
-type Selection []Command
+type Selection struct {
+	commands []Command
+	Args     []string
+}
 
-func (commands Selection) String() string {
+func (selection Selection) Select(args []string) Selection {
+	if len(args) > 0 {
+		commands := selection.commands
+		if subcommand, found := commands[len(commands)-1].Get(args[0]); found {
+			selection = selection.SelectCommand(subcommand.Command, args[1:])
+			return selection.Select(selection.Args)
+		}
+	}
+	newSelection := NewSelection(selection.commands[0], selection.commands[1:]...)
+	newSelection.Args = args
+	return newSelection
+}
+
+func (selection Selection) SelectCommand(command Command, args []string) Selection {
+	commands := selection.commands
+	newSelection := NewSelection(commands[0], append(commands[1:], command)...)
+	newSelection.Args = args
+	return newSelection
+}
+
+func (selection Selection) String() string {
 	var names []string
-	for _, command := range commands {
+	for _, command := range selection.commands {
 		if command.Name != "" {
 			names = append(names, command.Name)
 		}
@@ -20,30 +43,21 @@ func (commands Selection) String() string {
 	return strings.Join(names, " ")
 }
 
-func (commands Selection) Runnable() bool {
-	for i := len(commands) - 1; i >= 0; {
-		return commands[i].Runnable()
-	}
-	return false
+func (selection Selection) Runnable() bool {
+	return selection.commands[len(selection.commands)-1].Runnable()
 }
 
-func (commands Selection) Description() string {
-	for i := len(commands) - 1; i >= 0; {
-		return commands[i].Description
-	}
-	return ""
+func (selection Selection) Description() string {
+	return selection.commands[len(selection.commands)-1].Description
 }
 
-func (commands Selection) Run() string {
-	for i := len(commands) - 1; i >= 0; {
-		return commands[i].Run
-	}
-	return ""
+func (selection Selection) Run() string {
+	return selection.commands[len(selection.commands)-1].Run
 }
 
-func (commands Selection) Shell() []string {
-	for i := len(commands) - 1; i >= 0; i-- {
-		command := commands[i]
+func (selection Selection) Shell() []string {
+	for i := len(selection.commands) - 1; i >= 0; i-- {
+		command := selection.commands[i]
 		if len(command.Shell) > 0 {
 			return command.Shell
 		}
@@ -51,39 +65,33 @@ func (commands Selection) Shell() []string {
 	return DefaultShell
 }
 
-func (commands Selection) Env() EnvMap {
+func (selection Selection) Env() EnvMap {
 	env := EnvMap{}
-	for _, command := range commands {
+	for _, command := range selection.commands {
 		env = env.Merge(command.Env)
 	}
 	return env
 }
 
-func (commands Selection) Pure() bool {
-	for i := len(commands) - 1; i >= 0; {
-		return commands[i].Pure
-	}
-	return false
+func (selection Selection) Pure() bool {
+	return selection.commands[len(selection.commands)-1].Pure
 }
 
-func (commands Selection) Inputs() Inputs {
+func (selection Selection) Inputs() Inputs {
 	inputs := Inputs{}
-	for _, command := range commands {
+	for _, command := range selection.commands {
 		inputs = inputs.Merge(command.Inputs)
 	}
 	return inputs
 }
 
-func (commands Selection) Commands() SubCommands {
-	for i := len(commands) - 1; i >= 0; {
-		return commands[i].Commands
-	}
-	return SubCommands{}
+func (selection Selection) Commands() SubCommands {
+	return selection.commands[len(selection.commands)-1].Commands
 }
 
-func (commands Selection) RenderScript(data TemplateData) (string, error) {
+func (selection Selection) RenderScript(data TemplateData) (string, error) {
 	var tmpl *template.Template
-	for _, command := range commands {
+	for _, command := range selection.commands {
 		var err error
 		if command.Run == "" {
 			continue
@@ -108,9 +116,9 @@ func (commands Selection) RenderScript(data TemplateData) (string, error) {
 	}
 }
 
-func (commands Selection) RenderScriptToTemp(data TemplateData) (string, error) {
+func (selection Selection) RenderScriptToTemp(data TemplateData) (string, error) {
 	var file *os.File
-	script, err := commands.RenderScript(data)
+	script, err := selection.RenderScript(data)
 	if err != nil {
 		return "", err
 	}
@@ -128,8 +136,8 @@ func (commands Selection) RenderScriptToTemp(data TemplateData) (string, error) 
 	return file.Name(), nil
 }
 
-func (commands Selection) RenderEnv(data TemplateData) (EnvMap, error) {
-	env := commands.Env()
+func (selection Selection) RenderEnv(data TemplateData) (EnvMap, error) {
+	env := selection.Env()
 	for name, template := range env {
 		if value, err := RenderTemplate(template, data); err != nil {
 			return env, fmt.Errorf("template error for environment variable: '%s' - %v", name, err)
@@ -140,20 +148,20 @@ func (commands Selection) RenderEnv(data TemplateData) (EnvMap, error) {
 	return env, nil
 }
 
-func (commands Selection) Cmd(data TemplateData, moreEnv EnvMap) (*exec.Cmd, error) {
+func (selection Selection) Cmd(data TemplateData, moreEnv EnvMap) (*exec.Cmd, error) {
 	var scriptFile string
 	var env EnvMap
 	var err error
-	shell := commands.Shell()
-	scriptFile, err = commands.RenderScriptToTemp(data)
+	shell := selection.Shell()
+	scriptFile, err = selection.RenderScriptToTemp(data)
 	if err != nil {
 		return nil, err
 	}
-	env, err = commands.RenderEnv(data)
+	env, err = selection.RenderEnv(data)
 	if err != nil {
 		return nil, err
 	}
-	if !commands.Pure() {
+	if !selection.Pure() {
 		env = moreEnv.Merge(env)
 	}
 	shell = append(shell, scriptFile)
@@ -162,13 +170,17 @@ func (commands Selection) Cmd(data TemplateData, moreEnv EnvMap) (*exec.Cmd, err
 	return cmd, nil
 }
 
-func (commands Selection) ToArgs() []string {
-	inputArgs := commands.Inputs().ToArgs()
-	args := make([]string, 0, len(commands)+len(inputArgs))
-	for _, command := range commands {
+func (selection Selection) ToArgs() []string {
+	inputArgs := selection.Inputs().ToArgs()
+	args := make([]string, 0, len(selection.commands)+len(inputArgs))
+	for _, command := range selection.commands {
 		if command.Name != "" {
 			args = append(args, command.Name)
 		}
 	}
 	return append(args, inputArgs...)
+}
+
+func NewSelection(command Command, commands ...Command) Selection {
+	return Selection{commands: append([]Command{command}, commands...), Args: []string{}}
 }

@@ -133,16 +133,16 @@ func (r *Runner) getInputValuesFromEnv(inputs Inputs) map[string]string {
 func (r *Runner) run() error {
 	var err error
 	logger.Printf("Running with arguments: %s\n", strings.Join(r.Args, " "))
-	selected, args := r.Config.Select(r.Args)
+	selection := r.Config.Select(r.Args)
 	var inputs Inputs
 	var values map[string]any
 	usageFunc := func() {
 		u := r.usage()
-		u.ImportSelection(selected).Print()
+		u.ImportSelection(selection).Print()
 		os.Exit(0)
 	}
 	for {
-		inputs = selected.Inputs()
+		inputs = selection.Inputs()
 		fs := inputs.FlagSet()
 		fs.Init(r.Name, flag.ExitOnError)
 		fs.Usage = usageFunc
@@ -150,9 +150,9 @@ func (r *Runner) run() error {
 		for name, value := range r.getInputValuesFromEnv(inputs) {
 			fs.Set(name, value)
 		}
-		if err := fs.Parse(args); err != nil {
+		if err := fs.Parse(selection.Args); err != nil {
 			return err
-		} else if selected.Runnable() {
+		} else if selection.Runnable() {
 			values = make(map[string]any, len(inputs))
 			fs.Visit(func(f *flag.Flag) {
 				if v, ok := f.Value.(flag.Getter); ok {
@@ -162,7 +162,7 @@ func (r *Runner) run() error {
 			break
 		} else if r.NonInteractive {
 			return ErrInvalidCommand
-		} else if selected, err = askCommands(selected); err != nil {
+		} else if selection, err = askCommands(selection); err != nil {
 			return err
 		}
 	}
@@ -191,7 +191,7 @@ func (r *Runner) run() error {
 	}
 
 	data := NewTemplateData(values, r.Env)
-	cmd, err := selected.Cmd(data, r.Env)
+	cmd, err := selection.Cmd(data, r.Env)
 	if err != nil {
 		return fmt.Errorf("failed generating script: %v", err)
 	}
@@ -202,7 +202,7 @@ func (r *Runner) run() error {
 	if err := cmd.Run(); err != nil {
 		return err
 	} else {
-		r.recordToHistory(selected.ToArgs())
+		r.recordToHistory(selection.ToArgs())
 		return nil
 	}
 }

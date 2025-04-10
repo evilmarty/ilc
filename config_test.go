@@ -26,64 +26,59 @@ func TestConfigSelect(t *testing.T) {
 		},
 	}
 	t.Run("selects all with no remaining args", func(t *testing.T) {
-		expected_commands := Selection{
+		expected := NewSelection(
 			Command(config),
 			config.Commands[0].Command,
 			config.Commands[0].Command.Commands[1].Command,
-		}
-		expected_args := []string{}
-		actual_commands, actual_args := config.Select([]string{"foo", "baz"})
-		assert.Equal(t, expected_commands, actual_commands)
-		assert.Equal(t, expected_args, actual_args)
+		)
+		actual := config.Select([]string{"foo", "baz"})
+		assert.Equal(t, expected, actual)
 	})
 	t.Run("selects all with remaining args", func(t *testing.T) {
-		expected_commands := Selection{
-			Command(config),
-			config.Commands[0].Command,
-			config.Commands[0].Command.Commands[1].Command,
+		expected := Selection{
+			commands: []Command{
+				Command(config),
+				config.Commands[0].Command,
+				config.Commands[0].Command.Commands[1].Command,
+			},
+			Args: []string{"a", "b"},
 		}
-		expected_args := []string{"a", "b"}
-		actual_commands, actual_args := config.Select([]string{"foo", "baz", "a", "b"})
-		assert.Equal(t, expected_commands, actual_commands)
-		assert.Equal(t, expected_args, actual_args)
+		actual := config.Select([]string{"foo", "baz", "a", "b"})
+		assert.Equal(t, expected, actual)
 	})
 	t.Run("selects some with no remaining args", func(t *testing.T) {
-		expected_commands := Selection{
+		expected := NewSelection(
 			Command(config),
 			config.Commands[0].Command,
-		}
-		expected_args := []string{}
-		actual_commands, actual_args := config.Select([]string{"foo"})
-		assert.Equal(t, expected_commands, actual_commands)
-		assert.Equal(t, expected_args, actual_args)
+		)
+		actual := config.Select([]string{"foo"})
+		assert.Equal(t, expected, actual)
 	})
 	t.Run("selects some with remaining args", func(t *testing.T) {
-		expected_commands := Selection{
-			Command(config),
-			config.Commands[0].Command,
+		expected := Selection{
+			commands: []Command{
+				Command(config),
+				config.Commands[0].Command,
+			},
+			Args: []string{"a", "b"},
 		}
-		expected_args := []string{"a", "b"}
-		actual_commands, actual_args := config.Select([]string{"foo", "a", "b"})
-		assert.Equal(t, expected_commands, actual_commands)
-		assert.Equal(t, expected_args, actual_args)
+		actual := config.Select([]string{"foo", "a", "b"})
+		assert.Equal(t, expected, actual)
 	})
 	t.Run("selects none with no remaining args", func(t *testing.T) {
-		expected_commands := Selection{
-			Command(config),
-		}
-		expected_args := []string{}
-		actual_commands, actual_args := config.Select([]string{})
-		assert.Equal(t, expected_commands, actual_commands)
-		assert.Equal(t, expected_args, actual_args)
+		expected := NewSelection(Command(config))
+		actual := config.Select([]string{})
+		assert.Equal(t, expected, actual)
 	})
 	t.Run("selects none with remaining args", func(t *testing.T) {
-		expected_commands := Selection{
-			Command(config),
+		expected := Selection{
+			commands: []Command{
+				Command(config),
+			},
+			Args: []string{"a", "b"},
 		}
-		expected_args := []string{"a", "b"}
-		actual_commands, actual_args := config.Select([]string{"a", "b"})
-		assert.Equal(t, expected_commands, actual_commands)
-		assert.Equal(t, expected_args, actual_args)
+		actual := config.Select([]string{"a", "b"})
+		assert.Equal(t, expected, actual)
 	})
 }
 

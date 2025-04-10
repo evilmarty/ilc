@@ -8,17 +8,9 @@ import (
 
 type Config Command
 
-func (config Config) Select(args []string) (Selection, []string) {
-	selected := Selection{Command(config)}
-	for len(args) > 0 {
-		if subcommand, found := selected[len(selected)-1].Get(args[0]); found {
-			selected = append(selected, subcommand.Command)
-			args = args[1:]
-		} else {
-			break
-		}
-	}
-	return selected, args
+func (config Config) Select(args []string) Selection {
+	selected := NewSelection(Command(config))
+	return selected.Select(args)
 }
 
 func ParseConfig(content []byte) (Config, error) {
