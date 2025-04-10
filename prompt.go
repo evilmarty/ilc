@@ -16,16 +16,13 @@ const (
 	accentColor        = termenv.ANSI256Color(32)
 )
 
-func askCommands(commands Selection) (Selection, error) {
-	if len(commands) == 0 {
-		return commands, nil
-	}
-	command := commands[len(commands)-1]
-	numCommands := len(command.Commands)
-	maxNameLength := maxStringLength(command.Commands, func(c SubCommand) string {
+func askCommands(sel Selection) (Selection, error) {
+	commands := sel.Commands()
+	numCommands := len(commands)
+	maxNameLength := maxStringLength(commands, func(c SubCommand) string {
 		return c.Name
 	})
-	sp := selection.New("Choose command", command.Commands)
+	sp := selection.New("Choose command", commands)
 	sp.SelectedChoiceStyle = func(c *selection.Choice[SubCommand]) string {
 		return renderChoiceStyle(c.Value.Name, c.Value.Description, maxNameLength, true)
 	}
@@ -38,10 +35,10 @@ func askCommands(commands Selection) (Selection, error) {
 	}
 
 	if choice, err := sp.RunPrompt(); err != nil {
-		return commands, err
+		return sel, err
 	} else {
 		logger.Printf("selected command: %s", choice)
-		return append(commands, choice.Command), nil
+		return sel.SelectCommand(choice.Command, sel.Args), nil
 	}
 }
 
