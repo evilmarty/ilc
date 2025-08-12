@@ -55,20 +55,27 @@ commands:
         min: 1
         max: 5
     run: echo You rated {{ .Input.rating }}/5 for {{ .Input.name }}
-  foo:
-    inputs:
-      prefix:
-        default: foo
-    commands:
-      bar:
-        inputs:
-          suffix:
-            default: bar
-        run: echo foobar
-      baz:
-        inputs:
-          suffix:
-            default: baz
-        run: echo foobaz
   fail:
     run: "false"
+  files:
+    description: File operations
+    commands:
+      list:
+        description: List files
+        aliases: ["ls"]
+        run: ls -l
+  user:
+    description: User operations
+    commands:
+      add:
+        description: Add a new user
+        inputs:
+          username:
+            description: The username for the new user
+            pattern: "^[a-zA-Z0-9_]+$"
+          age:
+            description: The age of the new user
+            type: number
+            min: 18
+            max: 120
+        run: echo "User {{ .Input.username }} added with age {{ .Input.age }}"
