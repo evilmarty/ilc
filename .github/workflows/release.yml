@@ -30,7 +30,7 @@ jobs:
         run: awk '{if($1 == "go") print "version=" $2}' go.mod >> "$GITHUB_OUTPUT"
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{steps.version.outputs.version}}
 
