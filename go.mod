@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/erikgeiser/promptkit v0.7.0
 	github.com/muesli/termenv v0.16.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	gopkg.in/yaml.v3 v3.0.1
 )
