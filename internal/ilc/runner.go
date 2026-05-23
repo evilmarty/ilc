@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -23,9 +24,10 @@ var (
 
 type Runner struct {
 	Name           string
-	Version        string
+	NameVersion    string
 	BuildDate      string
 	Commit         string
+	Version        string
 	Env            EnvMap
 	Output         *os.File
 	Args           []string
@@ -48,15 +50,12 @@ func (r *Runner) Printf(format string, a ...any) {
 }
 
 func (r *Runner) printVersion() {
-	if r.Name != "" {
-		r.Printf("%s", r.Name)
-		if r.BuildDate != "" {
-			r.Printf(" - %s", r.BuildDate)
-		}
-		r.Printf("\n")
-	}
+	r.Printf("%s\n", r.Name)
 	if r.Version != "" {
 		r.Printf("Version: %s\n", r.Version)
+	}
+	if r.BuildDate != "" {
+		r.Printf("BuildDate: %s\n", r.BuildDate)
 	}
 	if r.Commit != "" {
 		r.Printf("Commit: %s\n", r.Commit)
@@ -109,6 +108,7 @@ func (r *Runner) Parse(args []string) error {
 	if config, err := LoadConfig(r.ConfigPath); err != nil {
 		return err
 	} else {
+		config.Name = filepath.Base(r.ConfigPath)
 		r.Config = &config
 	}
 	if underscore, found := r.Env["_"]; found && underscore == r.ConfigPath {
@@ -119,83 +119,41 @@ func (r *Runner) Parse(args []string) error {
 	return nil
 }
 
-func (r *Runner) getInputValuesFromEnv(inputs Inputs) map[string]string {
-	values := make(map[string]string, len(inputs))
-	inputEnv := r.Env.FilterPrefix(EnvVarPrefix).TrimPrefix(EnvVarPrefix)
-	for _, input := range inputs {
-		if value, found := inputEnv[input.EnvName()]; found {
-			values[input.Name] = value
-		}
-	}
-	return values
-}
-
 func (r *Runner) run() error {
 	var err error
 	logger.Printf("Running with arguments: %s\n", strings.Join(r.Args, " "))
 	selection := r.Config.Select(r.Args)
-	var inputs Inputs
-	var values map[string]any
-	usageFunc := func() {
-		u := r.usage()
-		u.ImportSelection(selection).Print()
-		os.Exit(0)
-	}
-	for {
-		inputs = selection.Inputs()
-		fs := inputs.FlagSet()
-		fs.Init(r.Name, flag.ExitOnError)
-		fs.Usage = usageFunc
-		// Set the input values on the flag set to determine what inputs are outstanding
-		for name, value := range r.getInputValuesFromEnv(inputs) {
-			fs.Set(name, value)
-		}
-		if err := fs.Parse(selection.Args); err != nil {
-			return err
-		} else if selection.Runnable() {
-			values = make(map[string]any, len(inputs))
-			fs.Visit(func(f *flag.Flag) {
-				if v, ok := f.Value.(flag.Getter); ok {
-					values[f.Name] = v.Get()
-				}
-			})
-			break
-		} else if r.NonInteractive {
-			return ErrInvalidCommand
-		} else if selection, err = askCommands(selection); err != nil {
-			return err
-		}
+	inps := selection.Inputs()
+	missing, err := inps.ParseEnvAndArgs(selection.Args, r.Env)
+	if err != nil {
+		return err
 	}
 
-	var missingInputs Inputs
-	for _, input := range inputs {
-		if _, found := values[input.Name]; !found {
-			missingInputs = append(missingInputs, input)
-		}
-	}
-
-	if len(missingInputs) > 0 {
+	if !selection.Runnable() || len(missing) > 0 {
 		if r.NonInteractive {
-			var inputNames []string
-			for _, input := range missingInputs {
-				inputNames = append(inputNames, input.Name)
+			if !selection.Runnable() {
+				return ErrInvalidCommand
 			}
-			return fmt.Errorf("missing inputs: %s", strings.Join(inputNames, ", "))
+			var missingNames []string
+			for _, input := range missing {
+				missingNames = append(missingNames, input.Name)
+			}
+			return fmt.Errorf("missing inputs: %s", strings.Join(missingNames, ", "))
 		}
-		if err := askInputs(missingInputs); err != nil {
+		selection, err = askCommands(selection, r.Env)
+		if err != nil {
 			return err
 		}
-		for name, value := range missingInputs.GetAll() {
-			values[name] = value
-		}
+		inps = selection.Inputs()
 	}
 
+	values := inps.Values()
 	data := NewTemplateData(values, r.Env)
 	cmd, err := selection.Cmd(data, r.Env)
 	if err != nil {
 		return fmt.Errorf("failed generating script: %v", err)
 	}
-	cmd.Env = append(cmd.Env, inputs.ToEnvMap().Prefix(EnvVarPrefix).ToList()...)
+	cmd.Env = append(cmd.Env, EnvMap(inps.ToEnvMap()).ToList()...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -223,11 +181,25 @@ func (r *Runner) Run() error {
 			r.HistoryFile = histFile
 		}
 	}
+	var err error
 	if r.isReplay() {
-		return r.replay()
+		err = r.replay()
 	} else {
-		return r.run()
+		err = r.run()
 	}
+
+	if errors.Is(err, flag.ErrHelp) {
+		selection := r.Config.Select(r.Args)
+		u := NewUsage(os.Stderr)
+		u.Title = r.Name
+		u.Entrypoint = r.Entrypoint
+		u.ImportFlags(r.flagSet())
+		u.ImportSelection(selection)
+		u.Print()
+		return nil
+	}
+
+	return err
 }
 
 func (r *Runner) replay() error {

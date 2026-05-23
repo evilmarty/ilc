@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 	"text/template"
+
+	"github.com/evilmarty/ilc/internal/inputs"
 )
 
 type Selection struct {
@@ -78,11 +80,13 @@ func (selection Selection) Pure() bool {
 }
 
 func (selection Selection) Inputs() Inputs {
-	inputs := Inputs{}
+	inps := Inputs{FlagSet: inputs.NewFlagSet("ilc", EnvVarPrefix)}
 	for _, command := range selection.commands {
-		inputs = inputs.Merge(command.Inputs)
+		if command.Inputs.FlagSet != nil {
+			inps.FlagSet = inps.FlagSet.Merge(command.Inputs.FlagSet)
+		}
 	}
-	return inputs
+	return inps
 }
 
 func (selection Selection) Commands() SubCommands {

@@ -1,100 +1,417 @@
 package ilc
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/erikgeiser/promptkit/selection"
-	"github.com/erikgeiser/promptkit/textinput"
-	"github.com/muesli/termenv"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/evilmarty/ilc/internal/inputs"
 )
+
+var (
+	titleStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("32")).Bold(true)
+	dimStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	accentStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("81")).Bold(true)
+	descDimStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	descActiveStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	helpStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Italic(true)
+	progressStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	errorStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
+	cmdPathStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
+)
+
+type commandMode int
 
 const (
-	maxPadSpacing      = 5
-	minChoiceFiltering = 5
-	accentColor        = termenv.ANSI256Color(32)
+	modeCommandSelect commandMode = iota
+	modeInputPrompt
 )
 
-func askCommands(sel Selection) (Selection, error) {
-	commands := sel.Commands()
-	numCommands := len(commands)
-	maxNameLength := maxStringLength(commands, func(c SubCommand) string {
-		return c.Name
-	})
-	sp := selection.New("Choose command", commands)
-	sp.SelectedChoiceStyle = func(c *selection.Choice[SubCommand]) string {
-		return renderChoiceStyle(c.Value.Name, c.Value.Description, maxNameLength, true)
-	}
-	sp.UnselectedChoiceStyle = func(c *selection.Choice[SubCommand]) string {
-		return renderChoiceStyle(c.Value.Name, c.Value.Description, maxNameLength, false)
-	}
+type commandModel struct {
+	title         string
+	history       []Selection
+	selectedIndex int
+	aborted       bool
+	done          bool
 
-	if numCommands <= minChoiceFiltering {
-		sp.Filter = nil
-	}
+	// Inputs wizard integrated fields
+	mode         commandMode
+	missing      []*inputs.Input
+	inputIndex   int
+	textInput    textinput.Model
+	optionsIndex int
+	inputErr     error
+	env          map[string]string
+}
 
-	if choice, err := sp.RunPrompt(); err != nil {
-		return sel, err
+func (m *commandModel) currentSelection() Selection {
+	return m.history[len(m.history)-1]
+}
+
+func (m *commandModel) currentSubcommands() SubCommands {
+	return m.currentSelection().Commands()
+}
+
+func (m *commandModel) initCurrentInput() {
+	m.inputErr = nil
+	if len(m.missing) == 0 {
+		return
+	}
+	current := m.missing[m.inputIndex]
+	if !current.Selectable() {
+		m.textInput = textinput.New()
+		m.textInput.Placeholder = current.Value.String()
+		m.textInput.Focus()
 	} else {
-		logger.Printf("selected command: %s", choice)
-		return sel.SelectCommand(choice.Command, sel.Args), nil
+		m.optionsIndex = 0
 	}
 }
 
-func askInputs(inputs Inputs) error {
-	for _, input := range inputs {
-		prompt := input.Description
-		if prompt == "" {
-			inputName := termenv.String(input.Name).Underline().String()
-			if input.Selectable() {
-				prompt = fmt.Sprintf("Choose a %s", inputName)
-			} else {
-				prompt = fmt.Sprintf("Please specify a %s", inputName)
+func (m *commandModel) Init() tea.Cmd {
+	return textinput.Blink
+}
+
+func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	if m.mode == modeInputPrompt {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.Type {
+			case tea.KeyCtrlC:
+				m.aborted = true
+				return m, tea.Quit
+
+			case tea.KeyEsc:
+				if m.inputIndex > 0 {
+					m.inputIndex--
+					m.initCurrentInput()
+					return m, nil
+				}
+				// Go back to command selection mode
+				m.mode = modeCommandSelect
+				m.selectedIndex = 0
+				if len(m.history) > 1 {
+					m.history = m.history[:len(m.history)-1]
+				}
+				return m, nil
+
+			case tea.KeyEnter:
+				current := m.missing[m.inputIndex]
+				var val string
+				if current.Selectable() {
+					val = current.Options[m.optionsIndex].Value
+				} else {
+					val = m.textInput.Value()
+					if val == "" {
+						val = current.Value.String()
+					}
+				}
+
+				if err := current.Value.Set(val); err != nil {
+					m.inputErr = err
+					return m, nil
+				}
+
+				m.inputErr = nil
+				if m.inputIndex < len(m.missing)-1 {
+					m.inputIndex++
+					m.initCurrentInput()
+					return m, nil
+				}
+				m.done = true
+				return m, tea.Quit
+
+			case tea.KeyUp:
+				current := m.missing[m.inputIndex]
+				if current.Selectable() {
+					if m.optionsIndex > 0 {
+						m.optionsIndex--
+					} else {
+						m.optionsIndex = len(current.Options) - 1
+					}
+				}
+				return m, nil
+
+			case tea.KeyDown:
+				current := m.missing[m.inputIndex]
+				if current.Selectable() {
+					if m.optionsIndex < len(current.Options)-1 {
+						m.optionsIndex++
+					} else {
+						m.optionsIndex = 0
+					}
+				}
+				return m, nil
 			}
 		}
-		if input.Selectable() {
-			sp := selection.New(prompt, input.Options)
-			logger.Printf("choosing input: %s", input.Name)
-			if option, err := sp.RunPrompt(); err != nil {
-				return err
-			} else if err := input.Value.Set(option.Value); err != nil {
-				return err
+
+		current := m.missing[m.inputIndex]
+		if !current.Selectable() {
+			m.textInput, cmd = m.textInput.Update(msg)
+		}
+		return m, cmd
+	}
+
+	// modeCommandSelect
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyCtrlC:
+			m.aborted = true
+			return m, tea.Quit
+
+		case tea.KeyEsc:
+			if len(m.history) > 1 {
+				m.history = m.history[:len(m.history)-1]
+				m.selectedIndex = 0
+				return m, nil
+			}
+			return m, nil
+
+		case tea.KeyEnter:
+			subs := m.currentSubcommands()
+			if len(subs) == 0 {
+				return m, nil
+			}
+			choice := subs[m.selectedIndex]
+			nextSel := m.currentSelection().SelectCommand(choice.Command, m.currentSelection().Args)
+
+			if nextSel.Runnable() {
+				inps := nextSel.Inputs()
+				missing, err := inps.ParseEnvAndArgs(nextSel.Args, m.env)
+				if err != nil {
+					m.inputErr = err
+					return m, nil
+				}
+
+				if len(missing) == 0 {
+					m.history = append(m.history, nextSel)
+					m.done = true
+					return m, tea.Quit
+				}
+
+				m.history = append(m.history, nextSel)
+				m.missing = missing
+				m.inputIndex = 0
+				m.mode = modeInputPrompt
+				m.initCurrentInput()
+				return m, nil
+			}
+
+			m.history = append(m.history, nextSel)
+			m.selectedIndex = 0
+			return m, nil
+
+		case tea.KeyUp:
+			subs := m.currentSubcommands()
+			if len(subs) > 0 {
+				if m.selectedIndex > 0 {
+					m.selectedIndex--
+				} else {
+					m.selectedIndex = len(subs) - 1
+				}
+			}
+			return m, nil
+
+		case tea.KeyDown:
+			subs := m.currentSubcommands()
+			if len(subs) > 0 {
+				if m.selectedIndex < len(subs)-1 {
+					m.selectedIndex++
+				} else {
+					m.selectedIndex = 0
+				}
+			}
+			return m, nil
+		}
+	}
+	return m, nil
+}
+
+func (m *commandModel) View() string {
+	if m.aborted {
+		return ""
+	}
+
+	var bcStyled strings.Builder
+	var bcPlain strings.Builder
+	for i, sel := range m.history {
+		if i == 0 {
+			continue
+		}
+		cmd := sel.commands[len(sel.commands)-1]
+		if i > 1 {
+			bcStyled.WriteString(titleStyle.Render(" ❯ "))
+			bcPlain.WriteString(" ❯ ")
+		} else {
+			bcStyled.WriteString(" ")
+			bcPlain.WriteString(" ")
+		}
+		bcStyled.WriteString(cmdPathStyle.Render(cmd.Name))
+		bcPlain.WriteString(cmd.Name)
+	}
+
+	if m.done {
+		var exitSb strings.Builder
+		exitSb.WriteString(fmt.Sprintf("%s%s\n", titleStyle.Render("Command:"), bcStyled.String()))
+		for _, completed := range m.missing {
+			exitSb.WriteString(titleStyle.Render(completed.Name+":") + " " + cmdPathStyle.Render(completed.Value.String()) + "\n")
+		}
+		return exitSb.String()
+	}
+
+	var sb strings.Builder
+
+	sb.WriteString(titleStyle.Render(fmt.Sprintf("── %s ──", m.title)) + "\n\n")
+
+	sb.WriteString(titleStyle.Render("Command:"))
+	if bcPlain.Len() > 0 {
+		sb.WriteString(bcStyled.String())
+		if m.mode == modeCommandSelect {
+			sb.WriteString(titleStyle.Render(" ❯"))
+		}
+	}
+	if m.mode == modeInputPrompt {
+		sb.WriteString("\n")
+	} else {
+		sb.WriteString("\n\n")
+	}
+
+	if m.mode == modeCommandSelect {
+		subs := m.currentSubcommands()
+		maxLen := 0
+		for _, sub := range subs {
+			maxLen = max(maxLen, utf8.RuneCountInString(sub.Name))
+		}
+
+		for i, sub := range subs {
+			padLen := maxLen - utf8.RuneCountInString(sub.Name)
+			if padLen < 0 {
+				padLen = 0
+			}
+			padding := strings.Repeat(" ", padLen+5)
+
+			var nameStr string
+			var descStr string
+
+			if i == m.selectedIndex {
+				nameStr = accentStyle.Render(sub.Name)
+				if sub.Description != "" {
+					descStr = descActiveStyle.Render(padding + sub.Description)
+				}
+				sb.WriteString(fmt.Sprintf("  ❯ %s%s\n", nameStr, descStr))
+			} else {
+				nameStr = dimStyle.Render(sub.Name)
+				if sub.Description != "" {
+					descStr = descDimStyle.Render(padding + sub.Description)
+				}
+				sb.WriteString(fmt.Sprintf("    %s%s\n", nameStr, descStr))
+			}
+		}
+
+		sb.WriteString("\n" + helpStyle.Render("  [Enter] Select/Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
+	} else {
+		// modeInputPrompt
+		// Render completed inputs in progressive/condensed form
+		for i := 0; i < m.inputIndex; i++ {
+			completed := m.missing[i]
+			sb.WriteString(titleStyle.Render(completed.Name+":") + " " + cmdPathStyle.Render(completed.Value.String()) + "\n")
+		}
+
+		current := m.missing[m.inputIndex]
+
+		// Active input prompt name
+		sb.WriteString(titleStyle.Render(current.Name + ":"))
+
+		// Active input description next to the name if available
+		if current.Description != "" {
+			sb.WriteString(descActiveStyle.Render("   " + current.Description))
+		}
+		sb.WriteString("\n")
+
+		// Render active input control
+		if current.Selectable() {
+			sb.WriteString("\n")
+			for i, option := range current.Options {
+				if i == m.optionsIndex {
+					sb.WriteString(fmt.Sprintf("    ❯ %s\n", accentStyle.Render(option.Label)))
+				} else {
+					sb.WriteString(fmt.Sprintf("      %s\n", dimStyle.Render(option.Label)))
+				}
 			}
 		} else {
-			ti := textinput.New(prompt)
-			ti.InitialValue = input.Value.String()
-			ti.Validate = func(s string) error {
-				return input.Value.Set(s)
-			}
-			logger.Printf("asking input: %s", input.Name)
-			if _, err := ti.RunPrompt(); err != nil {
-				return err
-			}
+			sb.WriteString("\n    " + m.textInput.View() + "\n")
+		}
+
+		// Validation Error Display
+		if m.inputErr != nil {
+			sb.WriteString("\n" + errorStyle.Render(fmt.Sprintf("    ✗ Invalid input: %v", m.inputErr)) + "\n")
+		}
+
+		// Help Guidelines
+		sb.WriteString("\n" + helpStyle.Render("  [Enter] Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
+	}
+
+	return sb.String()
+}
+
+func askCommands(sel Selection, env map[string]string) (Selection, error) {
+	title := sel.commands[0].Description
+	if title == "" {
+		title = sel.commands[0].Name
+	}
+	if title == "" {
+		title = "Choose command"
+	}
+
+	var history []Selection
+	for i := 1; i <= len(sel.commands); i++ {
+		history = append(history, Selection{
+			commands: sel.commands[:i],
+			Args:     sel.Args,
+		})
+	}
+
+	m := commandModel{
+		title:         title,
+		history:       history,
+		selectedIndex: 0,
+		mode:          modeCommandSelect,
+		env:           env,
+	}
+
+	if sel.Runnable() {
+		inps := sel.Inputs()
+		missing, err := inps.ParseEnvAndArgs(sel.Args, env)
+		if err == nil && len(missing) > 0 {
+			m.missing = missing
+			m.inputIndex = 0
+			m.mode = modeInputPrompt
+			m.initCurrentInput()
 		}
 	}
-	return nil
-}
 
-func renderChoiceStyle(name, desc string, maxNameLength int, selected bool) string {
-	padLen := maxNameLength - utf8.RuneCountInString(name)
-	if padLen < 0 {
-		padLen = 0
+	p := tea.NewProgram(&m)
+	if _, err := p.Run(); err != nil {
+		return sel, err
 	}
-	if selected {
-		name = termenv.String(name).Foreground(accentColor).Bold().String()
-	}
-	if desc != "" {
-		desc = strings.Repeat(" ", padLen+maxPadSpacing) + termenv.String(desc).Faint().String()
-	}
-	return name + desc
-}
 
-func maxStringLength[T any](items []T, fun func(T) string) int {
-	maxLen := 0
-	for _, item := range items {
-		s := fun(item)
-		maxLen = max(maxLen, utf8.RuneCountInString(s))
+	if m.aborted {
+		return sel, inputs.ErrAborted
 	}
-	return maxLen
+
+	if len(m.history) > 0 {
+		finalSel := m.history[len(m.history)-1]
+		if finalSel.Runnable() {
+			logger.Printf("selected command: %s", finalSel.String())
+			return finalSel, nil
+		}
+	}
+
+	return sel, errors.New("no choice made")
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/evilmarty/ilc/internal/inputs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -200,10 +201,12 @@ func usageFixture() Usage {
 		{Command: Command{Name: "a", Description: "a subcommand"}, Aliases: CommandAliases{"aa"}},
 		{Command: Command{Name: "b", Description: "b subcommand"}},
 	}
-	inputs := Inputs{
-		{Name: "c", Description: "c input"},
-		{Name: "d", Description: "d input"},
-	}
+	inputs := func() Inputs {
+		fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+		fs.Var(&inputs.Input{Name: "c", Description: "c input", Value: &inputs.StringValue{}})
+		fs.Var(&inputs.Input{Name: "d", Description: "d input", Value: &inputs.StringValue{}})
+		return Inputs{FlagSet: fs}
+	}()
 	u := NewUsage(os.Stdout)
 	u.ImportCommands(commands).ImportInputs(inputs)
 	u.Entrypoint = []string{"ilc", "config.yaml", "subcommand"}

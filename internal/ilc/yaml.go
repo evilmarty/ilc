@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/evilmarty/ilc/internal/inputs"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -58,14 +59,16 @@ func (x *SubCommands) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-func (x *InputOptions) UnmarshalYAML(node *yaml.Node) error {
+type yamlInputOptions inputs.InputOptions
+
+func (x *yamlInputOptions) UnmarshalYAML(node *yaml.Node) error {
 	if node.Kind == yaml.SequenceNode {
 		var values []string
 		if err := node.Decode(&values); err != nil {
 			return err
 		}
 		for _, value := range values {
-			*x = append(*x, InputOption{value, value})
+			*x = append(*x, inputs.InputOption{Label: value, Value: value})
 		}
 	} else {
 		om := orderedmap.New[string, string]()
@@ -73,7 +76,7 @@ func (x *InputOptions) UnmarshalYAML(node *yaml.Node) error {
 			return err
 		}
 		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
-			*x = append(*x, InputOption{pair.Key, pair.Value})
+			*x = append(*x, inputs.InputOption{Label: pair.Key, Value: pair.Value})
 		}
 	}
 	return nil
@@ -97,37 +100,52 @@ type yamlInputType struct {
 	Type string
 }
 
-func (y yamlInputType) newValue() Value {
+func (y yamlInputType) newValue() inputs.Value {
 	switch y.Type {
 	case "number":
-		return &NumberValue{}
+		return &inputs.NumberValue{}
 	case "boolean":
-		return &BooleanValue{}
+		return &inputs.BooleanValue{}
 	default:
-		return &StringValue{}
+		return &inputs.StringValue{}
 	}
 }
 
-type yamlInput Input
+type yamlInput struct {
+	Name        string
+	Description string
+	Options     yamlInputOptions
+	Value       inputs.Value
+}
 
 func (x *yamlInput) UnmarshalYAML(node *yaml.Node) error {
 	var inputType yamlInputType
-	var input Input
 	if node.Kind == yaml.ScalarNode {
 		inputType.Type = node.Value
 	} else if err := node.Decode(&inputType); err != nil {
 		return err
 	}
-	input.Value = inputType.newValue()
+
+	val := inputType.newValue()
+
+	type tempInput struct {
+		Description string           `yaml:"description"`
+		Options     yamlInputOptions `yaml:"options,flow"`
+	}
+	var temp tempInput
+
 	if node.Kind == yaml.MappingNode {
-		if err := node.Decode(&input); err != nil {
+		if err := node.Decode(&temp); err != nil {
 			return err
 		}
-		if err := node.Decode(input.Value); err != nil {
+		if err := node.Decode(val); err != nil {
 			return err
 		}
 	}
-	*x = yamlInput(input)
+
+	x.Description = temp.Description
+	x.Options = temp.Options
+	x.Value = val
 	return nil
 }
 
@@ -136,15 +154,21 @@ func (x *Inputs) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&om); err != nil {
 		return err
 	}
+	fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
 		pair.Value.Name = string(pair.Key)
-		// In some situations where the value is scalar it does not call UnmarshalYAML so it
-		// is set to the default values. If so then it should be defaulted to be a string value.
 		if pair.Value.Value == nil {
-			pair.Value.Value = &StringValue{}
+			pair.Value.Value = &inputs.StringValue{}
 		}
-		*x = append(*x, Input(pair.Value))
+		inp := inputs.Input{
+			Name:        pair.Value.Name,
+			Description: pair.Value.Description,
+			Options:     inputs.InputOptions(pair.Value.Options),
+			Value:       pair.Value.Value,
+		}
+		fs.Var(&inp)
 	}
+	*x = Inputs{FlagSet: fs}
 	return nil
 }
 

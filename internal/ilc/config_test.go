@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/evilmarty/ilc/internal/inputs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -106,32 +107,28 @@ commands:
 				Command: Command{
 					Name: "test",
 					Run:  "go test",
-					Inputs: Inputs{
-						{
-							Name:  "bool",
-							Value: &BooleanValue{},
-						},
-						{
-							Name:  "num",
-							Value: &NumberValue{MinValue: -1.0, MaxValue: 10.0},
-						},
-						{
+					Inputs: func() Inputs {
+						fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+						fs.Var(&inputs.Input{Name: "bool", Value: &inputs.BooleanValue{}})
+						fs.Var(&inputs.Input{Name: "num", Value: &inputs.NumberValue{MinValue: -1.0, MaxValue: 10.0}})
+						fs.Var(&inputs.Input{
 							Name:  "sequence",
-							Value: &StringValue{},
-							Options: InputOptions{
+							Value: &inputs.StringValue{},
+							Options: inputs.InputOptions{
 								{Label: "A", Value: "A"},
 								{Label: "B", Value: "B"},
 							},
-						},
-						{
+						})
+						fs.Var(&inputs.Input{
 							Name:  "map",
-							Value: &StringValue{},
-							Options: InputOptions{
+							Value: &inputs.StringValue{},
+							Options: inputs.InputOptions{
 								{Label: "a", Value: "A"},
 								{Label: "b", Value: "B"},
 							},
-						},
-					},
+						})
+						return Inputs{FlagSet: fs}
+					}(),
 				},
 			},
 		},

@@ -1,8 +1,16 @@
 package ilc
 
+import (
+	"github.com/evilmarty/ilc/internal/inputs"
+)
+
 var DefaultShell = []string{"/bin/sh"}
 
 type CommandAliases []string
+
+type Inputs struct {
+	*inputs.FlagSet
+}
 
 type Command struct {
 	Name        string `yaml:"-"`
