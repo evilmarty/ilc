@@ -1,4 +1,4 @@
-package main
+package ilc
 
 var DefaultShell = []string{"/bin/sh"}
 
