@@ -14,7 +14,7 @@ YAML file.
 To install via [Homebrew](https://brew.sh) just run the following command:
 
 ```shell
-brew install --cask evilmarty/ilc/ilc
+brew install evilmarty/ilc/ilc
 ```
 
 ### Golang
@@ -34,7 +34,7 @@ Binaries are available to download. Get the [latest release](https://github.com/
 The usage is as followed:
 
 ```shell
-ilc [--version] [--debug] CONFIG [COMMAND ...] [INPUT ...]
+ilc [flags] CONFIG [COMMAND ...] [INPUT ...]
 ```
 
 `CONFIG` is the path to your config file.
@@ -42,6 +42,13 @@ ilc [--version] [--debug] CONFIG [COMMAND ...] [INPUT ...]
 `COMMAND` is one or a cascade of subcommands defined in the config file.
 
 `INPUT` is one or many inputs inherited by the command.
+
+### Flags
+
+- `-version` / `--version`: Displays the version information and exits.
+- `-debug` / `--debug`: Prints debugging logs to standard error.
+- `-non-interactive` / `--non-interactive`: Disables interactive terminal prompts. If any required inputs are missing, the tool immediately exits with an error listing the missing inputs. Useful for CI/CD or automated scripts.
+- `-validate` / `--validate`: Validates the syntax, structure, and schema of the configuration file without executing any commands.
 
 The best way to use `ilc` is to include it in the shebang of your config, like so:
 
@@ -58,25 +65,35 @@ prompt will appear to complete the selection process.
 
 ### Inputs
 
-After a command is specified or selected an interactive prompt will ask for
-input before the command will be executed. Inputs can be passed as arguments or
-as environment variables that are prefixed with `ILC_INPUT_`. Inputs that have
-been passed as arguments will not be asked, only for the inputs that have yet a value.
+After a command is specified or selected, if any inputs are missing, an interactive TUI prompt will collect them before execution. Inputs are rendered natively according to their type:
+- **`boolean`**: Rendered as interactive selection toggles (Yes/No).
+- **`number`**: Can be incremented or decremented using arrow keys, enforcing `min` and `max` constraints.
+- **`string` (with `options`)**: Rendered as an interactive select list.
+- **`string` (with `pattern`)**: Validated live against the regex pattern as the user types.
 
-All inputs will also be accessible via environment variables prefixed with `ILC_INPUT_`.
+Inputs can also be pre-filled via command-line arguments or environment variables prefixed with `ILC_INPUT_`. Inputs provided via these methods are not prompted interactively.
+
+All resolved input values are accessible within the script environment via variables prefixed with `ILC_INPUT_`.
 
 #### Example of passing inputs as arguments
 
 ```shell
-ilc example/ilc.yaml calendar -month feb
+ilc examples/ilc.yml calendar -month February
 ```
 
 #### Example of passing inputs via environment variables
 
 ```shell
-export ILC_INPUT_month=feb
-ilc example/ilc.yaml calendar
+export ILC_INPUT_month=February
+ilc examples/ilc.yml calendar
 ```
+
+### Replay & History
+
+`ilc` logs the arguments of successfully executed commands in a history file.
+
+- **Replay Prefix (`!`)**: You can replay a previous execution by prefixing the command name or argument with `!`. For example, `ilc examples/ilc.yml !calendar` or `ilc examples/ilc.yml !` to replay the last run of that configuration.
+- **History File Location**: History is written to `~/.ilc_history` by default. This path can be overridden by setting the `ILC_HISTFILE` environment variable.
 
 ## Config
 
