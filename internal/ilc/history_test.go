@@ -186,3 +186,27 @@ some file2:
 		assert.Equal(t, expected, actual)
 	})
 }
+
+func TestFileHistoryStore(t *testing.T) {
+	tempFile, err := os.CreateTemp(t.TempDir(), "")
+	assert.NoError(t, err, "Failed to create temp file")
+
+	store := FileHistoryStore{}
+
+	h := &History{
+		Path: tempFile.Name(),
+		Records: map[string][][]string{
+			"test": {
+				{"hello", "world"},
+			},
+		},
+	}
+
+	err = store.Save(h)
+	assert.NoError(t, err)
+
+	loaded, err := store.Load(tempFile.Name())
+	assert.NoError(t, err)
+	assert.Equal(t, h.Records, loaded.Records)
+}
+

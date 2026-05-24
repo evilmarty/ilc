@@ -103,3 +103,111 @@ func TestTuiModel_BooleanInputToggle(t *testing.T) {
 	assert.True(t, boolVal.Value)
 }
 
+func TestTuiModel_Init(t *testing.T) {
+	m := &tuiModel{}
+	cmd := m.Init()
+	assert.NotNil(t, cmd)
+}
+
+func TestTuiModel_Abort(t *testing.T) {
+	input := &Input{Name: "name", Value: &StringValue{Value: "test"}}
+	m := &tuiModel{
+		inputs: []*Input{input},
+	}
+	m.initCurrentInput()
+
+	// Press Ctrl+C -> should set aborted to true
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+	assert.True(t, m.aborted)
+	assert.NotNil(t, cmd)
+
+	m.aborted = false
+	// Press Esc -> should set aborted to true
+	_, cmd = m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	assert.True(t, m.aborted)
+	assert.NotNil(t, cmd)
+
+	// View should return empty string if aborted
+	assert.Equal(t, "", m.View())
+}
+
+func TestTuiModel_ViewSelectable(t *testing.T) {
+	input := &Input{
+		Name:        "choices",
+		Description: "Choose one",
+		Options: InputOptions{
+			{Label: "OptA", Value: "A"},
+			{Label: "OptB", Value: "B"},
+		},
+		Value: &StringValue{},
+	}
+	m := &tuiModel{
+		inputs: []*Input{input},
+	}
+	m.initCurrentInput()
+
+	viewStr := m.View()
+	assert.Contains(t, viewStr, "[1/1] Choose one")
+	assert.Contains(t, viewStr, "❯ OptA")
+	assert.Contains(t, viewStr, "OptB")
+
+	// Adjust optionsIndex and check update view
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
+	viewStr2 := m.View()
+	assert.Contains(t, viewStr2, "❯ OptB")
+}
+
+func TestTuiModel_ViewStringInputWithError(t *testing.T) {
+	input := &Input{
+		Name:  "name",
+		Value: &StringValue{Pattern: "^[a-z]+$"},
+	}
+	m := &tuiModel{
+		inputs: []*Input{input},
+	}
+	m.initCurrentInput()
+
+	// Initially no error
+	viewStr := m.View()
+	assert.Contains(t, viewStr, "Please specify a name")
+	assert.NotContains(t, viewStr, "✗ Invalid input")
+
+	// Set invalid value to trigger error
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter}) // triggers empty set which fails pattern
+	viewStrErr := m.View()
+	assert.Contains(t, viewStrErr, "✗ Invalid input")
+}
+
+func TestTuiModel_TransitionMultipleInputs(t *testing.T) {
+	input1 := &Input{Name: "first", Value: &StringValue{Value: "A"}}
+	input2 := &Input{Name: "second", Value: &StringValue{Value: "B"}}
+	m := &tuiModel{
+		inputs: []*Input{input1, input2},
+	}
+	m.initCurrentInput()
+
+	// Initially at index 0
+	assert.Equal(t, 0, m.currentIndex)
+
+	// Press Enter to confirm first and transition
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	assert.Equal(t, 1, m.currentIndex)
+
+	// Press Enter to confirm second and finish
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	assert.NotNil(t, cmd) // Should return tea.Quit
+}
+
+func TestTuiModel_NonSelectableKeystrokes(t *testing.T) {
+	input := &Input{Name: "name", Value: &StringValue{}}
+	m := &tuiModel{
+		inputs: []*Input{input},
+	}
+	m.initCurrentInput()
+
+	// Send normal key msg to update textInput
+	_, _ = m.Update(tea.KeyMsg{Runes: []rune("hello"), Type: tea.KeyRunes})
+	assert.Equal(t, "hello", m.textInput.Value())
+}
+
+
