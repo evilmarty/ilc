@@ -39,10 +39,17 @@ func (m *tuiModel) initCurrentInput() {
 	} else {
 		m.optionsIndex = 0
 		if m.isBooleanInput(current) {
+			opts := m.getBooleanOptions(current)
+			targetVal := "false"
 			if boolVal, ok := current.Value.(*BooleanValue); ok && boolVal.Value {
-				m.optionsIndex = 0
-			} else {
-				m.optionsIndex = 1
+				targetVal = "true"
+			}
+			m.optionsIndex = 0
+			for i, opt := range opts {
+				if opt.Value == targetVal {
+					m.optionsIndex = i
+					break
+				}
 			}
 		}
 	}

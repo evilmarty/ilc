@@ -143,6 +143,47 @@ func (x *yamlInput) UnmarshalYAML(node *yaml.Node) error {
 		}
 	}
 
+	if _, isBool := val.(*inputs.BooleanValue); isBool && len(temp.Options) > 0 {
+		var optionsNode *yaml.Node
+		for i := 0; i < len(node.Content); i += 2 {
+			if node.Content[i].Value == "options" {
+				optionsNode = node.Content[i+1]
+				break
+			}
+		}
+
+		if optionsNode != nil {
+			if optionsNode.Kind == yaml.SequenceNode {
+				if len(temp.Options) != 2 {
+					return fmt.Errorf("line %d: boolean input options array must have exactly 2 items, got %d", optionsNode.Line, len(temp.Options))
+				}
+				temp.Options[0] = inputs.InputOption{Label: temp.Options[0].Label, Value: "false"}
+				temp.Options[1] = inputs.InputOption{Label: temp.Options[1].Label, Value: "true"}
+			} else {
+				hasTrue := false
+				hasFalse := false
+				var newOptions yamlInputOptions
+				for _, opt := range temp.Options {
+					key := opt.Label
+					valStr := opt.Value
+					if key == "true" {
+						hasTrue = true
+						newOptions = append(newOptions, inputs.InputOption{Label: valStr, Value: "true"})
+					} else if key == "false" {
+						hasFalse = true
+						newOptions = append(newOptions, inputs.InputOption{Label: valStr, Value: "false"})
+					} else {
+						return fmt.Errorf("line %d: invalid boolean option key: %s (must be true or false)", optionsNode.Line, key)
+					}
+				}
+				if !hasTrue || !hasFalse {
+					return fmt.Errorf("line %d: boolean option map must contain both true and false keys", optionsNode.Line)
+				}
+				temp.Options = newOptions
+			}
+		}
+	}
+
 	x.Description = temp.Description
 	x.Options = temp.Options
 	x.Value = val

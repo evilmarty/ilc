@@ -193,4 +193,90 @@ empty_input:
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
+	t.Run("boolean options map", func(t *testing.T) {
+		content := `
+bool_map:
+  type: boolean
+  options:
+    true: Absolutely
+    false: No way
+`
+		expected := func() Inputs {
+			fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+			fs.Var(&inputs.Input{
+				Name:  "bool_map",
+				Value: &inputs.BooleanValue{},
+				Options: inputs.InputOptions{
+					{Label: "Absolutely", Value: "true"},
+					{Label: "No way", Value: "false"},
+				},
+			})
+			return Inputs{FlagSet: fs}
+		}()
+		var actual Inputs
+		err := yaml.Unmarshal([]byte(content), &actual)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("boolean options array", func(t *testing.T) {
+		content := `
+bool_array:
+  type: boolean
+  options:
+    - No way
+    - Absolutely
+`
+		expected := func() Inputs {
+			fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+			fs.Var(&inputs.Input{
+				Name:  "bool_array",
+				Value: &inputs.BooleanValue{},
+				Options: inputs.InputOptions{
+					{Label: "No way", Value: "false"},
+					{Label: "Absolutely", Value: "true"},
+				},
+			})
+			return Inputs{FlagSet: fs}
+		}()
+		var actual Inputs
+		err := yaml.Unmarshal([]byte(content), &actual)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("boolean options invalid mapping", func(t *testing.T) {
+		content := `
+bool_invalid:
+  type: boolean
+  options:
+    true: Absolutely
+    invalid: No way
+`
+		var actual Inputs
+		err := yaml.Unmarshal([]byte(content), &actual)
+		assert.ErrorContains(t, err, "invalid boolean option key: invalid")
+	})
+	t.Run("boolean options incomplete mapping", func(t *testing.T) {
+		content := `
+bool_incomplete:
+  type: boolean
+  options:
+    true: Absolutely
+`
+		var actual Inputs
+		err := yaml.Unmarshal([]byte(content), &actual)
+		assert.ErrorContains(t, err, "boolean option map must contain both true and false keys")
+	})
+	t.Run("boolean options invalid array length", func(t *testing.T) {
+		content := `
+bool_invalid_array:
+  type: boolean
+  options:
+    - No
+    - Yes
+    - Maybe
+`
+		var actual Inputs
+		err := yaml.Unmarshal([]byte(content), &actual)
+		assert.ErrorContains(t, err, "boolean input options array must have exactly 2 items, got 3")
+	})
 }

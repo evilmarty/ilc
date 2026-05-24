@@ -181,6 +181,32 @@ inputs:
       Sydney: syd
 ```
 
+- Customizing `boolean` input options:
+
+  For `boolean` inputs, options can be defined as a map to specify custom labels for `true` and `false` values, or as a 2-item array where the first item (index 0) represents `false` and the second item (index 1) represents `true`:
+
+  **Using a map:**
+
+  ```yaml
+  inputs:
+    confirm:
+      type: boolean
+      options:
+        true: Absolutely
+        false: No way
+  ```
+
+  **Using an array:**
+
+  ```yaml
+  inputs:
+    confirm:
+      type: boolean
+      options:
+        - No way
+        - Absolutely
+  ```
+
 ### `inputs.<input_name>.pattern`
 
 A regex pattern to validate the input's value. Default is to allow any input.
