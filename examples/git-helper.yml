@@ -1,0 +1,53 @@
+#!/usr/bin/env ilc
+description: Interactive Git Workflow Assistant
+commands:
+  branch:
+    description: Branch operations
+    commands:
+      create:
+        description: Create and switch to a new branch
+        inputs:
+          name:
+            description: Name of the new branch
+            pattern: "^[a-zA-Z0-9_.-]+$"
+        run: git checkout -b {{ .Input.name }}
+      switch:
+        description: Switch to an existing branch
+        inputs:
+          target:
+            description: Target branch name
+            options:
+              - main
+              - master
+              - next
+              - dev
+        run: git checkout {{ .Input.target }}
+  commit:
+    description: Commit staged changes with custom messaging
+    inputs:
+      type:
+        description: Type of commit change
+        options:
+          feat: Features
+          fix: Bug Fixes
+          docs: Documentation
+          style: Formatting & Styles
+          refactor: Refactoring
+          test: Testing
+      message:
+        description: Short description of changes
+    run: |
+      git commit -m "{{ .Input.type }}: {{ .Input.message }}"
+  sync:
+    description: Push or pull changes
+    inputs:
+      action:
+        description: Sync action to perform
+        options:
+          - push
+          - pull
+      remote:
+        description: Remote repository name
+        default: origin
+    run: |
+      git {{ .Input.action }} {{ .Input.remote }} $(git branch --show-current)

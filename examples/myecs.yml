@@ -1,7 +1,8 @@
 #!/usr/bin/env ilc
 description: View my ECS clusters
 inputs:
-  env:
+  cluster:
+    description: Select the target ECS cluster environment
     options:
       development: dev-cluster
       staging: staging-cluster

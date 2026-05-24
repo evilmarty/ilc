@@ -1,0 +1,44 @@
+#!/usr/bin/env ilc
+description: Interactive Docker Container Manager
+commands:
+  logs:
+    description: Stream container logs
+    inputs:
+      container:
+        description: Target container name or ID
+        default: web-app
+      lines:
+        description: Number of trailing lines to show
+        type: number
+        min: 1
+        max: 100
+        default: 10
+      follow:
+        description: Stream logs continuously
+        type: boolean
+        default: true
+    run: docker logs {{ if .Input.follow }}-f{{ end }} --tail {{ .Input.lines }} {{ .Input.container }}
+  cleanup:
+    description: Clean up system resources
+    inputs:
+      all:
+        description: Remove unused images, containers, and networks
+        type: boolean
+        default: false
+    run: docker system prune {{ if .Input.all }}-a{{ end }} --volumes -f
+  run:
+    description: Launch a disposable background container
+    inputs:
+      image:
+        description: Docker image name
+        options:
+          - nginx:alpine
+          - redis:alpine
+          - postgres:alpine
+      port:
+        description: Host port mapping
+        type: number
+        min: 1024
+        max: 65535
+        default: 8080
+    run: docker run -d -p {{ .Input.port }}:80 --name test-container {{ .Input.image }}
