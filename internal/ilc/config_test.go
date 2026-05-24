@@ -206,3 +206,9 @@ func TestConfigValidate(t *testing.T) {
 		}
 	})
 }
+
+func TestLoadConfig_FileNotExist(t *testing.T) {
+	_, err := LoadConfig("non_existent_file.yml")
+	assert.Error(t, err)
+}
+

@@ -180,3 +180,68 @@ func TestFlagSet_ParseInteractiveMocked(t *testing.T) {
 	assert.True(t, mock.Called)
 	assert.Equal(t, "bne", sVal.Value)
 }
+
+func TestInputOptionString(t *testing.T) {
+	opt := InputOption{Label: "Brisbane", Value: "bne"}
+	assert.Equal(t, "Brisbane", opt.String())
+}
+
+func TestFlagSet_InputsValuesToEnvMapToArgs(t *testing.T) {
+	fs := NewFlagSet("test-fs", "ILC_INPUT_")
+	strIn := &Input{Name: "str", Value: &StringValue{Value: "hello"}}
+	numIn := &Input{Name: "num", Value: &NumberValue{Value: 42}}
+	boolInTrue := &Input{Name: "bool-true", Value: &BooleanValue{Value: true}}
+	boolInFalse := &Input{Name: "bool-false", Value: &BooleanValue{Value: false}}
+	fs.Var(strIn)
+	fs.Var(numIn)
+	fs.Var(boolInTrue)
+	fs.Var(boolInFalse)
+
+	// Test Inputs()
+	assert.Len(t, fs.Inputs(), 4)
+
+	// Test Values()
+	vals := fs.Values()
+	assert.Equal(t, "hello", vals["str"])
+	assert.Equal(t, 42.0, vals["num"])
+	assert.Equal(t, true, vals["bool-true"])
+	assert.Equal(t, false, vals["bool-false"])
+
+	// Test ToEnvMap()
+	em := fs.ToEnvMap()
+	assert.Equal(t, "hello", em["ILC_INPUT_STR"])
+	assert.Equal(t, "42", em["ILC_INPUT_NUM"])
+	assert.Equal(t, "true", em["ILC_INPUT_BOOL_TRUE"])
+	assert.Equal(t, "false", em["ILC_INPUT_BOOL_FALSE"])
+
+	// Test ToArgs()
+	args := fs.ToArgs()
+	assert.Contains(t, args, "-str")
+	assert.Contains(t, args, "hello")
+	assert.Contains(t, args, "-bool-true")
+	assert.Contains(t, args, "-bool-false=false")
+}
+
+func TestValues_ValidateLive(t *testing.T) {
+	// StringValue ValidateLive
+	sVal := StringValue{Pattern: "^[a-z]+$"}
+	assert.NoError(t, sVal.ValidateLive("valid"))
+	assert.Error(t, sVal.ValidateLive("INVALID"))
+
+	// NumberValue ValidateLive
+	nVal := NumberValue{MinValue: 1.0, MaxValue: 10.0}
+	assert.NoError(t, nVal.ValidateLive("5"))
+	assert.NoError(t, nVal.ValidateLive("-")) // incomplete number is ignored/valid live
+	assert.NoError(t, nVal.ValidateLive("+"))
+	assert.NoError(t, nVal.ValidateLive("."))
+	assert.NoError(t, nVal.ValidateLive("1e-"))
+	assert.NoError(t, nVal.ValidateLive("1e+"))
+	assert.NoError(t, nVal.ValidateLive("1E"))
+	assert.Error(t, nVal.ValidateLive("12"))
+
+	// BooleanValue ValidateLive
+	bVal := BooleanValue{}
+	assert.NoError(t, bVal.ValidateLive("true"))
+	assert.Error(t, bVal.ValidateLive("nope"))
+}
+

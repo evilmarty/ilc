@@ -410,6 +410,14 @@ func (m *commandModel) View() string {
 	return sb.String()
 }
 
+type programRunner interface {
+	Run() (tea.Model, error)
+}
+
+var newProgram = func(m tea.Model) programRunner {
+	return tea.NewProgram(m)
+}
+
 func askCommands(sel Selection, env map[string]string) (Selection, error) {
 	title := sel.commands[0].Description
 	if title == "" {
@@ -446,7 +454,7 @@ func askCommands(sel Selection, env map[string]string) (Selection, error) {
 		}
 	}
 
-	p := tea.NewProgram(&m)
+	p := newProgram(&m)
 	if _, err := p.Run(); err != nil {
 		return sel, err
 	}

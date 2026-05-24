@@ -1,6 +1,7 @@
 package ilc
 
 import (
+	"bytes"
 	"os"
 	"testing"
 
@@ -214,3 +215,28 @@ func usageFixture() Usage {
 	u.Description = "this is a fixture"
 	return u
 }
+
+func TestUsage_ImportSelection(t *testing.T) {
+	u := NewUsage(os.Stdout)
+	cmd := Command{
+		Name:        "root",
+		Description: "root command",
+		Commands: SubCommands{
+			{Command: Command{Name: "sub", Description: "sub command"}},
+		},
+	}
+	sel := Selection{
+		commands: []Command{cmd},
+	}
+	u.ImportSelection(sel)
+	assert.Contains(t, u.String(), "sub command")
+}
+
+func TestUsage_Print(t *testing.T) {
+	var buf bytes.Buffer
+	u := NewUsage(&buf)
+	u.Title = "PrintTest"
+	u.Print()
+	assert.Contains(t, buf.String(), "PrintTest")
+}
+

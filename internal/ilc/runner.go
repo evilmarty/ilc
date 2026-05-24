@@ -23,6 +23,8 @@ var (
 	ErrInvalidReplay     = errors.New("invalid replay command")
 )
 
+var exitFunc = os.Exit
+
 type Runner struct {
 	Name           string
 	NameVersion    string
@@ -69,7 +71,7 @@ func (r *Runner) printVersion() {
 	if r.Commit != "" {
 		r.Printf("Commit: %s\n", r.Commit)
 	}
-	os.Exit(0)
+	exitFunc(0)
 }
 
 func (r *Runner) usage() Usage {
@@ -89,7 +91,7 @@ func (r *Runner) flagSet() *flag.FlagSet {
 	fs := flag.NewFlagSet(r.Name, flag.ExitOnError)
 	fs.Usage = func() {
 		r.usage().Print()
-		os.Exit(0)
+		exitFunc(0)
 	}
 	fs.BoolFunc("version", "Displays the version", func(_ string) error {
 		r.printVersion()
