@@ -3,8 +3,6 @@ package ilc
 import (
 	"errors"
 	"fmt"
-	"math"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -140,8 +138,10 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					} else {
 						m.optionsIndex = len(current.Options) - 1
 					}
-				} else if _, isNumber := current.Value.(*inputs.NumberValue); isNumber {
-					m.adjustNumberInput(1)
+				} else if adjustable, ok := current.Value.(inputs.AdjustableValue); ok {
+					newStr, err := adjustable.Adjust(m.textInput.Value(), 1)
+					m.textInput.SetValue(newStr)
+					m.inputErr = err
 				}
 				return m, nil
 
@@ -153,8 +153,10 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					} else {
 						m.optionsIndex = 0
 					}
-				} else if _, isNumber := current.Value.(*inputs.NumberValue); isNumber {
-					m.adjustNumberInput(-1)
+				} else if adjustable, ok := current.Value.(inputs.AdjustableValue); ok {
+					newStr, err := adjustable.Adjust(m.textInput.Value(), -1)
+					m.textInput.SetValue(newStr)
+					m.inputErr = err
 				}
 				return m, nil
 			}
@@ -171,21 +173,9 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			var err error
-			switch v := current.Value.(type) {
-			case *inputs.NumberValue:
-				if isIncompleteNumber(val) {
-					err = nil
-				} else {
-					temp := &inputs.NumberValue{MinValue: v.MinValue, MaxValue: v.MaxValue}
-					err = temp.Set(val)
-				}
-			case *inputs.StringValue:
-				temp := &inputs.StringValue{Pattern: v.Pattern}
-				err = temp.Set(val)
-			case *inputs.BooleanValue:
-				temp := &inputs.BooleanValue{}
-				err = temp.Set(val)
-			default:
+			if validator, ok := current.Value.(inputs.LiveValidator); ok {
+				err = validator.ValidateLive(val)
+			} else {
 				err = current.Value.Set(val)
 			}
 
@@ -395,7 +385,7 @@ func (m *commandModel) View() string {
 
 		// Help Guidelines (Hide confirm instruction if active input is invalid)
 		var helpParts []string
-		if _, isNumber := current.Value.(*inputs.NumberValue); isNumber {
+		if _, isAdjustable := current.Value.(inputs.AdjustableValue); isAdjustable {
 			helpParts = append(helpParts, "[Up/Down] +/-")
 		}
 		if m.inputErr == nil {
@@ -464,63 +454,4 @@ func askCommands(sel Selection, env map[string]string) (Selection, error) {
 	return sel, errors.New("no choice made")
 }
 
-func isIncompleteNumber(s string) bool {
-	if s == "" || s == "-" || s == "+" || s == "." || s == "-." || s == "+." {
-		return true
-	}
-	if strings.HasSuffix(s, "e") || strings.HasSuffix(s, "E") ||
-		strings.HasSuffix(s, "e-") || strings.HasSuffix(s, "E-") ||
-		strings.HasSuffix(s, "e+") || strings.HasSuffix(s, "E+") {
-		return true
-	}
-	if strings.HasSuffix(s, ".") {
-		return true
-	}
-	return false
-}
 
-func (m *commandModel) adjustNumberInput(delta float64) {
-	current := m.missing[m.inputIndex]
-	numVal, ok := current.Value.(*inputs.NumberValue)
-	if !ok {
-		return
-	}
-
-	val := m.textInput.Value()
-	if val == "" {
-		val = current.Value.String()
-	}
-
-	n, err := strconv.ParseFloat(val, 64)
-	if err != nil {
-		n = numVal.Value
-	}
-
-	newVal := n + delta
-
-	// Clamping to min/max bounds if defined
-	if numVal.MinValue < numVal.MaxValue {
-		if newVal < numVal.MinValue {
-			newVal = numVal.MinValue
-		} else if newVal > numVal.MaxValue {
-			newVal = numVal.MaxValue
-		}
-	} else if numVal.MinValue > numVal.MaxValue && numVal.MaxValue == 0.0 {
-		if newVal < numVal.MinValue {
-			newVal = numVal.MinValue
-		}
-	}
-
-	// Format back cleanly (avoiding .00000 decimals for integers)
-	prec := 5
-	if newVal == math.Round(newVal) {
-		prec = 0
-	}
-	newStr := strconv.FormatFloat(newVal, 'f', prec, 64)
-
-	m.textInput.SetValue(newStr)
-
-	// Update prompt validation in real-time
-	temp := &inputs.NumberValue{MinValue: numVal.MinValue, MaxValue: numVal.MaxValue}
-	m.inputErr = temp.Set(newStr)
-}
