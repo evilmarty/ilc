@@ -1,7 +1,6 @@
 package ilc
 
 import (
-	"fmt"
 	"text/template"
 
 	"github.com/evilmarty/ilc/internal/inputs"
@@ -59,14 +58,23 @@ func (command Command) Validate() error {
 	if command.Run != "" {
 		_, err := template.New(command.Name).Funcs(defaultTemplateFuncs).Parse(command.Run)
 		if err != nil {
-			return fmt.Errorf("invalid run template in command %q: %w", command.Name, err)
+			return &TemplateError{
+				Type:    "run",
+				Command: command.Name,
+				Err:     err,
+			}
 		}
 	}
 
 	for name, envTmpl := range command.Env {
 		_, err := template.New(name).Funcs(defaultTemplateFuncs).Parse(envTmpl)
 		if err != nil {
-			return fmt.Errorf("invalid env template %q in command %q: %w", name, command.Name, err)
+			return &TemplateError{
+				Type:      "env",
+				Command:   command.Name,
+				FieldName: name,
+				Err:       err,
+			}
 		}
 	}
 

@@ -1,6 +1,7 @@
 package ilc
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -173,6 +174,15 @@ func TestConfigValidate(t *testing.T) {
 		err := cfg.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid run template in command \"test-cmd\"")
+
+		// Verify custom structured TemplateError properties
+		var tmplErr *TemplateError
+		if assert.True(t, errors.As(err, &tmplErr)) {
+			assert.Equal(t, "run", tmplErr.Type)
+			assert.Equal(t, "test-cmd", tmplErr.Command)
+			assert.Equal(t, "", tmplErr.FieldName)
+			assert.Error(t, tmplErr.Err)
+		}
 	})
 
 	t.Run("invalid env template", func(t *testing.T) {
@@ -185,5 +195,14 @@ func TestConfigValidate(t *testing.T) {
 		err := cfg.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid env template \"BAD_VAR\" in command \"test-cmd\"")
+
+		// Verify custom structured TemplateError properties
+		var tmplErr *TemplateError
+		if assert.True(t, errors.As(err, &tmplErr)) {
+			assert.Equal(t, "env", tmplErr.Type)
+			assert.Equal(t, "test-cmd", tmplErr.Command)
+			assert.Equal(t, "BAD_VAR", tmplErr.FieldName)
+			assert.Error(t, tmplErr.Err)
+		}
 	})
 }
