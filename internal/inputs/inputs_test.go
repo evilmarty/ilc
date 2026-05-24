@@ -140,3 +140,43 @@ func TestFlagSet_Merge(t *testing.T) {
 	assert.True(t, merged.Has("count"))
 	assert.Equal(t, 2, len(merged.inputs))
 }
+
+type MockPrompter struct {
+	PromptFunc    func(title string, missing []*Input) error
+	Called        bool
+	PassedTitle   string
+	PassedMissing []*Input
+}
+
+func (m *MockPrompter) Prompt(title string, missing []*Input) error {
+	m.Called = true
+	m.PassedTitle = title
+	m.PassedMissing = missing
+	if m.PromptFunc != nil {
+		return m.PromptFunc(title, missing)
+	}
+	return nil
+}
+
+func TestFlagSet_ParseInteractiveMocked(t *testing.T) {
+	fs := NewFlagSet("my-flagset", "ILC_INPUT_")
+	sVal := &StringValue{}
+	fs.Var(&Input{Name: "airport", Value: sVal})
+
+	mock := &MockPrompter{
+		PromptFunc: func(title string, missing []*Input) error {
+			assert.Equal(t, "my-flagset", title)
+			assert.Len(t, missing, 1)
+			assert.Equal(t, "airport", missing[0].Name)
+			// Simulate user typing input in the TUI prompt:
+			return missing[0].Value.Set("bne")
+		},
+	}
+	fs.Prompter = mock
+
+	// Run interactive Parse with nonInteractive = false
+	err := fs.Parse(nil, nil, false)
+	assert.NoError(t, err)
+	assert.True(t, mock.Called)
+	assert.Equal(t, "bne", sVal.Value)
+}

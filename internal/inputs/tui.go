@@ -173,9 +173,15 @@ func (m *tuiModel) View() string {
 	return sb.String()
 }
 
-func (fs *FlagSet) promptTUI(missing []*Input) error {
+type Prompter interface {
+	Prompt(title string, missing []*Input) error
+}
+
+type TuiPrompter struct{}
+
+func (tp TuiPrompter) Prompt(title string, missing []*Input) error {
 	m := tuiModel{
-		title:        fs.name,
+		title:        title,
 		inputs:       missing,
 		currentIndex: 0,
 	}

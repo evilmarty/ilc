@@ -66,6 +66,7 @@ type FlagSet struct {
 	envPrefix      string
 	inputs         []*Input
 	provided       map[string]*bool
+	Prompter       Prompter
 }
 
 func NewFlagSet(name string, envPrefix string) *FlagSet {
@@ -74,6 +75,13 @@ func NewFlagSet(name string, envPrefix string) *FlagSet {
 		envPrefix: envPrefix,
 		provided:  make(map[string]*bool),
 	}
+}
+
+func (fs *FlagSet) getPrompter() Prompter {
+	if fs.Prompter == nil {
+		return TuiPrompter{}
+	}
+	return fs.Prompter
 }
 
 func (fs *FlagSet) Var(input *Input) {
@@ -143,8 +151,8 @@ func (fs *FlagSet) Parse(args []string, envs map[string]string, nonInteractive b
 			return fmt.Errorf("missing inputs: %s", strings.Join(missingNames, ", "))
 		}
 
-		// Prompt using Bubble Tea TUI
-		if err := fs.promptTUI(missing); err != nil {
+		// Prompt using the prompter
+		if err := fs.getPrompter().Prompt(fs.name, missing); err != nil {
 			return err
 		}
 	}
