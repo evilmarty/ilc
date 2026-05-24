@@ -153,6 +153,33 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		current := m.missing[m.inputIndex]
 		if !current.Selectable() {
 			m.textInput, cmd = m.textInput.Update(msg)
+
+			// Live validation dry-run
+			val := m.textInput.Value()
+			if val == "" {
+				val = current.Value.String()
+			}
+
+			var err error
+			switch v := current.Value.(type) {
+			case *inputs.NumberValue:
+				if isIncompleteNumber(val) {
+					err = nil
+				} else {
+					temp := &inputs.NumberValue{MinValue: v.MinValue, MaxValue: v.MaxValue}
+					err = temp.Set(val)
+				}
+			case *inputs.StringValue:
+				temp := &inputs.StringValue{Pattern: v.Pattern}
+				err = temp.Set(val)
+			case *inputs.BooleanValue:
+				temp := &inputs.BooleanValue{}
+				err = temp.Set(val)
+			default:
+				err = current.Value.Set(val)
+			}
+
+			m.inputErr = err
 		}
 		return m, cmd
 	}
@@ -414,4 +441,19 @@ func askCommands(sel Selection, env map[string]string) (Selection, error) {
 	}
 
 	return sel, errors.New("no choice made")
+}
+
+func isIncompleteNumber(s string) bool {
+	if s == "" || s == "-" || s == "+" || s == "." || s == "-." || s == "+." {
+		return true
+	}
+	if strings.HasSuffix(s, "e") || strings.HasSuffix(s, "E") ||
+		strings.HasSuffix(s, "e-") || strings.HasSuffix(s, "E-") ||
+		strings.HasSuffix(s, "e+") || strings.HasSuffix(s, "E+") {
+		return true
+	}
+	if strings.HasSuffix(s, ".") {
+		return true
+	}
+	return false
 }
