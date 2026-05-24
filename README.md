@@ -183,9 +183,22 @@ inputs:
 
 - Customizing `boolean` input options:
 
-  For `boolean` inputs, options can be defined as a map to specify custom labels for `true` and `false` values, or as a 2-item array where the first item (index 0) represents `false` and the second item (index 1) represents `true`:
+  For `boolean` inputs, options can be defined as a 2-item array where the first item (index 0) represents `false` and the second item (index 1) represents `true`, or as a map. 
 
-  **Using a map:**
+  To keep maps fully consistent with standard selectable maps, keys are treated as user-facing labels and values as the resulting boolean value. For convenience, writing maps with the boolean as the key and the label as the value is also supported.
+
+  **Using a map (consistent with standard selectable maps):**
+
+  ```yaml
+  inputs:
+    confirm:
+      type: boolean
+      options:
+        Absolutely: true
+        No way: false
+  ```
+
+  **Using a map (alternative shorthand):**
 
   ```yaml
   inputs:

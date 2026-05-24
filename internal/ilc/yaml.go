@@ -166,14 +166,24 @@ func (x *yamlInput) UnmarshalYAML(node *yaml.Node) error {
 				for _, opt := range temp.Options {
 					key := opt.Label
 					valStr := opt.Value
-					if key == "true" {
-						hasTrue = true
-						newOptions = append(newOptions, inputs.InputOption{Label: valStr, Value: "true"})
-					} else if key == "false" {
-						hasFalse = true
-						newOptions = append(newOptions, inputs.InputOption{Label: valStr, Value: "false"})
+					if key == "true" || key == "false" {
+						if key == "true" {
+							hasTrue = true
+							newOptions = append(newOptions, inputs.InputOption{Label: valStr, Value: "true"})
+						} else {
+							hasFalse = true
+							newOptions = append(newOptions, inputs.InputOption{Label: valStr, Value: "false"})
+						}
+					} else if valStr == "true" || valStr == "false" {
+						if valStr == "true" {
+							hasTrue = true
+							newOptions = append(newOptions, inputs.InputOption{Label: key, Value: "true"})
+						} else {
+							hasFalse = true
+							newOptions = append(newOptions, inputs.InputOption{Label: key, Value: "false"})
+						}
 					} else {
-						return fmt.Errorf("line %d: invalid boolean option key: %s (must be true or false)", optionsNode.Line, key)
+						return fmt.Errorf("line %d: invalid boolean option: key='%s', value='%s' (one must be true or false)", optionsNode.Line, key, valStr)
 					}
 				}
 				if !hasTrue || !hasFalse {

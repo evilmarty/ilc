@@ -218,6 +218,31 @@ bool_map:
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
+	t.Run("boolean options map consistent", func(t *testing.T) {
+		content := `
+bool_map_consistent:
+  type: boolean
+  options:
+    Absolutely: true
+    No way: false
+`
+		expected := func() Inputs {
+			fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+			fs.Var(&inputs.Input{
+				Name:  "bool_map_consistent",
+				Value: &inputs.BooleanValue{},
+				Options: inputs.InputOptions{
+					{Label: "Absolutely", Value: "true"},
+					{Label: "No way", Value: "false"},
+				},
+			})
+			return Inputs{FlagSet: fs}
+		}()
+		var actual Inputs
+		err := yaml.Unmarshal([]byte(content), &actual)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
 	t.Run("boolean options array", func(t *testing.T) {
 		content := `
 bool_array:
@@ -253,7 +278,7 @@ bool_invalid:
 `
 		var actual Inputs
 		err := yaml.Unmarshal([]byte(content), &actual)
-		assert.ErrorContains(t, err, "invalid boolean option key: invalid")
+		assert.ErrorContains(t, err, "invalid boolean option: key='invalid'")
 	})
 	t.Run("boolean options incomplete mapping", func(t *testing.T) {
 		content := `
