@@ -177,6 +177,9 @@ func (r *Runner) Run() error {
 		return ErrMissingArguments
 	}
 	if r.ValidateConfig {
+		if err := r.Config.Validate(); err != nil {
+			return fmt.Errorf("configuration validation failed: %w", err)
+		}
 		r.Printf("configuration is valid\n")
 		return nil
 	}

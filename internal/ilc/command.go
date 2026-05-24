@@ -1,6 +1,9 @@
 package ilc
 
 import (
+	"fmt"
+	"text/template"
+
 	"github.com/evilmarty/ilc/internal/inputs"
 )
 
@@ -51,3 +54,27 @@ type SubCommand struct {
 }
 
 type SubCommands []SubCommand
+
+func (command Command) Validate() error {
+	if command.Run != "" {
+		_, err := template.New(command.Name).Funcs(defaultTemplateFuncs).Parse(command.Run)
+		if err != nil {
+			return fmt.Errorf("invalid run template in command %q: %w", command.Name, err)
+		}
+	}
+
+	for name, envTmpl := range command.Env {
+		_, err := template.New(name).Funcs(defaultTemplateFuncs).Parse(envTmpl)
+		if err != nil {
+			return fmt.Errorf("invalid env template %q in command %q: %w", name, command.Name, err)
+		}
+	}
+
+	for _, subcommand := range command.Commands {
+		if err := subcommand.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

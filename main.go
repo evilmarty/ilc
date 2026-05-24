@@ -15,6 +15,14 @@ var (
 )
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			// Ensure terminal cursor is visible and formatting is reset before re-panicking
+			fmt.Fprintf(os.Stderr, "\033[?25h\033[0m\n[ilc panic recovery]\n")
+			panic(err)
+		}
+	}()
+
 	r := ilc.Runner{
 		Name:      Name,
 		Version:   Version,

@@ -13,6 +13,10 @@ func (config Config) Select(args []string) Selection {
 	return selected.Select(args)
 }
 
+func (config Config) Validate() error {
+	return Command(config).Validate()
+}
+
 func ParseConfig(content []byte) (Config, error) {
 	var config Config
 

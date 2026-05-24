@@ -144,3 +144,46 @@ commands:
 	assert.NoError(t, err, "LoadConfig() returned an unexpected error")
 	assert.Equal(t, expected, actual, "LoadConfig() returned unexpected results")
 }
+
+func TestConfigValidate(t *testing.T) {
+	t.Run("valid templates", func(t *testing.T) {
+		cfg := Config{
+			Run: "echo {{.Input.Name}}",
+			Env: map[string]string{
+				"GREETING": "hello {{.Input.Greeting}}",
+			},
+			Commands: SubCommands{
+				{
+					Command: Command{
+						Name: "child",
+						Run:  "echo {{.Input.Child}}",
+					},
+				},
+			},
+		}
+		err := cfg.Validate()
+		assert.NoError(t, err)
+	})
+
+	t.Run("invalid run template", func(t *testing.T) {
+		cfg := Config{
+			Name: "test-cmd",
+			Run:  "echo {{.Input.Name", // missing closing braces
+		}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid run template in command \"test-cmd\"")
+	})
+
+	t.Run("invalid env template", func(t *testing.T) {
+		cfg := Config{
+			Name: "test-cmd",
+			Env: map[string]string{
+				"BAD_VAR": "hello {{.Input.Greeting", // missing closing braces
+			},
+		}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid env template \"BAD_VAR\" in command \"test-cmd\"")
+	})
+}
