@@ -150,3 +150,47 @@ func TestCommandModel_HelpTextForNumberInput(t *testing.T) {
 		t.Errorf("expected string input help text NOT to contain '[Up/Down] +/-', got %q", viewStrStr)
 	}
 }
+
+func TestCommandModel_BooleanInputToggle(t *testing.T) {
+	boolVal := &inputs.BooleanValue{Value: true}
+	input := &inputs.Input{
+		Name:  "confirm",
+		Value: boolVal,
+	}
+	m := &commandModel{
+		mode:       modeInputPrompt,
+		missing:    []*inputs.Input{input},
+		inputIndex: 0,
+	}
+	m.initCurrentInput()
+
+	// Initial selection should be "true" (index 0) because default is true
+	if m.optionsIndex != 0 {
+		t.Errorf("expected optionsIndex to be 0 for default true, got %d", m.optionsIndex)
+	}
+
+	// Press KeyDown to select "false" (index 1)
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
+	if m.optionsIndex != 1 {
+		t.Errorf("expected optionsIndex to be 1 after KeyDown, got %d", m.optionsIndex)
+	}
+
+	// Press KeyDown again to cycle back to "true" (index 0)
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
+	if m.optionsIndex != 0 {
+		t.Errorf("expected optionsIndex to cycle back to 0, got %d", m.optionsIndex)
+	}
+
+	// Press KeyUp to go to "false" (index 1)
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})
+	if m.optionsIndex != 1 {
+		t.Errorf("expected optionsIndex to be 1 after KeyUp, got %d", m.optionsIndex)
+	}
+
+	// Confirm selection by pressing KeyEnter
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if boolVal.Value != false {
+		t.Errorf("expected boolVal to be set to false after confirmation, got %v", boolVal.Value)
+	}
+}
+

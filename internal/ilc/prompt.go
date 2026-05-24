@@ -65,13 +65,20 @@ func (m *commandModel) initCurrentInput() {
 		return
 	}
 	current := m.missing[m.inputIndex]
-	if !current.Selectable() {
+	if !current.Selectable() && !m.isBooleanInput(current) {
 		m.textInput = textinput.New()
 		m.textInput.Placeholder = current.Value.String()
 		m.textInput.PlaceholderStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 		m.textInput.Focus()
 	} else {
 		m.optionsIndex = 0
+		if m.isBooleanInput(current) {
+			if boolVal, ok := current.Value.(*inputs.BooleanValue); ok && boolVal.Value {
+				m.optionsIndex = 0
+			} else {
+				m.optionsIndex = 1
+			}
+		}
 	}
 }
 
@@ -107,8 +114,9 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyEnter:
 				current := m.missing[m.inputIndex]
 				var val string
-				if current.Selectable() {
-					val = current.Options[m.optionsIndex].Value
+				if current.Selectable() || m.isBooleanInput(current) {
+					opts := m.getBooleanOptions(current)
+					val = opts[m.optionsIndex].Value
 				} else {
 					val = m.textInput.Value()
 					if val == "" {
@@ -132,11 +140,12 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case tea.KeyUp:
 				current := m.missing[m.inputIndex]
-				if current.Selectable() {
+				if current.Selectable() || m.isBooleanInput(current) {
+					opts := m.getBooleanOptions(current)
 					if m.optionsIndex > 0 {
 						m.optionsIndex--
 					} else {
-						m.optionsIndex = len(current.Options) - 1
+						m.optionsIndex = len(opts) - 1
 					}
 				} else if adjustable, ok := current.Value.(inputs.AdjustableValue); ok {
 					newStr, err := adjustable.Adjust(m.textInput.Value(), 1)
@@ -147,8 +156,9 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case tea.KeyDown:
 				current := m.missing[m.inputIndex]
-				if current.Selectable() {
-					if m.optionsIndex < len(current.Options)-1 {
+				if current.Selectable() || m.isBooleanInput(current) {
+					opts := m.getBooleanOptions(current)
+					if m.optionsIndex < len(opts)-1 {
 						m.optionsIndex++
 					} else {
 						m.optionsIndex = 0
@@ -362,9 +372,10 @@ func (m *commandModel) View() string {
 		sb.WriteString("\n")
 
 		// Render active input control
-		if current.Selectable() {
+		if current.Selectable() || m.isBooleanInput(current) {
 			sb.WriteString("\n")
-			for i, option := range current.Options {
+			opts := m.getBooleanOptions(current)
+			for i, option := range opts {
 				if i == m.optionsIndex {
 					sb.WriteString(fmt.Sprintf("    ❯ %s\n", accentStyle.Render(option.Label)))
 				} else {
@@ -452,6 +463,21 @@ func askCommands(sel Selection, env map[string]string) (Selection, error) {
 	}
 
 	return sel, errors.New("no choice made")
+}
+
+func (m *commandModel) isBooleanInput(current *inputs.Input) bool {
+	_, isBool := current.Value.(*inputs.BooleanValue)
+	return isBool
+}
+
+func (m *commandModel) getBooleanOptions(current *inputs.Input) []inputs.InputOption {
+	if current.Selectable() {
+		return current.Options
+	}
+	return []inputs.InputOption{
+		{Label: "true", Value: "true"},
+		{Label: "false", Value: "false"},
+	}
 }
 
 

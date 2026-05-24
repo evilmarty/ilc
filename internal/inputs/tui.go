@@ -31,12 +31,19 @@ type tuiModel struct {
 func (m *tuiModel) initCurrentInput() {
 	m.err = nil
 	current := m.inputs[m.currentIndex]
-	if !current.Selectable() {
+	if !current.Selectable() && !m.isBooleanInput(current) {
 		m.textInput = textinput.New()
 		m.textInput.Placeholder = current.Value.String()
 		m.textInput.Focus()
 	} else {
 		m.optionsIndex = 0
+		if m.isBooleanInput(current) {
+			if boolVal, ok := current.Value.(*BooleanValue); ok && boolVal.Value {
+				m.optionsIndex = 0
+			} else {
+				m.optionsIndex = 1
+			}
+		}
 	}
 }
 
@@ -57,8 +64,9 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			current := m.inputs[m.currentIndex]
 			var val string
-			if current.Selectable() {
-				val = current.Options[m.optionsIndex].Value
+			if current.Selectable() || m.isBooleanInput(current) {
+				opts := m.getBooleanOptions(current)
+				val = opts[m.optionsIndex].Value
 			} else {
 				val = m.textInput.Value()
 				if val == "" {
@@ -81,11 +89,12 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyUp:
 			current := m.inputs[m.currentIndex]
-			if current.Selectable() {
+			if current.Selectable() || m.isBooleanInput(current) {
+				opts := m.getBooleanOptions(current)
 				if m.optionsIndex > 0 {
 					m.optionsIndex--
 				} else {
-					m.optionsIndex = len(current.Options) - 1
+					m.optionsIndex = len(opts) - 1
 				}
 			} else if adjustable, ok := current.Value.(AdjustableValue); ok {
 				newStr, err := adjustable.Adjust(m.textInput.Value(), 1)
@@ -96,8 +105,9 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyDown:
 			current := m.inputs[m.currentIndex]
-			if current.Selectable() {
-				if m.optionsIndex < len(current.Options)-1 {
+			if current.Selectable() || m.isBooleanInput(current) {
+				opts := m.getBooleanOptions(current)
+				if m.optionsIndex < len(opts)-1 {
 					m.optionsIndex++
 				} else {
 					m.optionsIndex = 0
@@ -112,7 +122,7 @@ func (m *tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	current := m.inputs[m.currentIndex]
-	if !current.Selectable() {
+	if !current.Selectable() && !m.isBooleanInput(current) {
 		m.textInput, cmd = m.textInput.Update(msg)
 	}
 
@@ -134,7 +144,7 @@ func (m *tuiModel) View() string {
 	progress := fmt.Sprintf("[%d/%d]", m.currentIndex+1, len(m.inputs))
 	prompt := current.Description
 	if prompt == "" {
-		if current.Selectable() {
+		if current.Selectable() || m.isBooleanInput(current) {
 			prompt = fmt.Sprintf("Choose a %s", current.Name)
 		} else {
 			prompt = fmt.Sprintf("Please specify a %s", current.Name)
@@ -144,9 +154,10 @@ func (m *tuiModel) View() string {
 	sb.WriteString(fmt.Sprintf("%s %s\n", progressStyle.Render(progress), prompt))
 
 	// Render specific control
-	if current.Selectable() {
+	if current.Selectable() || m.isBooleanInput(current) {
 		sb.WriteString("\n")
-		for i, option := range current.Options {
+		opts := m.getBooleanOptions(current)
+		for i, option := range opts {
 			if i == m.optionsIndex {
 				sb.WriteString(fmt.Sprintf("  ❯ %s\n", accentStyle.Render(option.Label)))
 			} else {
@@ -171,6 +182,21 @@ func (m *tuiModel) View() string {
 	sb.WriteString("\n" + helpStyle.Render("  "+strings.Join(helpParts, "  •  ")) + "\n")
 
 	return sb.String()
+}
+
+func (m *tuiModel) isBooleanInput(current *Input) bool {
+	_, isBool := current.Value.(*BooleanValue)
+	return isBool
+}
+
+func (m *tuiModel) getBooleanOptions(current *Input) []InputOption {
+	if current.Selectable() {
+		return current.Options
+	}
+	return []InputOption{
+		{Label: "true", Value: "true"},
+		{Label: "false", Value: "false"},
+	}
 }
 
 type Prompter interface {

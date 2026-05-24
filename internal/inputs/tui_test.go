@@ -70,3 +70,36 @@ func TestTuiModel_NumberInputAdjustment_NoMax(t *testing.T) {
 	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
 	assert.Equal(t, "1", m.textInput.Value())
 }
+
+func TestTuiModel_BooleanInputToggle(t *testing.T) {
+	boolVal := &BooleanValue{Value: false}
+	input := &Input{
+		Name:  "confirm",
+		Value: boolVal,
+	}
+	m := &tuiModel{
+		inputs:       []*Input{input},
+		currentIndex: 0,
+	}
+	m.initCurrentInput()
+
+	// Initial selection should be "false" (index 1) because default is false
+	assert.Equal(t, 1, m.optionsIndex)
+
+	// Press KeyUp to select "true" (index 0)
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})
+	assert.Equal(t, 0, m.optionsIndex)
+
+	// Press KeyUp again to cycle to "false" (index 1)
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})
+	assert.Equal(t, 1, m.optionsIndex)
+
+	// Press KeyDown to select "true" (index 0)
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
+	assert.Equal(t, 0, m.optionsIndex)
+
+	// Confirm selection by pressing KeyEnter
+	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	assert.True(t, boolVal.Value)
+}
+
