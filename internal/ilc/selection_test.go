@@ -1,10 +1,11 @@
-package main
+package ilc
 
 import (
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/evilmarty/ilc/internal/inputs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -223,30 +224,36 @@ func TestSelectionInputs(t *testing.T) {
 			Command{},
 			Command{},
 		)
-		expected := Inputs{}
+		expected := Inputs{FlagSet: inputs.NewFlagSet("ilc", EnvVarPrefix)}
 		actual := selection.Inputs()
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("merged inputs", func(t *testing.T) {
 		selection := NewSelection(
 			Command{
-				Inputs: Inputs{
-					Input{Name: "a", Value: &StringValue{}},
-					Input{Name: "b", Value: &NumberValue{}},
-				},
+				Inputs: func() Inputs {
+					fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+					fs.Var(&inputs.Input{Name: "a", Value: &inputs.StringValue{}})
+					fs.Var(&inputs.Input{Name: "b", Value: &inputs.NumberValue{}})
+					return Inputs{FlagSet: fs}
+				}(),
 			},
 			Command{
-				Inputs: Inputs{
-					Input{Name: "a", Value: &NumberValue{}},
-					Input{Name: "c", Value: &NumberValue{}},
-				},
+				Inputs: func() Inputs {
+					fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+					fs.Var(&inputs.Input{Name: "a", Value: &inputs.NumberValue{}})
+					fs.Var(&inputs.Input{Name: "c", Value: &inputs.NumberValue{}})
+					return Inputs{FlagSet: fs}
+				}(),
 			},
 		)
-		expected := Inputs{
-			Input{Name: "a", Value: &NumberValue{}},
-			Input{Name: "b", Value: &NumberValue{}},
-			Input{Name: "c", Value: &NumberValue{}},
-		}
+		expected := func() Inputs {
+			fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+			fs.Var(&inputs.Input{Name: "a", Value: &inputs.NumberValue{}})
+			fs.Var(&inputs.Input{Name: "b", Value: &inputs.NumberValue{}})
+			fs.Var(&inputs.Input{Name: "c", Value: &inputs.NumberValue{}})
+			return Inputs{FlagSet: fs}
+		}()
 		actual := selection.Inputs()
 		assert.Equal(t, expected, actual)
 	})
@@ -392,6 +399,7 @@ func TestSelectionRenderScriptToTemp(t *testing.T) {
 	expected := "echo a"
 	file, err := selection.RenderScriptToTemp(data)
 	assert.NoError(t, err)
+	defer os.Remove(file)
 	actual, err := readTextFile(file)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -415,10 +423,12 @@ func TestSelectionCmd(t *testing.T) {
 					"A": "{{.Input.A}}",
 					"B": "{{.Input.B}}",
 				},
-				Inputs: Inputs{
-					{Name: "A"},
-					{Name: "B"},
-				},
+				Inputs: func() Inputs {
+					fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+					fs.Var(&inputs.Input{Name: "A", Value: &inputs.StringValue{}})
+					fs.Var(&inputs.Input{Name: "B", Value: &inputs.StringValue{}})
+					return Inputs{FlagSet: fs}
+				}(),
 			},
 			Command{
 				Shell: []string{"/bin/bash", "-x"},
@@ -427,14 +437,19 @@ func TestSelectionCmd(t *testing.T) {
 					"A": "aa",
 					"C": "{{.Input.C}}",
 				},
-				Inputs: Inputs{
-					{Name: "C"},
-				},
+				Inputs: func() Inputs {
+					fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+					fs.Var(&inputs.Input{Name: "C", Value: &inputs.StringValue{}})
+					return Inputs{FlagSet: fs}
+				}(),
 				Pure: true,
 			},
 		)
 		cmd, err := selection.Cmd(data, moreEnviron)
 		assert.NoError(t, err)
+		if len(cmd.Args) > 0 {
+			defer os.Remove(cmd.Args[len(cmd.Args)-1])
+		}
 		assert.ElementsMatch(
 			t,
 			[]string{"A=aa", "B=b", "C=c"},
@@ -464,10 +479,12 @@ func TestSelectionCmd(t *testing.T) {
 					"A": "{{.Input.A}}",
 					"B": "{{.Input.B}}",
 				},
-				Inputs: Inputs{
-					{Name: "A"},
-					{Name: "B"},
-				},
+				Inputs: func() Inputs {
+					fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+					fs.Var(&inputs.Input{Name: "A", Value: &inputs.StringValue{}})
+					fs.Var(&inputs.Input{Name: "B", Value: &inputs.StringValue{}})
+					return Inputs{FlagSet: fs}
+				}(),
 			},
 			Command{
 				Shell: []string{"/bin/bash", "-x"},
@@ -476,13 +493,18 @@ func TestSelectionCmd(t *testing.T) {
 					"A": "aa",
 					"C": "{{.Input.C}}",
 				},
-				Inputs: Inputs{
-					{Name: "C"},
-				},
+				Inputs: func() Inputs {
+					fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+					fs.Var(&inputs.Input{Name: "C", Value: &inputs.StringValue{}})
+					return Inputs{FlagSet: fs}
+				}(),
 			},
 		)
 		cmd, err := selection.Cmd(data, moreEnviron)
 		assert.NoError(t, err)
+		if len(cmd.Args) > 0 {
+			defer os.Remove(cmd.Args[len(cmd.Args)-1])
+		}
 		assert.ElementsMatch(t, []string{"A=aa", "B=b", "C=c", "D=d"}, cmd.Env)
 		assert.Equal(t, "/bin/bash", cmd.Path)
 		assert.Equal(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1])
@@ -493,23 +515,29 @@ func TestSelectionToArgs(t *testing.T) {
 	selection := NewSelection(
 		Command{
 			Name: "",
-			Inputs: Inputs{
-				{Name: "arg1", Value: &StringValue{Value: "foobar"}},
-				{Name: "arg2", Value: &NumberValue{Value: 123}},
-			},
+			Inputs: func() Inputs {
+				fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+				fs.Var(&inputs.Input{Name: "arg1", Value: &inputs.StringValue{Value: "foobar"}})
+				fs.Var(&inputs.Input{Name: "arg2", Value: &inputs.NumberValue{Value: 123}})
+				return Inputs{FlagSet: fs}
+			}(),
 		},
 		Command{
 			Name: "command1",
-			Inputs: Inputs{
-				{Name: "arg1", Value: &StringValue{Value: "foobar"}},
-				{Name: "arg2", Value: &NumberValue{Value: 123}},
-			},
+			Inputs: func() Inputs {
+				fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+				fs.Var(&inputs.Input{Name: "arg1", Value: &inputs.StringValue{Value: "foobar"}})
+				fs.Var(&inputs.Input{Name: "arg2", Value: &inputs.NumberValue{Value: 123}})
+				return Inputs{FlagSet: fs}
+			}(),
 		},
 		Command{
 			Name: "command2",
-			Inputs: Inputs{
-				{Name: "arg3", Value: &BooleanValue{Value: true}},
-			},
+			Inputs: func() Inputs {
+				fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+				fs.Var(&inputs.Input{Name: "arg3", Value: &inputs.BooleanValue{Value: true}})
+				return Inputs{FlagSet: fs}
+			}(),
 		},
 	)
 	expected := []string{"command1", "command2", "-arg1", "foobar", "-arg2", "123", "-arg3"}

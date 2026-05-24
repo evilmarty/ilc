@@ -1,10 +1,12 @@
-package main
+package ilc
 
 import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -21,13 +23,19 @@ var (
 	ErrInvalidReplay     = errors.New("invalid replay command")
 )
 
+var exitFunc = os.Exit
+
 type Runner struct {
 	Name           string
-	Version        string
+	NameVersion    string
 	BuildDate      string
 	Commit         string
+	Version        string
 	Env            EnvMap
-	Output         *os.File
+	Output         io.Writer
+	Stdout         io.Writer
+	Stderr         io.Writer
+	Stdin          io.Reader
 	Args           []string
 	Entrypoint     []string
 	NonInteractive bool
@@ -35,6 +43,7 @@ type Runner struct {
 	ConfigPath     string
 	Config         *Config
 	HistoryFile    string
+	HistoryStore   HistoryStore
 	Debug          bool
 	parsed         bool
 }
@@ -44,29 +53,34 @@ func (r *Runner) Parsed() bool {
 }
 
 func (r *Runner) Printf(format string, a ...any) {
-	fmt.Fprintf(r.Output, format, a...)
+	output := r.Output
+	if output == nil {
+		output = os.Stderr
+	}
+	fmt.Fprintf(output, format, a...)
 }
 
 func (r *Runner) printVersion() {
-	if r.Name != "" {
-		r.Printf("%s", r.Name)
-		if r.BuildDate != "" {
-			r.Printf(" - %s", r.BuildDate)
-		}
-		r.Printf("\n")
-	}
+	r.Printf("%s\n", r.Name)
 	if r.Version != "" {
 		r.Printf("Version: %s\n", r.Version)
+	}
+	if r.BuildDate != "" {
+		r.Printf("BuildDate: %s\n", r.BuildDate)
 	}
 	if r.Commit != "" {
 		r.Printf("Commit: %s\n", r.Commit)
 	}
-	os.Exit(0)
+	exitFunc(0)
 }
 
 func (r *Runner) usage() Usage {
 	fs := r.flagSet()
-	u := NewUsage(os.Stderr)
+	output := r.Output
+	if output == nil {
+		output = os.Stderr
+	}
+	u := NewUsage(output)
 	u.Title = r.Name
 	u.Entrypoint = r.Entrypoint
 	u.ImportFlags(fs)
@@ -77,7 +91,7 @@ func (r *Runner) flagSet() *flag.FlagSet {
 	fs := flag.NewFlagSet(r.Name, flag.ExitOnError)
 	fs.Usage = func() {
 		r.usage().Print()
-		os.Exit(0)
+		exitFunc(0)
 	}
 	fs.BoolFunc("version", "Displays the version", func(_ string) error {
 		r.printVersion()
@@ -109,6 +123,7 @@ func (r *Runner) Parse(args []string) error {
 	if config, err := LoadConfig(r.ConfigPath); err != nil {
 		return err
 	} else {
+		config.Name = filepath.Base(r.ConfigPath)
 		r.Config = &config
 	}
 	if underscore, found := r.Env["_"]; found && underscore == r.ConfigPath {
@@ -119,86 +134,64 @@ func (r *Runner) Parse(args []string) error {
 	return nil
 }
 
-func (r *Runner) getInputValuesFromEnv(inputs Inputs) map[string]string {
-	values := make(map[string]string, len(inputs))
-	inputEnv := r.Env.FilterPrefix(EnvVarPrefix).TrimPrefix(EnvVarPrefix)
-	for _, input := range inputs {
-		if value, found := inputEnv[input.EnvName()]; found {
-			values[input.Name] = value
-		}
-	}
-	return values
-}
-
 func (r *Runner) run() error {
 	var err error
 	logger.Printf("Running with arguments: %s\n", strings.Join(r.Args, " "))
 	selection := r.Config.Select(r.Args)
-	var inputs Inputs
-	var values map[string]any
-	usageFunc := func() {
-		u := r.usage()
-		u.ImportSelection(selection).Print()
-		os.Exit(0)
-	}
-	for {
-		inputs = selection.Inputs()
-		fs := inputs.FlagSet()
-		fs.Init(r.Name, flag.ExitOnError)
-		fs.Usage = usageFunc
-		// Set the input values on the flag set to determine what inputs are outstanding
-		for name, value := range r.getInputValuesFromEnv(inputs) {
-			fs.Set(name, value)
-		}
-		if err := fs.Parse(selection.Args); err != nil {
-			return err
-		} else if selection.Runnable() {
-			values = make(map[string]any, len(inputs))
-			fs.Visit(func(f *flag.Flag) {
-				if v, ok := f.Value.(flag.Getter); ok {
-					values[f.Name] = v.Get()
-				}
-			})
-			break
-		} else if r.NonInteractive {
-			return ErrInvalidCommand
-		} else if selection, err = askCommands(selection); err != nil {
-			return err
-		}
+	inps := selection.Inputs()
+	missing, err := inps.ParseEnvAndArgs(selection.Args, r.Env)
+	if err != nil {
+		return err
 	}
 
-	var missingInputs Inputs
-	for _, input := range inputs {
-		if _, found := values[input.Name]; !found {
-			missingInputs = append(missingInputs, input)
-		}
-	}
-
-	if len(missingInputs) > 0 {
+	if !selection.Runnable() || len(missing) > 0 {
 		if r.NonInteractive {
-			var inputNames []string
-			for _, input := range missingInputs {
-				inputNames = append(inputNames, input.Name)
+			if !selection.Runnable() {
+				return ErrInvalidCommand
 			}
-			return fmt.Errorf("missing inputs: %s", strings.Join(inputNames, ", "))
+			var missingNames []string
+			for _, input := range missing {
+				missingNames = append(missingNames, input.Name)
+			}
+			return fmt.Errorf("missing inputs: %s", strings.Join(missingNames, ", "))
 		}
-		if err := askInputs(missingInputs); err != nil {
+		selection, err = askCommands(selection, r.Env)
+		if err != nil {
 			return err
 		}
-		for name, value := range missingInputs.GetAll() {
-			values[name] = value
-		}
+		inps = selection.Inputs()
 	}
 
+	values := inps.Values()
 	data := NewTemplateData(values, r.Env)
 	cmd, err := selection.Cmd(data, r.Env)
 	if err != nil {
 		return fmt.Errorf("failed generating script: %v", err)
 	}
-	cmd.Env = append(cmd.Env, inputs.ToEnvMap().Prefix(EnvVarPrefix).ToList()...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	// Clean up temporary script file after the runner finishes
+	if len(cmd.Args) > 0 {
+		scriptFile := cmd.Args[len(cmd.Args)-1]
+		defer os.Remove(scriptFile)
+	}
+
+	cmd.Env = append(cmd.Env, EnvMap(inps.ToEnvMap()).ToList()...)
+	stdin := r.Stdin
+	if stdin == nil {
+		stdin = os.Stdin
+	}
+	stdout := r.Stdout
+	if stdout == nil {
+		stdout = os.Stdout
+	}
+	stderr := r.Stderr
+	if stderr == nil {
+		stderr = os.Stderr
+	}
+
+	cmd.Stdin = stdin
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	if err := cmd.Run(); err != nil {
 		return err
 	} else {
@@ -212,6 +205,9 @@ func (r *Runner) Run() error {
 		return ErrMissingArguments
 	}
 	if r.ValidateConfig {
+		if err := r.Config.Validate(); err != nil {
+			return fmt.Errorf("configuration validation failed: %w", err)
+		}
 		r.Printf("configuration is valid\n")
 		return nil
 	}
@@ -223,15 +219,34 @@ func (r *Runner) Run() error {
 			r.HistoryFile = histFile
 		}
 	}
+	var err error
 	if r.isReplay() {
-		return r.replay()
+		err = r.replay()
 	} else {
-		return r.run()
+		err = r.run()
 	}
+
+	if errors.Is(err, flag.ErrHelp) {
+		selection := r.Config.Select(r.Args)
+		output := r.Output
+		if output == nil {
+			output = os.Stderr
+		}
+		u := NewUsage(output)
+		u.Title = r.Name
+		u.Entrypoint = r.Entrypoint
+		u.ImportFlags(r.flagSet())
+		u.ImportSelection(selection)
+		u.Print()
+		return nil
+	}
+
+	return err
 }
 
 func (r *Runner) replay() error {
-	history, err := LoadHistory(r.HistoryFile)
+	store := r.getHistoryStore()
+	history, err := store.Load(r.HistoryFile)
 	if err != nil {
 		return err
 	}
@@ -248,6 +263,13 @@ func (r *Runner) replay() error {
 	}
 }
 
+func (r *Runner) getHistoryStore() HistoryStore {
+	if r.HistoryStore == nil {
+		return FileHistoryStore{}
+	}
+	return r.HistoryStore
+}
+
 func (r *Runner) isReplay() bool {
 	if len(r.Args) == 0 {
 		return false
@@ -256,9 +278,19 @@ func (r *Runner) isReplay() bool {
 }
 
 func (R *Runner) recordToHistory(args []string) {
-	history, _ := LoadHistory(R.HistoryFile)
+	store := R.getHistoryStore()
+	history, err := store.Load(R.HistoryFile)
+	if err != nil {
+		logger.Printf("Failed to load history for recording: %v\n", err)
+		// Try to record using a fresh history object if file load fails (standard behavior)
+		fresh := History{
+			Path:    R.HistoryFile,
+			Records: make(map[string][][]string),
+		}
+		history = &fresh
+	}
 	history.Append(R.ConfigPath, args)
-	if err := history.Save(); err != nil {
+	if err := store.Save(history); err != nil {
 		logger.Printf("Failed to save to history: %v\n", err)
 	}
 }

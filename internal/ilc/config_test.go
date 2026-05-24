@@ -1,9 +1,11 @@
-package main
+package ilc
 
 import (
+	"errors"
 	"os"
 	"testing"
 
+	"github.com/evilmarty/ilc/internal/inputs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -106,38 +108,35 @@ commands:
 				Command: Command{
 					Name: "test",
 					Run:  "go test",
-					Inputs: Inputs{
-						{
-							Name:  "bool",
-							Value: &BooleanValue{},
-						},
-						{
-							Name:  "num",
-							Value: &NumberValue{MinValue: -1.0, MaxValue: 10.0},
-						},
-						{
+					Inputs: func() Inputs {
+						fs := inputs.NewFlagSet("ilc", EnvVarPrefix)
+						fs.Var(&inputs.Input{Name: "bool", Value: &inputs.BooleanValue{}})
+						fs.Var(&inputs.Input{Name: "num", Value: &inputs.NumberValue{MinValue: -1.0, MaxValue: 10.0}})
+						fs.Var(&inputs.Input{
 							Name:  "sequence",
-							Value: &StringValue{},
-							Options: InputOptions{
+							Value: &inputs.StringValue{},
+							Options: inputs.InputOptions{
 								{Label: "A", Value: "A"},
 								{Label: "B", Value: "B"},
 							},
-						},
-						{
+						})
+						fs.Var(&inputs.Input{
 							Name:  "map",
-							Value: &StringValue{},
-							Options: InputOptions{
+							Value: &inputs.StringValue{},
+							Options: inputs.InputOptions{
 								{Label: "a", Value: "A"},
 								{Label: "b", Value: "B"},
 							},
-						},
-					},
+						})
+						return Inputs{FlagSet: fs}
+					}(),
 				},
 			},
 		},
 	}
 	tempFile, err := os.CreateTemp("", "")
 	assert.NoError(t, err, "Failed to create temp file")
+	defer os.Remove(tempFile.Name())
 
 	_, err = tempFile.Write([]byte(content))
 	assert.NoError(t, err, "Failed to write config to temp file")
@@ -146,3 +145,70 @@ commands:
 	assert.NoError(t, err, "LoadConfig() returned an unexpected error")
 	assert.Equal(t, expected, actual, "LoadConfig() returned unexpected results")
 }
+
+func TestConfigValidate(t *testing.T) {
+	t.Run("valid templates", func(t *testing.T) {
+		cfg := Config{
+			Run: "echo {{.Input.Name}}",
+			Env: map[string]string{
+				"GREETING": "hello {{.Input.Greeting}}",
+			},
+			Commands: SubCommands{
+				{
+					Command: Command{
+						Name: "child",
+						Run:  "echo {{.Input.Child}}",
+					},
+				},
+			},
+		}
+		err := cfg.Validate()
+		assert.NoError(t, err)
+	})
+
+	t.Run("invalid run template", func(t *testing.T) {
+		cfg := Config{
+			Name: "test-cmd",
+			Run:  "echo {{.Input.Name", // missing closing braces
+		}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid run template in command \"test-cmd\"")
+
+		// Verify custom structured TemplateError properties
+		var tmplErr *TemplateError
+		if assert.True(t, errors.As(err, &tmplErr)) {
+			assert.Equal(t, "run", tmplErr.Type)
+			assert.Equal(t, "test-cmd", tmplErr.Command)
+			assert.Equal(t, "", tmplErr.FieldName)
+			assert.Error(t, tmplErr.Err)
+		}
+	})
+
+	t.Run("invalid env template", func(t *testing.T) {
+		cfg := Config{
+			Name: "test-cmd",
+			Env: map[string]string{
+				"BAD_VAR": "hello {{.Input.Greeting", // missing closing braces
+			},
+		}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid env template \"BAD_VAR\" in command \"test-cmd\"")
+
+		// Verify custom structured TemplateError properties
+		var tmplErr *TemplateError
+		if assert.True(t, errors.As(err, &tmplErr)) {
+			assert.Equal(t, "env", tmplErr.Type)
+			assert.Equal(t, "test-cmd", tmplErr.Command)
+			assert.Equal(t, "BAD_VAR", tmplErr.FieldName)
+			assert.Error(t, tmplErr.Err)
+		}
+	})
+}
+
+func TestLoadConfig_FileNotExist(t *testing.T) {
+	_, err := LoadConfig("non_existent_file.yml")
+	assert.Error(t, err)
+}
+

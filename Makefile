@@ -10,7 +10,7 @@ all: build test
 
 build:
 	@echo "Building the application..."
-	$(GO) build -o ilc
+	$(GO) build -buildvcs=false -o ilc
 
 test:
 	@echo "Running tests..."

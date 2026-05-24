@@ -1,8 +1,18 @@
-package main
+package ilc
+
+import (
+	"text/template"
+
+	"github.com/evilmarty/ilc/internal/inputs"
+)
 
 var DefaultShell = []string{"/bin/sh"}
 
 type CommandAliases []string
+
+type Inputs struct {
+	*inputs.FlagSet
+}
 
 type Command struct {
 	Name        string `yaml:"-"`
@@ -43,3 +53,36 @@ type SubCommand struct {
 }
 
 type SubCommands []SubCommand
+
+func (command Command) Validate() error {
+	if command.Run != "" {
+		_, err := template.New(command.Name).Funcs(defaultTemplateFuncs).Parse(command.Run)
+		if err != nil {
+			return &TemplateError{
+				Type:    "run",
+				Command: command.Name,
+				Err:     err,
+			}
+		}
+	}
+
+	for name, envTmpl := range command.Env {
+		_, err := template.New(name).Funcs(defaultTemplateFuncs).Parse(envTmpl)
+		if err != nil {
+			return &TemplateError{
+				Type:      "env",
+				Command:   command.Name,
+				FieldName: name,
+				Err:       err,
+			}
+		}
+	}
+
+	for _, subcommand := range command.Commands {
+		if err := subcommand.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

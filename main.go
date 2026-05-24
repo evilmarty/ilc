@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"os"
+
+	"github.com/evilmarty/ilc/internal/ilc"
 )
 
 var (
@@ -12,21 +12,28 @@ var (
 	Version   = "No version provided"
 	BuildDate = "Unknown build date"
 	Commit    = ""
-	logger    = log.New(io.Discard, "DEBUG: ", log.Lshortfile)
 )
 
 func main() {
-	r := Runner{
+	defer func() {
+		if err := recover(); err != nil {
+			// Ensure terminal cursor is visible and formatting is reset before re-panicking
+			fmt.Fprintf(os.Stderr, "\033[?25h\033[0m\n[ilc panic recovery]\n")
+			panic(err)
+		}
+	}()
+
+	r := ilc.Runner{
 		Name:      Name,
 		Version:   Version,
 		BuildDate: BuildDate,
 		Commit:    Commit,
-		Env:       NewEnvMap(os.Environ()),
+		Env:       ilc.NewEnvMap(os.Environ()),
 		Output:    os.Stderr,
 	}
 	if err := r.Parse(os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
-		if err == ErrConfigFileMissing {
+		if err == ilc.ErrConfigFileMissing {
 			os.Exit(2)
 		} else {
 			os.Exit(1)
@@ -38,3 +45,4 @@ func main() {
 		os.Exit(1)
 	}
 }
+

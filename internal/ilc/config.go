@@ -1,4 +1,4 @@
-package main
+package ilc
 
 import (
 	"os"
@@ -11,6 +11,10 @@ type Config Command
 func (config Config) Select(args []string) Selection {
 	selected := NewSelection(Command(config))
 	return selected.Select(args)
+}
+
+func (config Config) Validate() error {
+	return Command(config).Validate()
 }
 
 func ParseConfig(content []byte) (Config, error) {

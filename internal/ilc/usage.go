@@ -1,4 +1,4 @@
-package main
+package ilc
 
 import (
 	"flag"
@@ -127,7 +127,7 @@ func (u *Usage) ImportCommands(commands SubCommands) *Usage {
 }
 
 func (u *Usage) ImportInputs(inputs Inputs) *Usage {
-	for _, input := range inputs {
+	for _, input := range inputs.Inputs() {
 		u.AddInput(input.Description, input.Name)
 	}
 	return u
