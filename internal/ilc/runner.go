@@ -41,6 +41,7 @@ type Runner struct {
 	ConfigPath     string
 	Config         *Config
 	HistoryFile    string
+	HistoryStore   HistoryStore
 	Debug          bool
 	parsed         bool
 }
@@ -242,7 +243,8 @@ func (r *Runner) Run() error {
 }
 
 func (r *Runner) replay() error {
-	history, err := LoadHistory(r.HistoryFile)
+	store := r.getHistoryStore()
+	history, err := store.Load(r.HistoryFile)
 	if err != nil {
 		return err
 	}
@@ -259,6 +261,13 @@ func (r *Runner) replay() error {
 	}
 }
 
+func (r *Runner) getHistoryStore() HistoryStore {
+	if r.HistoryStore == nil {
+		return FileHistoryStore{}
+	}
+	return r.HistoryStore
+}
+
 func (r *Runner) isReplay() bool {
 	if len(r.Args) == 0 {
 		return false
@@ -267,9 +276,19 @@ func (r *Runner) isReplay() bool {
 }
 
 func (R *Runner) recordToHistory(args []string) {
-	history, _ := LoadHistory(R.HistoryFile)
+	store := R.getHistoryStore()
+	history, err := store.Load(R.HistoryFile)
+	if err != nil {
+		logger.Printf("Failed to load history for recording: %v\n", err)
+		// Try to record using a fresh history object if file load fails (standard behavior)
+		fresh := History{
+			Path:    R.HistoryFile,
+			Records: make(map[string][][]string),
+		}
+		history = &fresh
+	}
 	history.Append(R.ConfigPath, args)
-	if err := history.Save(); err != nil {
+	if err := store.Save(history); err != nil {
 		logger.Printf("Failed to save to history: %v\n", err)
 	}
 }

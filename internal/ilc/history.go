@@ -104,3 +104,19 @@ func LoadHistory(path string) (History, error) {
 	err := history.load()
 	return history, err
 }
+
+type HistoryStore interface {
+	Load(path string) (*History, error)
+	Save(h *History) error
+}
+
+type FileHistoryStore struct{}
+
+func (s FileHistoryStore) Load(path string) (*History, error) {
+	h, err := LoadHistory(path)
+	return &h, err
+}
+
+func (s FileHistoryStore) Save(h *History) error {
+	return h.Save()
+}
