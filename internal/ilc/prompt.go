@@ -3,6 +3,8 @@ package ilc
 import (
 	"errors"
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -138,6 +140,8 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					} else {
 						m.optionsIndex = len(current.Options) - 1
 					}
+				} else if _, isNumber := current.Value.(*inputs.NumberValue); isNumber {
+					m.adjustNumberInput(1)
 				}
 				return m, nil
 
@@ -149,6 +153,8 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					} else {
 						m.optionsIndex = 0
 					}
+				} else if _, isNumber := current.Value.(*inputs.NumberValue); isNumber {
+					m.adjustNumberInput(-1)
 				}
 				return m, nil
 			}
@@ -467,4 +473,50 @@ func isIncompleteNumber(s string) bool {
 		return true
 	}
 	return false
+}
+
+func (m *commandModel) adjustNumberInput(delta float64) {
+	current := m.missing[m.inputIndex]
+	numVal, ok := current.Value.(*inputs.NumberValue)
+	if !ok {
+		return
+	}
+
+	val := m.textInput.Value()
+	if val == "" {
+		val = current.Value.String()
+	}
+
+	n, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		n = numVal.Value
+	}
+
+	newVal := n + delta
+
+	// Clamping to min/max bounds if defined
+	if numVal.MinValue < numVal.MaxValue {
+		if newVal < numVal.MinValue {
+			newVal = numVal.MinValue
+		} else if newVal > numVal.MaxValue {
+			newVal = numVal.MaxValue
+		}
+	} else if numVal.MinValue > numVal.MaxValue && numVal.MaxValue == 0.0 {
+		if newVal < numVal.MinValue {
+			newVal = numVal.MinValue
+		}
+	}
+
+	// Format back cleanly (avoiding .00000 decimals for integers)
+	prec := 5
+	if newVal == math.Round(newVal) {
+		prec = 0
+	}
+	newStr := strconv.FormatFloat(newVal, 'f', prec, 64)
+
+	m.textInput.SetValue(newStr)
+
+	// Update prompt validation in real-time
+	temp := &inputs.NumberValue{MinValue: numVal.MinValue, MaxValue: numVal.MaxValue}
+	m.inputErr = temp.Set(newStr)
 }
