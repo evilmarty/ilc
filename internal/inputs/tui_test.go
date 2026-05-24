@@ -19,8 +19,8 @@ func TestTuiModel_NumberInputAdjustment(t *testing.T) {
 	}
 	m.initCurrentInput()
 
-	// Initially empty
-	assert.Equal(t, "", m.textInput.Value())
+	// Initially pre-populated
+	assert.Equal(t, "3", m.textInput.Value())
 
 	// Press KeyUp -> increment to 4 (default 3 + 1)
 	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})

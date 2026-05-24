@@ -33,6 +33,7 @@ func (m *tuiModel) initCurrentInput() {
 	current := m.inputs[m.currentIndex]
 	if !current.Selectable() && !m.isBooleanInput(current) {
 		m.textInput = textinput.New()
+		m.textInput.SetValue(current.Value.String())
 		m.textInput.Placeholder = current.Value.String()
 		m.textInput.Focus()
 	} else {

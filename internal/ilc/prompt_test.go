@@ -21,9 +21,9 @@ func TestCommandModel_NumberInputAdjustment(t *testing.T) {
 	}
 	m.initCurrentInput()
 
-	// Initially, textInput value is empty, so it uses default/placeholder
-	if m.textInput.Value() != "" {
-		t.Errorf("expected textInput to be initially empty, got %q", m.textInput.Value())
+	// Initially, textInput value is pre-populated with default
+	if m.textInput.Value() != "3" {
+		t.Errorf("expected textInput to be initially '3', got %q", m.textInput.Value())
 	}
 
 	// Send KeyUp message (should increment to 4, since 3 + 1 = 4)

@@ -67,6 +67,7 @@ func (m *commandModel) initCurrentInput() {
 	current := m.missing[m.inputIndex]
 	if !current.Selectable() && !m.isBooleanInput(current) {
 		m.textInput = textinput.New()
+		m.textInput.SetValue(current.Value.String())
 		m.textInput.Placeholder = current.Value.String()
 		m.textInput.PlaceholderStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 		m.textInput.Focus()
