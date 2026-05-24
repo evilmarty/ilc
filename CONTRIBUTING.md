@@ -102,4 +102,17 @@ At the very least, please try to:
 - When applicable, use syntax highlighting by adding the correct language name after the first "code fence"
 
 
+## Architecture & Package Design
+
+The project is structured with a clear separation of concerns to maintain testability and maintainability:
+
+1. **`internal/inputs`**: A generic, framework-free interactive terminal inputs and forms library built on top of Bubble Tea. For detailed documentation on how to add custom value types, handle live validations, or configure interactive keyboard shortcuts, refer to [internal/inputs/README.md](file:///Users/marty/Code/ilc/internal/inputs/README.md).
+2. **`internal/ilc`**: The application runner and CLI executor. It manages command loading, progressive subcommand selection histories, cascaded input prompting, and execution.
+
+When submitting pull requests, ensure that:
+- Core input models remain within `internal/inputs` and do not import any application-specific components from `internal/ilc`.
+- Interactive Bubble Tea models use pointer receivers (`*commandModel`, `*tuiModel`) rather than value receivers so that state mutations propagate correctly to the runner.
+- All new TUI keyboard interactions and validation styles are fully covered by unit tests.
+
+
 [so]: http://stackoverflow.com/questions/tagged/ilc
