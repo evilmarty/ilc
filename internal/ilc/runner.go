@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,7 +30,10 @@ type Runner struct {
 	Commit         string
 	Version        string
 	Env            EnvMap
-	Output         *os.File
+	Output         io.Writer
+	Stdout         io.Writer
+	Stderr         io.Writer
+	Stdin          io.Reader
 	Args           []string
 	Entrypoint     []string
 	NonInteractive bool
@@ -46,7 +50,11 @@ func (r *Runner) Parsed() bool {
 }
 
 func (r *Runner) Printf(format string, a ...any) {
-	fmt.Fprintf(r.Output, format, a...)
+	output := r.Output
+	if output == nil {
+		output = os.Stderr
+	}
+	fmt.Fprintf(output, format, a...)
 }
 
 func (r *Runner) printVersion() {
@@ -65,7 +73,11 @@ func (r *Runner) printVersion() {
 
 func (r *Runner) usage() Usage {
 	fs := r.flagSet()
-	u := NewUsage(os.Stderr)
+	output := r.Output
+	if output == nil {
+		output = os.Stderr
+	}
+	u := NewUsage(output)
 	u.Title = r.Name
 	u.Entrypoint = r.Entrypoint
 	u.ImportFlags(fs)
@@ -161,9 +173,22 @@ func (r *Runner) run() error {
 	}
 
 	cmd.Env = append(cmd.Env, EnvMap(inps.ToEnvMap()).ToList()...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	stdin := r.Stdin
+	if stdin == nil {
+		stdin = os.Stdin
+	}
+	stdout := r.Stdout
+	if stdout == nil {
+		stdout = os.Stdout
+	}
+	stderr := r.Stderr
+	if stderr == nil {
+		stderr = os.Stderr
+	}
+
+	cmd.Stdin = stdin
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	if err := cmd.Run(); err != nil {
 		return err
 	} else {
@@ -200,7 +225,11 @@ func (r *Runner) Run() error {
 
 	if errors.Is(err, flag.ErrHelp) {
 		selection := r.Config.Select(r.Args)
-		u := NewUsage(os.Stderr)
+		output := r.Output
+		if output == nil {
+			output = os.Stderr
+		}
+		u := NewUsage(output)
 		u.Title = r.Name
 		u.Entrypoint = r.Entrypoint
 		u.ImportFlags(r.flagSet())
