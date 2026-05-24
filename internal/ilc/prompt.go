@@ -22,6 +22,9 @@ var (
 	progressStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	errorStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
 	cmdPathStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
+	neutralPromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	validPromptStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("150"))
+	invalidPromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("203"))
 )
 
 type commandMode int
@@ -372,16 +375,23 @@ func (m *commandModel) View() string {
 				}
 			}
 		} else {
+			// Dynamically style the text input prompt based on validation state
+			if m.textInput.Value() == "" {
+				m.textInput.Prompt = neutralPromptStyle.Render("> ")
+			} else if m.inputErr != nil {
+				m.textInput.Prompt = invalidPromptStyle.Render("✘ ")
+			} else {
+				m.textInput.Prompt = validPromptStyle.Render("✔ ")
+			}
 			sb.WriteString("\n    " + m.textInput.View() + "\n")
 		}
 
-		// Validation Error Display
+		// Help Guidelines (Hide confirm instruction if active input is invalid)
 		if m.inputErr != nil {
-			sb.WriteString("\n" + errorStyle.Render(fmt.Sprintf("    ✗ Invalid input: %v", m.inputErr)) + "\n")
+			sb.WriteString("\n" + helpStyle.Render("  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
+		} else {
+			sb.WriteString("\n" + helpStyle.Render("  [Enter] Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
 		}
-
-		// Help Guidelines
-		sb.WriteString("\n" + helpStyle.Render("  [Enter] Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
 	}
 
 	return sb.String()
