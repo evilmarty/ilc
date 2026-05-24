@@ -161,7 +161,12 @@ func (m *tuiModel) View() string {
 	}
 
 	// Help Guidelines
-	sb.WriteString("\n" + helpStyle.Render("  [Enter] Confirm  •  [Ctrl+C / Esc] Abort") + "\n")
+	var helpParts []string
+	if _, isNumber := current.Value.(*NumberValue); isNumber {
+		helpParts = append(helpParts, "[Up/Down] +/-")
+	}
+	helpParts = append(helpParts, "[Enter] Confirm", "[Ctrl+C / Esc] Abort")
+	sb.WriteString("\n" + helpStyle.Render("  "+strings.Join(helpParts, "  •  ")) + "\n")
 
 	return sb.String()
 }

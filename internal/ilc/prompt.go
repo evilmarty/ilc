@@ -394,11 +394,15 @@ func (m *commandModel) View() string {
 		}
 
 		// Help Guidelines (Hide confirm instruction if active input is invalid)
-		if m.inputErr != nil {
-			sb.WriteString("\n" + helpStyle.Render("  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
-		} else {
-			sb.WriteString("\n" + helpStyle.Render("  [Enter] Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
+		var helpParts []string
+		if _, isNumber := current.Value.(*inputs.NumberValue); isNumber {
+			helpParts = append(helpParts, "[Up/Down] +/-")
 		}
+		if m.inputErr == nil {
+			helpParts = append(helpParts, "[Enter] Confirm")
+		}
+		helpParts = append(helpParts, "[Esc] Back", "[Ctrl+C] Abort")
+		sb.WriteString("\n" + helpStyle.Render("  "+strings.Join(helpParts, "  •  ")) + "\n")
 	}
 
 	return sb.String()

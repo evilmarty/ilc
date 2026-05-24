@@ -1,6 +1,7 @@
 package ilc
 
 import (
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -112,5 +113,40 @@ func TestCommandModel_NumberInputAdjustment_IncompleteNumber(t *testing.T) {
 	_, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})
 	if m.textInput.Value() != "6" {
 		t.Errorf("expected fallback to Value 5 + delta = 6 on invalid input, got %q", m.textInput.Value())
+	}
+}
+
+func TestCommandModel_HelpTextForNumberInput(t *testing.T) {
+	numVal := &inputs.NumberValue{Value: 5, MinValue: 1, MaxValue: 10}
+	input := &inputs.Input{
+		Name:  "rating",
+		Value: numVal,
+	}
+	m := &commandModel{
+		mode:       modeInputPrompt,
+		missing:    []*inputs.Input{input},
+		inputIndex: 0,
+	}
+	m.initCurrentInput()
+
+	viewStr := m.View()
+	if !strings.Contains(viewStr, "[Up/Down] +/-") {
+		t.Errorf("expected help text to contain '[Up/Down] +/-', got %q", viewStr)
+	}
+
+	// For a string input it should NOT contain '[Up/Down] +/-'
+	strInput := &inputs.Input{
+		Name:  "name",
+		Value: &inputs.StringValue{Value: "test"},
+	}
+	mStr := &commandModel{
+		mode:       modeInputPrompt,
+		missing:    []*inputs.Input{strInput},
+		inputIndex: 0,
+	}
+	mStr.initCurrentInput()
+	viewStrStr := mStr.View()
+	if strings.Contains(viewStrStr, "[Up/Down] +/-") {
+		t.Errorf("expected string input help text NOT to contain '[Up/Down] +/-', got %q", viewStrStr)
 	}
 }
