@@ -153,6 +153,13 @@ func (r *Runner) run() error {
 	if err != nil {
 		return fmt.Errorf("failed generating script: %v", err)
 	}
+
+	// Clean up temporary script file after the runner finishes
+	if len(cmd.Args) > 0 {
+		scriptFile := cmd.Args[len(cmd.Args)-1]
+		defer os.Remove(scriptFile)
+	}
+
 	cmd.Env = append(cmd.Env, EnvMap(inps.ToEnvMap()).ToList()...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

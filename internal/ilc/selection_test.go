@@ -399,6 +399,7 @@ func TestSelectionRenderScriptToTemp(t *testing.T) {
 	expected := "echo a"
 	file, err := selection.RenderScriptToTemp(data)
 	assert.NoError(t, err)
+	defer os.Remove(file)
 	actual, err := readTextFile(file)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -446,6 +447,9 @@ func TestSelectionCmd(t *testing.T) {
 		)
 		cmd, err := selection.Cmd(data, moreEnviron)
 		assert.NoError(t, err)
+		if len(cmd.Args) > 0 {
+			defer os.Remove(cmd.Args[len(cmd.Args)-1])
+		}
 		assert.ElementsMatch(
 			t,
 			[]string{"A=aa", "B=b", "C=c"},
@@ -498,6 +502,9 @@ func TestSelectionCmd(t *testing.T) {
 		)
 		cmd, err := selection.Cmd(data, moreEnviron)
 		assert.NoError(t, err)
+		if len(cmd.Args) > 0 {
+			defer os.Remove(cmd.Args[len(cmd.Args)-1])
+		}
 		assert.ElementsMatch(t, []string{"A=aa", "B=b", "C=c", "D=d"}, cmd.Env)
 		assert.Equal(t, "/bin/bash", cmd.Path)
 		assert.Equal(t, []string{"/bin/bash", "-x"}, cmd.Args[:len(cmd.Args)-1])

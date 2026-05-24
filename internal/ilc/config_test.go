@@ -135,6 +135,7 @@ commands:
 	}
 	tempFile, err := os.CreateTemp("", "")
 	assert.NoError(t, err, "Failed to create temp file")
+	defer os.Remove(tempFile.Name())
 
 	_, err = tempFile.Write([]byte(content))
 	assert.NoError(t, err, "Failed to write config to temp file")
