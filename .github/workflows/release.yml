@@ -50,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
-      - uses: mislav/bump-homebrew-formula-action@v4
+      - uses: dawidd6/action-homebrew-bump-formula@v7
         with:
           formula-name: ilc
           formula-path: Formula/ilc.rb
