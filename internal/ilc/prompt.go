@@ -50,6 +50,7 @@ type commandModel struct {
 	inputErr     error
 	env          map[string]string
 	width        int
+	height       int
 }
 
 func (m *commandModel) currentSelection() Selection {
@@ -101,6 +102,7 @@ func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
+		m.height = msg.Height
 	}
 
 	if m.mode == modeInputPrompt {
@@ -340,7 +342,32 @@ func (m *commandModel) View() string {
 			maxLen = max(maxLen, utf8.RuneCountInString(sub.Name))
 		}
 
-		for i, sub := range subs {
+		totalSubs := len(subs)
+		pageSize := 5
+		if m.height > 30 {
+			pageSize = 8
+		}
+
+		startIdx := 0
+		endIdx := totalSubs
+		if totalSubs > pageSize {
+			startIdx = m.selectedIndex - pageSize/2
+			if startIdx < 0 {
+				startIdx = 0
+			}
+			endIdx = startIdx + pageSize
+			if endIdx > totalSubs {
+				endIdx = totalSubs
+				startIdx = endIdx - pageSize
+			}
+		}
+
+		if startIdx > 0 {
+			sb.WriteString(dimStyle.Render("  ▲  (more above)") + "\n")
+		}
+
+		for idx := startIdx; idx < endIdx; idx++ {
+			sub := subs[idx]
 			padLen := maxLen - utf8.RuneCountInString(sub.Name)
 			if padLen < 0 {
 				padLen = 0
@@ -348,7 +375,7 @@ func (m *commandModel) View() string {
 			padding := strings.Repeat(" ", padLen+5)
 
 			var prefixAndName string
-			if i == m.selectedIndex {
+			if idx == m.selectedIndex {
 				prefixAndName = fmt.Sprintf("  ❯ %s", accentStyle.Render(sub.Name))
 			} else {
 				prefixAndName = fmt.Sprintf("    %s", dimStyle.Render(sub.Name))
@@ -362,7 +389,7 @@ func (m *commandModel) View() string {
 				lines := wrapText(sub.Description, wrapWidth)
 				if len(lines) > 0 {
 					var styledFirstLine string
-					if i == m.selectedIndex {
+					if idx == m.selectedIndex {
 						styledFirstLine = descActiveStyle.Render(padding + lines[0])
 					} else {
 						styledFirstLine = descDimStyle.Render(padding + lines[0])
@@ -372,7 +399,7 @@ func (m *commandModel) View() string {
 					indent := strings.Repeat(" ", maxLen+9)
 					for _, line := range lines[1:] {
 						var styledLine string
-						if i == m.selectedIndex {
+						if idx == m.selectedIndex {
 							styledLine = descActiveStyle.Render(line)
 						} else {
 							styledLine = descDimStyle.Render(line)
@@ -385,6 +412,10 @@ func (m *commandModel) View() string {
 			} else {
 				sb.WriteString(prefixAndName + "\n")
 			}
+		}
+
+		if endIdx < totalSubs {
+			sb.WriteString(dimStyle.Render("  ▼  (more below)") + "\n")
 		}
 
 		sb.WriteString("\n" + helpStyle.Render("  [Enter] Select/Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
@@ -477,6 +508,7 @@ func askCommands(sel Selection, env map[string]string) (Selection, error) {
 		mode:          modeCommandSelect,
 		env:           env,
 		width:         80,
+		height:        24,
 	}
 
 	if sel.Runnable() {

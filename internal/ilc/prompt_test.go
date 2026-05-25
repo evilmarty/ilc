@@ -449,6 +449,45 @@ func TestCommandModel_CommandSelectMode_Wrapping(t *testing.T) {
 	assert.Contains(t, viewStr, "\n             feature of macOS.")
 }
 
+func TestCommandModel_CommandSelectMode_Pagination(t *testing.T) {
+	rootCmd := Command{
+		Name:        "root",
+		Description: "root command",
+		Commands: SubCommands{
+			{Command: Command{Name: "sub1", Description: "sub1 desc"}},
+			{Command: Command{Name: "sub2", Description: "sub2 desc"}},
+			{Command: Command{Name: "sub3", Description: "sub3 desc"}},
+			{Command: Command{Name: "sub4", Description: "sub4 desc"}},
+			{Command: Command{Name: "sub5", Description: "sub5 desc"}},
+			{Command: Command{Name: "sub6", Description: "sub6 desc"}},
+			{Command: Command{Name: "sub7", Description: "sub7 desc"}},
+		},
+	}
+	history := []Selection{
+		{
+			commands: []Command{rootCmd},
+		},
+	}
+	m := &commandModel{
+		title:         "Choose command",
+		mode:          modeCommandSelect,
+		history:       history,
+		selectedIndex: 5,
+		width:         80,
+		height:        24,
+	}
+
+	viewStr := m.View()
+	// Should contain scroll up indicator
+	assert.Contains(t, viewStr, "▲  (more above)")
+	// Should contain visible items
+	assert.Contains(t, viewStr, "sub6")
+	assert.Contains(t, viewStr, "sub7")
+	// Should NOT contain hidden items
+	assert.NotContains(t, viewStr, "sub1")
+	assert.NotContains(t, viewStr, "sub2")
+}
+
 
 
 
