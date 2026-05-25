@@ -419,6 +419,36 @@ func TestCommandModel_SelectableBooleanInput(t *testing.T) {
 	assert.Equal(t, "Yes Please", opts[0].Label)
 }
 
+func TestCommandModel_CommandSelectMode_Wrapping(t *testing.T) {
+	rootCmd := Command{
+		Name:        "root",
+		Description: "root command",
+		Commands: SubCommands{
+			{Command: Command{
+				Name:        "dock",
+				Description: "The Dock is a prominent feature of macOS. It is used to launch applications.",
+			}},
+		},
+	}
+	history := []Selection{
+		{
+			commands: []Command{rootCmd},
+		},
+	}
+	m := &commandModel{
+		title:         "Choose command",
+		mode:          modeCommandSelect,
+		history:       history,
+		selectedIndex: 0,
+		width:         40, // narrow width to force wrapping
+	}
+
+	viewStr := m.View()
+	// dock name length is 4. maxLen is 4. maxLen + 9 is 13.
+	// Subsequent lines should be indented by 13 spaces.
+	assert.Contains(t, viewStr, "\n             feature of macOS.")
+}
+
 
 
 

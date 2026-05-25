@@ -49,6 +49,7 @@ type commandModel struct {
 	optionsIndex int
 	inputErr     error
 	env          map[string]string
+	width        int
 }
 
 func (m *commandModel) currentSelection() Selection {
@@ -96,6 +97,11 @@ func (m *commandModel) Init() tea.Cmd {
 
 func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+	}
 
 	if m.mode == modeInputPrompt {
 		switch msg := msg.(type) {
@@ -341,21 +347,43 @@ func (m *commandModel) View() string {
 			}
 			padding := strings.Repeat(" ", padLen+5)
 
-			var nameStr string
-			var descStr string
-
+			var prefixAndName string
 			if i == m.selectedIndex {
-				nameStr = accentStyle.Render(sub.Name)
-				if sub.Description != "" {
-					descStr = descActiveStyle.Render(padding + sub.Description)
-				}
-				sb.WriteString(fmt.Sprintf("  ❯ %s%s\n", nameStr, descStr))
+				prefixAndName = fmt.Sprintf("  ❯ %s", accentStyle.Render(sub.Name))
 			} else {
-				nameStr = dimStyle.Render(sub.Name)
-				if sub.Description != "" {
-					descStr = descDimStyle.Render(padding + sub.Description)
+				prefixAndName = fmt.Sprintf("    %s", dimStyle.Render(sub.Name))
+			}
+
+			if sub.Description != "" {
+				wrapWidth := m.width - (maxLen + 9)
+				if wrapWidth < 20 {
+					wrapWidth = 20
 				}
-				sb.WriteString(fmt.Sprintf("    %s%s\n", nameStr, descStr))
+				lines := wrapText(sub.Description, wrapWidth)
+				if len(lines) > 0 {
+					var styledFirstLine string
+					if i == m.selectedIndex {
+						styledFirstLine = descActiveStyle.Render(padding + lines[0])
+					} else {
+						styledFirstLine = descDimStyle.Render(padding + lines[0])
+					}
+					sb.WriteString(fmt.Sprintf("%s%s\n", prefixAndName, styledFirstLine))
+
+					indent := strings.Repeat(" ", maxLen+9)
+					for _, line := range lines[1:] {
+						var styledLine string
+						if i == m.selectedIndex {
+							styledLine = descActiveStyle.Render(line)
+						} else {
+							styledLine = descDimStyle.Render(line)
+						}
+						sb.WriteString(fmt.Sprintf("%s%s\n", indent, styledLine))
+					}
+				} else {
+					sb.WriteString(prefixAndName + "\n")
+				}
+			} else {
+				sb.WriteString(prefixAndName + "\n")
 			}
 		}
 
@@ -448,6 +476,7 @@ func askCommands(sel Selection, env map[string]string) (Selection, error) {
 		selectedIndex: 0,
 		mode:          modeCommandSelect,
 		env:           env,
+		width:         80,
 	}
 
 	if sel.Runnable() {
@@ -494,6 +523,39 @@ func (m *commandModel) getBooleanOptions(current *inputs.Input) []inputs.InputOp
 		{Label: "true", Value: "true"},
 		{Label: "false", Value: "false"},
 	}
+}
+
+func wrapText(text string, limit int) []string {
+	if limit <= 0 {
+		return []string{text}
+	}
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return nil
+	}
+	var lines []string
+	var currentLine []string
+	currentLen := 0
+	for _, word := range words {
+		wordLen := utf8.RuneCountInString(word)
+		if currentLen + len(currentLine) + wordLen > limit {
+			if len(currentLine) > 0 {
+				lines = append(lines, strings.Join(currentLine, " "))
+				currentLine = nil
+				currentLen = 0
+			}
+			if wordLen > limit {
+				lines = append(lines, word)
+				continue
+			}
+		}
+		currentLine = append(currentLine, word)
+		currentLen += wordLen
+	}
+	if len(currentLine) > 0 {
+		lines = append(lines, strings.Join(currentLine, " "))
+	}
+	return lines
 }
 
 
