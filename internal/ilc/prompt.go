@@ -341,26 +341,19 @@ func (m *commandModel) View() string {
 			}
 			padding := strings.Repeat(" ", padLen+5)
 
-			var cleanDesc string
-			if sub.Description != "" {
-				cleanDesc = strings.ReplaceAll(sub.Description, "\r", "")
-				cleanDesc = strings.ReplaceAll(cleanDesc, "\n", " ")
-				cleanDesc = strings.TrimSpace(cleanDesc)
-			}
-
 			var nameStr string
 			var descStr string
 
 			if i == m.selectedIndex {
 				nameStr = accentStyle.Render(sub.Name)
-				if cleanDesc != "" {
-					descStr = descActiveStyle.Render(padding + cleanDesc)
+				if sub.Description != "" {
+					descStr = descActiveStyle.Render(padding + sub.Description)
 				}
 				sb.WriteString(fmt.Sprintf("  ❯ %s%s\n", nameStr, descStr))
 			} else {
 				nameStr = dimStyle.Render(sub.Name)
-				if cleanDesc != "" {
-					descStr = descDimStyle.Render(padding + cleanDesc)
+				if sub.Description != "" {
+					descStr = descDimStyle.Render(padding + sub.Description)
 				}
 				sb.WriteString(fmt.Sprintf("    %s%s\n", nameStr, descStr))
 			}
@@ -382,10 +375,7 @@ func (m *commandModel) View() string {
 
 		// Active input description next to the name if available
 		if current.Description != "" {
-			desc := strings.ReplaceAll(current.Description, "\r", "")
-			desc = strings.ReplaceAll(desc, "\n", " ")
-			desc = strings.TrimSpace(desc)
-			sb.WriteString(descActiveStyle.Render("   " + desc))
+			sb.WriteString(descActiveStyle.Render("   " + current.Description))
 		}
 		sb.WriteString("\n")
 

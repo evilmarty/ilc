@@ -3,6 +3,7 @@ package ilc
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/evilmarty/ilc/internal/inputs"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -43,6 +44,7 @@ func (x *yamlSubCommand) UnmarshalYAML(node *yaml.Node) error {
 	} else if err := node.Decode(&subcommand); err != nil {
 		return err
 	}
+	subcommand.Description = strings.TrimSpace(subcommand.Description)
 	*x = yamlSubCommand(subcommand)
 	return nil
 }
@@ -194,7 +196,7 @@ func (x *yamlInput) UnmarshalYAML(node *yaml.Node) error {
 		}
 	}
 
-	x.Description = temp.Description
+	x.Description = strings.TrimSpace(temp.Description)
 	x.Options = temp.Options
 	x.Value = val
 	return nil

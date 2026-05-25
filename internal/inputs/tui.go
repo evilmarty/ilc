@@ -151,11 +151,6 @@ func (m *tuiModel) View() string {
 	// Progress and Label
 	progress := fmt.Sprintf("[%d/%d]", m.currentIndex+1, len(m.inputs))
 	prompt := current.Description
-	if prompt != "" {
-		prompt = strings.ReplaceAll(prompt, "\r", "")
-		prompt = strings.ReplaceAll(prompt, "\n", " ")
-		prompt = strings.TrimSpace(prompt)
-	}
 	if prompt == "" {
 		if current.Selectable() || m.isBooleanInput(current) {
 			prompt = fmt.Sprintf("Choose a %s", current.Name)
