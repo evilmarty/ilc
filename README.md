@@ -66,6 +66,7 @@ prompt will appear to complete the selection process.
 ### Inputs
 
 After a command is specified or selected, if any inputs are missing, an interactive TUI prompt will collect them before execution. Inputs are rendered natively according to their type:
+
 - **`boolean`**: Rendered as interactive selection toggles (Yes/No).
 - **`number`**: Can be incremented or decremented using arrow keys, enforcing `min` and `max` constraints.
 - **`string` (with `options`)**: Rendered as an interactive select list.
@@ -144,14 +145,15 @@ Optionally describe the input's purpose or outcome.
 
 ### `inputs.<input_name>.options`
 
-Limit the value to a list of acceptable values. Options can be a list of values
-or a map, with the keys presented as labels and the corresponding values the
-resulting value.
+Limit the value to a set of acceptable choices. Options can be defined as either a **list** or a **map**, with behavior varying slightly based on the input type:
 
-#### Example of option types
+#### 1. Using Lists (Arrays)
+- **String inputs**: The list items are presented directly as selectable options.
+- **Boolean inputs**: The list must contain exactly 2 items; the item at index 0 represents `false` and the item at index 1 represents `true`.
 
-- A list of options:
+##### List Examples
 
+**String options list:**
 ```yaml
 inputs:
   month:
@@ -170,8 +172,23 @@ inputs:
       - December
 ```
 
-- A map of options:
+**Boolean options list:**
+```yaml
+inputs:
+  confirm:
+    type: boolean
+    options:
+      - No way      # index 0 (false)
+      - Absolutely  # index 1 (true)
+```
 
+#### 2. Using Maps
+- **Standard Behavior**: In general (and for string inputs), keys are presented as the user-facing labels, and the corresponding values are the resulting values.
+- **Boolean inputs**: Follows the standard `Label: Value` format for consistency, but also supports the shorthand `Value: Label` format for convenience.
+
+##### Map Examples
+
+**String options map:**
 ```yaml
 inputs:
   city:
@@ -180,6 +197,27 @@ inputs:
       Melbourne: mlb
       Sydney: syd
 ```
+
+**Boolean options map (Consistent style):**
+```yaml
+inputs:
+  confirm:
+    type: boolean
+    options:
+      Absolutely: true
+      No way: false
+```
+
+**Boolean options map (Shorthand style):**
+```yaml
+inputs:
+  confirm:
+    type: boolean
+    options:
+      true: Absolutely
+      false: No way
+```
+
 
 ### `inputs.<input_name>.pattern`
 

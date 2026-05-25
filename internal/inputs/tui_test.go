@@ -103,6 +103,64 @@ func TestTuiModel_BooleanInputToggle(t *testing.T) {
 	assert.True(t, boolVal.Value)
 }
 
+func TestTuiModel_BooleanInputToggle_CustomOptions(t *testing.T) {
+	t.Run("array custom options", func(t *testing.T) {
+		boolVal := &BooleanValue{Value: true}
+		input := &Input{
+			Name:  "confirm",
+			Value: boolVal,
+			Options: InputOptions{
+				{Label: "No", Value: "false"},
+				{Label: "Yes", Value: "true"},
+			},
+		}
+		m := &tuiModel{
+			inputs:       []*Input{input},
+			currentIndex: 0,
+		}
+		m.initCurrentInput()
+
+		// Initial selection should be "true" (index 1 in our options: Yes is true)
+		assert.Equal(t, 1, m.optionsIndex)
+
+		// Press KeyUp to cycle to "false" (index 0: No is false)
+		_, _ = m.Update(tea.KeyMsg{Type: tea.KeyUp})
+		assert.Equal(t, 0, m.optionsIndex)
+
+		// Confirm "false" selection by pressing KeyEnter
+		_, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		assert.False(t, boolVal.Value)
+	})
+
+	t.Run("map custom options", func(t *testing.T) {
+		boolVal := &BooleanValue{Value: false}
+		input := &Input{
+			Name:  "confirm",
+			Value: boolVal,
+			Options: InputOptions{
+				{Label: "Absolutely", Value: "true"},
+				{Label: "No way", Value: "false"},
+			},
+		}
+		m := &tuiModel{
+			inputs:       []*Input{input},
+			currentIndex: 0,
+		}
+		m.initCurrentInput()
+
+		// Initial selection should be "false" (index 1 in our options: No way is false)
+		assert.Equal(t, 1, m.optionsIndex)
+
+		// Press KeyDown to cycle to "true" (index 0: Absolutely is true)
+		_, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
+		assert.Equal(t, 0, m.optionsIndex)
+
+		// Confirm "true" selection by pressing KeyEnter
+		_, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		assert.True(t, boolVal.Value)
+	})
+}
+
 func TestTuiModel_Init(t *testing.T) {
 	m := &tuiModel{}
 	cmd := m.Init()

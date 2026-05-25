@@ -17,6 +17,9 @@ commands:
         description: Stream logs continuously
         type: boolean
         default: true
+        options:
+          - no
+          - yes
     run: docker logs {{ if .Input.follow }}-f{{ end }} --tail {{ .Input.lines }} {{ .Input.container }}
   cleanup:
     description: Clean up system resources
