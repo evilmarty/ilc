@@ -420,3 +420,68 @@ commands:
       NAME: "{{ .Input.name }}"
       GREETING: "{{ .Input.greeting }}"
 ```
+
+## Contributing
+
+Contributions are welcome! Whether you are reporting a bug, proposing a feature, or submitting a pull request, we appreciate your help in making `ilc` better.
+
+Before contributing, please read our [Contributing Guidelines](CONTRIBUTING.md) to understand:
+- The project's architecture and package design (e.g., the separation of concerns between `internal/inputs` and `internal/ilc`).
+- How to format issues and pull requests.
+- Our coding standards.
+
+For AI agents contributing to this repository, please also refer to [AGENTS.md](AGENTS.md) for local agent execution guidelines and specialized workspace skills.
+
+## Development & Testing
+
+### Prerequisites
+Ensure you have [Go](https://go.dev) installed (Go 1.18 or later is recommended).
+
+### Building from Source
+You can compile the binary locally by running:
+
+```shell
+make build
+```
+
+This compiles the `ilc` executable using the `-buildvcs=false` flag to prevent VCS permission errors during sandboxed builds.
+
+### Running Tests
+To run the automated unit test suite, use the following command:
+
+```shell
+make test
+```
+
+Or run Go's test runner directly:
+
+```shell
+go test -buildvcs=false ./...
+```
+
+### Manual & Interactive Testing
+Since `ilc` features rich interactive TUI components built on Bubble Tea, you can verify your changes using the configurations inside the `examples/` directory:
+
+1. **Verify Numeric Inputs & Constraints**:
+   ```shell
+   ./ilc examples/ilc.yml rate
+   ```
+   *Select the `rate` command, navigate to the `rating` input, and press the `Up` and `Down` arrows to test validation, increment/decrement, and bounds clamping.*
+
+2. **Verify Text Validation & Placeholders**:
+   ```shell
+   ./ilc examples/ilc.yml greet
+   ```
+   *Verify that default text placeholders render correctly, and that live input regex pattern matching triggers validation ticks/crosses immediately as you type.*
+
+3. **Verify Help Cascades**:
+   ```shell
+   ./ilc examples/ilc.yml -help
+   # Or for specific subcommands:
+   ./ilc examples/ilc.yml weather -help
+   ```
+
+## License
+
+This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
+
