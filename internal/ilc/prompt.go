@@ -342,69 +342,48 @@ func (m *commandModel) View() string {
 			maxLen = max(maxLen, utf8.RuneCountInString(sub.Name))
 		}
 
-		totalSubs := len(subs)
-		pageSize := 5
-		if m.height > 30 {
-			pageSize = 8
-		}
-
-		startIdx := 0
-		endIdx := totalSubs
-		if totalSubs > pageSize {
-			startIdx = m.selectedIndex - pageSize/2
-			if startIdx < 0 {
-				startIdx = 0
-			}
-			endIdx = startIdx + pageSize
-			if endIdx > totalSubs {
-				endIdx = totalSubs
-				startIdx = endIdx - pageSize
-			}
-		}
-
-		if startIdx > 0 {
-			sb.WriteString(dimStyle.Render("  ▲  (more above)") + "\n")
-		}
-
-		for idx := startIdx; idx < endIdx; idx++ {
-			sub := subs[idx]
+		for i, sub := range subs {
 			padLen := maxLen - utf8.RuneCountInString(sub.Name)
 			if padLen < 0 {
 				padLen = 0
 			}
 			padding := strings.Repeat(" ", padLen+5)
 
-			var prefixAndName string
-			if idx == m.selectedIndex {
-				prefixAndName = fmt.Sprintf("  ❯ %s", accentStyle.Render(sub.Name))
-			} else {
-				prefixAndName = fmt.Sprintf("    %s", dimStyle.Render(sub.Name))
-			}
+			var nameStr string
+			var descStr string
 
-			if sub.Description != "" {
-				wrapWidth := m.width - (maxLen + 9)
-				if wrapWidth < 20 {
-					wrapWidth = 20
+			if i == m.selectedIndex {
+				nameStr = accentStyle.Render(sub.Name)
+				if sub.Description != "" {
+					wrapWidth := m.width - (maxLen + 9)
+					if wrapWidth < 20 {
+						wrapWidth = 20
+					}
+					desc := sub.Description
+					if utf8.RuneCountInString(desc) > wrapWidth {
+						desc = truncateText(desc, wrapWidth)
+					}
+					descStr = descActiveStyle.Render(padding + desc)
 				}
-				desc := sub.Description
-				if utf8.RuneCountInString(desc) > wrapWidth {
-					desc = truncateText(desc, wrapWidth)
-				}
-				var styledDesc string
-				if idx == m.selectedIndex {
-					styledDesc = descActiveStyle.Render(padding + desc)
-				} else {
-					styledDesc = descDimStyle.Render(padding + desc)
-				}
-				sb.WriteString(fmt.Sprintf("%s%s\n", prefixAndName, styledDesc))
+				sb.WriteString(fmt.Sprintf("  ❯ %s%s\n", nameStr, descStr))
 			} else {
-				sb.WriteString(prefixAndName + "\n")
+				nameStr = dimStyle.Render(sub.Name)
+				if sub.Description != "" {
+					wrapWidth := m.width - (maxLen + 9)
+					if wrapWidth < 20 {
+						wrapWidth = 20
+					}
+					desc := sub.Description
+					if utf8.RuneCountInString(desc) > wrapWidth {
+						desc = truncateText(desc, wrapWidth)
+					}
+					descStr = descDimStyle.Render(padding + desc)
+				}
+				sb.WriteString(fmt.Sprintf("    %s%s\n", nameStr, descStr))
 			}
 		}
 
-		if endIdx < totalSubs {
-			sb.WriteString(dimStyle.Render("  ▼  (more below)") + "\n")
-		}
+		sb.WriteString("\n" + helpStyle.Render("  [Enter] Select/Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
 	} else {
 		// modeInputPrompt
 		// Render completed inputs in progressive/condensed form
@@ -448,14 +427,6 @@ func (m *commandModel) View() string {
 		}
 
 		// Help Guidelines (Hide confirm instruction if active input is invalid)
-		// Rendered statically at the end of View()
-	}
-
-	var helpText string
-	if m.mode == modeCommandSelect {
-		helpText = "  [Enter] Select/Confirm  •  [Esc] Back  •  [Ctrl+C] Abort"
-	} else {
-		current := m.missing[m.inputIndex]
 		var helpParts []string
 		if _, isAdjustable := current.Value.(inputs.AdjustableValue); isAdjustable {
 			helpParts = append(helpParts, "[Up/Down] +/-")
@@ -464,15 +435,8 @@ func (m *commandModel) View() string {
 			helpParts = append(helpParts, "[Enter] Confirm")
 		}
 		helpParts = append(helpParts, "[Esc] Back", "[Ctrl+C] Abort")
-		helpText = "  " + strings.Join(helpParts, "  •  ")
+		sb.WriteString("\n" + helpStyle.Render("  "+strings.Join(helpParts, "  •  ")) + "\n")
 	}
-
-	contentLines := strings.Count(sb.String(), "\n")
-	paddingNewlines := m.height - contentLines - 2
-	if paddingNewlines > 0 {
-		sb.WriteString(strings.Repeat("\n", paddingNewlines))
-	}
-	sb.WriteString(helpStyle.Render(helpText) + "\n")
 
 	return sb.String()
 }
