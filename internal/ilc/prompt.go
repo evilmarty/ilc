@@ -49,6 +49,8 @@ type commandModel struct {
 	optionsIndex int
 	inputErr     error
 	env          map[string]string
+	width        int
+	height       int
 }
 
 func (m *commandModel) currentSelection() Selection {
@@ -96,6 +98,12 @@ func (m *commandModel) Init() tea.Cmd {
 
 func (m *commandModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+	}
 
 	if m.mode == modeInputPrompt {
 		switch msg := msg.(type) {
@@ -312,7 +320,7 @@ func (m *commandModel) View() string {
 
 	var sb strings.Builder
 
-	sb.WriteString(titleStyle.Render(fmt.Sprintf("── %s ──", m.title)) + "\n\n")
+	sb.WriteString(titleStyle.Render(m.title) + "\n\n")
 
 	sb.WriteString(titleStyle.Render("Command:"))
 	if bcPlain.Len() > 0 {
@@ -347,13 +355,29 @@ func (m *commandModel) View() string {
 			if i == m.selectedIndex {
 				nameStr = accentStyle.Render(sub.Name)
 				if sub.Description != "" {
-					descStr = descActiveStyle.Render(padding + sub.Description)
+					wrapWidth := m.width - (maxLen + 9)
+					if wrapWidth < 20 {
+						wrapWidth = 20
+					}
+					desc := sub.Description
+					if utf8.RuneCountInString(desc) > wrapWidth {
+						desc = truncateText(desc, wrapWidth)
+					}
+					descStr = descActiveStyle.Render(padding + desc)
 				}
 				sb.WriteString(fmt.Sprintf("  ❯ %s%s\n", nameStr, descStr))
 			} else {
 				nameStr = dimStyle.Render(sub.Name)
 				if sub.Description != "" {
-					descStr = descDimStyle.Render(padding + sub.Description)
+					wrapWidth := m.width - (maxLen + 9)
+					if wrapWidth < 20 {
+						wrapWidth = 20
+					}
+					desc := sub.Description
+					if utf8.RuneCountInString(desc) > wrapWidth {
+						desc = truncateText(desc, wrapWidth)
+					}
+					descStr = descDimStyle.Render(padding + desc)
 				}
 				sb.WriteString(fmt.Sprintf("    %s%s\n", nameStr, descStr))
 			}
@@ -448,6 +472,8 @@ func askCommands(sel Selection, env map[string]string) (Selection, error) {
 		selectedIndex: 0,
 		mode:          modeCommandSelect,
 		env:           env,
+		width:         80,
+		height:        24,
 	}
 
 	if sel.Runnable() {
@@ -494,6 +520,20 @@ func (m *commandModel) getBooleanOptions(current *inputs.Input) []inputs.InputOp
 		{Label: "true", Value: "true"},
 		{Label: "false", Value: "false"},
 	}
+}
+
+func truncateText(text string, limit int) string {
+	if limit <= 3 {
+		if utf8.RuneCountInString(text) <= limit {
+			return text
+		}
+		return "..."
+	}
+	if utf8.RuneCountInString(text) <= limit {
+		return text
+	}
+	runes := []rune(text)
+	return string(runes[:limit-3]) + "..."
 }
 
 

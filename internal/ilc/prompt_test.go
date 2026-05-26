@@ -419,6 +419,39 @@ func TestCommandModel_SelectableBooleanInput(t *testing.T) {
 	assert.Equal(t, "Yes Please", opts[0].Label)
 }
 
+func TestCommandModel_CommandSelectMode_Truncation(t *testing.T) {
+	rootCmd := Command{
+		Name:        "root",
+		Description: "root command",
+		Commands: SubCommands{
+			{Command: Command{
+				Name:        "dock",
+				Description: "The Dock is a prominent feature of macOS. It is used to launch applications.",
+			}},
+		},
+	}
+	history := []Selection{
+		{
+			commands: []Command{rootCmd},
+		},
+	}
+	m := &commandModel{
+		title:         "Choose command",
+		mode:          modeCommandSelect,
+		history:       history,
+		selectedIndex: 0,
+		width:         40, // narrow width to force truncation
+	}
+
+	viewStr := m.View()
+	// dock name length is 4. maxLen is 4. maxLen + 9 is 13.
+	// wrapWidth is 40 - 13 = 27.
+	// The truncated description should be 27 runes total including ellipsis.
+	// "The Dock is a prominent ..." (27 runes)
+	assert.Contains(t, viewStr, "The Dock is a prominent ...")
+}
+
+
 
 
 

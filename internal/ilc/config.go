@@ -2,11 +2,23 @@ package ilc
 
 import (
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Config Command
+
+func (config *Config) UnmarshalYAML(node *yaml.Node) error {
+	type tempConfig Config
+	var temp tempConfig
+	if err := node.Decode(&temp); err != nil {
+		return err
+	}
+	*config = Config(temp)
+	config.Description = strings.TrimSpace(config.Description)
+	return nil
+}
 
 func (config Config) Select(args []string) Selection {
 	selected := NewSelection(Command(config))

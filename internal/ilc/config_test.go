@@ -212,3 +212,39 @@ func TestLoadConfig_FileNotExist(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestLoadConfig_DescriptionTrimming(t *testing.T) {
+	content := `
+description: |
+  Root command description with newlines.
+
+commands:
+  test:
+    description: |
+      Subcommand description with newlines.
+      
+    run: go test
+    inputs:
+      test_input:
+        description: |
+          Input description with newlines.
+          
+        type: string
+`
+	tempFile, err := os.CreateTemp("", "")
+	assert.NoError(t, err)
+	defer os.Remove(tempFile.Name())
+
+	_, err = tempFile.Write([]byte(content))
+	assert.NoError(t, err)
+
+	actual, err := LoadConfig(tempFile.Name())
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Root command description with newlines.", actual.Description)
+	assert.Equal(t, "Subcommand description with newlines.", actual.Commands[0].Description)
+
+	inputs := actual.Commands[0].Inputs.Inputs()
+	assert.Len(t, inputs, 1)
+	assert.Equal(t, "Input description with newlines.", inputs[0].Description)
+}
+
