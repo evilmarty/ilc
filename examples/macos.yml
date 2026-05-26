@@ -1,0 +1,1244 @@
+#!/usr/bin/env ilc
+description: |
+  macOS-defaults
+  https://macos-defaults.com/
+commands:
+  activity-monitor:
+    description: |
+      Activity Monitor is the built-in utility for monitoring your systems resource usage, such as CPU, RAM, Disk, Network, and Energy.
+    commands:
+      icontype:
+        description: |
+          Choose what information should be shown in the app's Dock icon, if any.
+        inputs:
+          type:
+            type: number
+            default: 0
+        run: |
+          {{ if (eq .Input.type 0) }}
+            defaults delete com.apple.ActivityMonitor "IconType" && killall Activity\ Monitor
+          {{ else }}
+            defaults write com.apple.ActivityMonitor "IconType" -int "{{ .Input.type }}" && killall Activity\ Monitor
+          {{ end }}
+      updateperiod:
+        description: |
+          How frequently Activity Monitor should update its data, in seconds.
+        inputs:
+          period:
+            type: number
+            default: 5
+        run: |
+          {{ if (eq .Input.period 5) }}
+            defaults delete com.apple.ActivityMonitor "UpdatePeriod" && killall Activity\ Monitor
+          {{ else }}
+            defaults write com.apple.ActivityMonitor "UpdatePeriod" -int "{{ .Input.period }}" && killall Activity\ Monitor
+          {{ end }}
+  desktop:
+    description: |
+      Desktop shows files and icons on a background, works as a part of the Finder. The desktop view can be customized.
+    commands:
+      fxsortfoldersfirstondesktop:
+        description: |
+          Keep folders on top when sorting
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "_FXSortFoldersFirstOnDesktop" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "_FXSortFoldersFirstOnDesktop" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      createdesktop:
+        description: |
+          Hide all icons on desktop
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "CreateDesktop" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "CreateDesktop" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      showexternalharddrivesondesktop:
+        description: |
+          Hide external disks on desktop
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "ShowExternalHardDrivesOnDesktop" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "ShowExternalHardDrivesOnDesktop" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      showharddrivesondesktop:
+        description: |
+          Show hard disks on desktop
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "ShowHardDrivesOnDesktop" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "ShowHardDrivesOnDesktop" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      showmountedserversondesktop:
+        description: |
+          Show connected servers on desktop
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "ShowMountedServersOnDesktop" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "ShowMountedServersOnDesktop" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      showremovablemediaondesktop:
+        description: |
+          Hide removable media (CDs, DVDs and iPods) on desktop
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "ShowRemovableMediaOnDesktop" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "ShowRemovableMediaOnDesktop" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+  dock:
+    description: |
+      The Dock is a prominent feature of macOS. It is used to launch applications and to switch between running applications. By default you can find it on the bottom of your screen. You can customize it as you like.
+    commands:
+      autohide-delay:
+        description: |
+          Change the Dock opening delay.
+        inputs:
+          delay:
+            type: number
+            default: 0.2
+        run: |
+          {{ if (eq .Input.delay 0.2) }}
+            defaults delete com.apple.dock "autohide-delay" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "autohide-delay" -float "{{ .Input.delay }}" && killall Dock
+          {{ end }}
+      autohide-time-modifier:
+        description: |
+          Change the Dock opening and closing animation times.
+        inputs:
+          modifier:
+            type: number
+            default: 0.5
+        run: |
+          {{ if (eq .Input.modifier 0.5) }}
+            defaults delete com.apple.dock "autohide-time-modifier" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "autohide-time-modifier" -float "{{ .Input.modifier }}" && killall Dock
+          {{ end }}
+      autohide:
+        description: |
+          Autohides the Dock. You can toggle the Dock using `⌥ alt`+`⌘ cmd`+`d`.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "autohide" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "autohide" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      mineffect:
+        description: |
+          Change the Dock minimize animation.
+        inputs:
+          mode:
+            type: string
+            default: "genie"
+            options:
+              "genie": "genie"
+              "scale": "scale"
+              "suck": "suck"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "mineffect" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "mineffect" -string "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      orientation:
+        description: |
+          Set the Dock position
+        inputs:
+          mode:
+            type: string
+            default: "bottom"
+            options:
+              "left": "left"
+              "bottom": "bottom"
+              "right": "right"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "orientation" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "orientation" -string "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      scroll-to-open:
+        description: |
+          Scroll up on a Dock icon to show all Space's opened windows for an app, or open stack.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "scroll-to-open" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "scroll-to-open" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      show-recents:
+        description: |
+          Show recently used apps in a separate section of the Dock.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "show-recents" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "show-recents" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      static-only:
+        description: |
+          Only show opened apps in Dock.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "static-only" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "static-only" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      tilesize:
+        description: |
+          Set the icon size of Dock items in pixels.
+        inputs:
+          size:
+            type: number
+            default: 48
+        run: |
+          {{ if (eq .Input.size 48) }}
+            defaults delete com.apple.dock "tilesize" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "tilesize" -int "{{ .Input.size }}" && killall Dock
+          {{ end }}
+  feedback-assistant:
+    description: |
+      The Feedback Assistant app allows user to submit reports for developer or public betas.
+    commands:
+      autogather:
+        description: |
+          Choose whether to autogather large files when submitting a feedback report. Can result in a slow Mac and important upload metrics.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.appleseed.FeedbackAssistant "Autogather"
+          {{ else }}
+            defaults write com.apple.appleseed.FeedbackAssistant "Autogather" -bool "{{ .Input.mode }}"
+          {{ end }}
+  finder:
+    description: |
+      The Finder is the default file manager on macOS. It is responsible for the launching of other applications, and for the overall user management of files, disks, and network volumes. In a tradition dating back to the Classic Mac OS of the 1980s and 1990s, the Finder icon is the smiling screen of a computer, known as the Happy Mac logo. Some of its features can be customized.
+    commands:
+      fxenablecolumnautosizing:
+        description: |
+          Automatically adjust column widths in column view to fit content.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "_FXEnableColumnAutoSizing" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "_FXEnableColumnAutoSizing" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      fxsortfoldersfirst:
+        description: |
+          Keep folders on top when sorting by name
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "_FXSortFoldersFirst" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "_FXSortFoldersFirst" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      appleshowallextensions:
+        description: |
+          Show all file extensions in the Finder.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain "AppleShowAllExtensions" && killall Finder
+          {{ else }}
+            defaults write NSGlobalDomain "AppleShowAllExtensions" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      appleshowallfiles:
+        description: |
+          Show hidden files in the Finder. You can toggle the value using `⌘ cmd`+`⇧ shift`+`.`.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "AppleShowAllFiles" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "AppleShowAllFiles" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      finderspawntab:
+        description: |
+          Set whether folders open in a new tab or a new window
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "FinderSpawnTab" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "FinderSpawnTab" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      fxdefaultsearchscope:
+        description: |
+          Set the default search scope when performing a search
+        inputs:
+          value:
+            type: string
+            default: "SCev"
+        run: |
+          {{ if (eq .Input.value "SCev") }}
+            defaults delete com.apple.finder "FXDefaultSearchScope" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "FXDefaultSearchScope" -string "{{ .Input.value }}" && killall Finder
+          {{ end }}
+      fxenableextensionchangewarning:
+        description: |
+          Choose whether to display a warning when changing a file extension.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "FXEnableExtensionChangeWarning" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "FXEnableExtensionChangeWarning" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      fxpreferredviewstyle:
+        description: |
+          Set the default view style for folders without custom setting
+        inputs:
+          value:
+            type: string
+            default: "icnv"
+        run: |
+          {{ if (eq .Input.value "icnv") }}
+            defaults delete com.apple.finder "FXPreferredViewStyle" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "FXPreferredViewStyle" -string "{{ .Input.value }}" && killall Finder
+          {{ end }}
+      fxremoveoldtrashitems:
+        description: |
+          Remove items in the bin after 30 days
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "FXRemoveOldTrashItems" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "FXRemoveOldTrashItems" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      nsdocumentsavenewdocumentstocloud:
+        description: |
+          Choose whether the default file save location is on disk or iCloud
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain "NSDocumentSaveNewDocumentsToCloud"
+          {{ else }}
+            defaults write NSGlobalDomain "NSDocumentSaveNewDocumentsToCloud" -bool "{{ .Input.mode }}"
+          {{ end }}
+      nstableviewdefaultsizemode:
+        description: |
+          Choose the size of Finder sidebar icons
+        inputs:
+          mode:
+            type: number
+            default: 2
+        run: |
+          {{ if (eq .Input.mode 2) }}
+            defaults delete NSGlobalDomain "NSTableViewDefaultSizeMode" && killall Finder
+          {{ else }}
+            defaults write NSGlobalDomain "NSTableViewDefaultSizeMode" -int "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      nstoolbartitleviewrolloverdelay:
+        description: |
+          Choose the delay of the auto-hidden document-proxy icon.
+        inputs:
+          delay:
+            type: number
+            default: 0.5
+        run: |
+          {{ if (eq .Input.delay 0.5) }}
+            defaults delete NSGlobalDomain "NSToolbarTitleViewRolloverDelay" && killall Finder
+          {{ else }}
+            defaults write NSGlobalDomain "NSToolbarTitleViewRolloverDelay" -float "{{ .Input.delay }}" && killall Finder
+          {{ end }}
+      quitmenuitem:
+        description: |
+          Add a quit option to the Finder. Behaves strangely when activated, would not recommend.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "QuitMenuItem" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "QuitMenuItem" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      showpathbar:
+        description: |
+          Show path bar in the bottom of the Finder windows
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "ShowPathbar" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "ShowPathbar" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      showstatusbar:
+        description: |
+          Show status bar in the bottom of the Finder windows
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.finder "ShowStatusBar" && killall Finder
+          {{ else }}
+            defaults write com.apple.finder "ShowStatusBar" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+      showwindowtitlebaricons:
+        description: |
+          Always show folder icon before title in the title bar
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.universalaccess "showWindowTitlebarIcons" && killall Finder
+          {{ else }}
+            defaults write com.apple.universalaccess "showWindowTitlebarIcons" -bool "{{ .Input.mode }}" && killall Finder
+          {{ end }}
+  keyboard:
+    description: |
+      The hardware device to type on a computer.
+    commands:
+      applefnusagetype:
+        description: |
+          Choose what happens when you press the Fn or 🌐︎ key on the keyboard.
+        inputs:
+          type:
+            type: number
+            default: 0
+        run: |
+          {{ if (eq .Input.type 0) }}
+            defaults delete com.apple.HIToolbox AppleFnUsageType
+          {{ else }}
+            defaults write com.apple.HIToolbox "AppleFnUsageType" -int "{{ .Input.type }}"
+          {{ end }}
+      applekeyboardaddperiodwithdoublespace:
+        description: |
+          Allows you to type a period by pressing space twice.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled
+          {{ else }}
+            defaults write NSGlobalDomain "NSAutomaticPeriodSubstitutionEnabled" -bool "{{ .Input.mode }}"
+          {{ end }}
+      applekeyboardfnstate:
+        description: |
+          Allows you to change the behavior of the function keys.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain com.apple.keyboard.fnState
+          {{ else }}
+            defaults write NSGlobalDomain "com.apple.keyboard.fnState" -bool "{{ .Input.mode }}"
+          {{ end }}
+      applekeyboarduimode:
+        description: |
+          Choose whether to enable moving focus with Tab and Shift Tab.
+        inputs:
+          mode:
+            type: number
+            default: 0
+        run: |
+          {{ if (eq .Input.mode 0) }}
+            defaults delete NSGlobalDomain AppleKeyboardUIMode
+          {{ else }}
+            defaults write NSGlobalDomain "AppleKeyboardUIMode" -int "{{ .Input.mode }}"
+          {{ end }}
+      applepressandholdenabled:
+        description: |
+          Allows you to select the behavior when a key is held down for a long time.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain "ApplePressAndHoldEnabled"
+          {{ else }}
+            defaults write NSGlobalDomain "ApplePressAndHoldEnabled" -bool "{{ .Input.mode }}"
+          {{ end }}
+      toggle-language-indicator:
+        description: |
+          Toggle the language indicator visibility while switching input sources.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete kCFPreferencesAnyApplication TSMLanguageIndicatorEnabled
+          {{ else }}
+            defaults write kCFPreferencesAnyApplication "TSMLanguageIndicatorEnabled" -bool "{{ .Input.mode }}"
+          {{ end }}
+  menubar:
+    description: |
+      The menu bar runs along the top of the screen on your Mac. Use the menus and icons in the menu bar to choose commands, perform tasks, and check status.
+    commands:
+      dateformat:
+        description: |
+          This setting configures the time and date format for the Menu Bar digital clock.
+        inputs:
+          format:
+            type: string
+        run: |
+            defaults write com.apple.menuextra.clock "DateFormat" -string "{{ .Input.format }}"
+      flashdateseparators:
+        description: |
+          When enabled, the clock indicator (which by default is the colon) will flash on and off each second.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.menuextra.clock "FlashDateSeparators" && killall SystemUIServer
+          {{ else }}
+            defaults write com.apple.menuextra.clock "FlashDateSeparators" -bool "{{ .Input.mode }}" && killall SystemUIServer
+          {{ end }}
+  messages:
+    description: |
+      Messages serves as a comprehensive messaging platform in macOS, allowing users to send and receive iMessages, photos, videos, and audio messages seamlessly across Apple devices. When connected with an iPhone, users can send and receive SMS and MMS messages directly from their Mac.
+    commands:
+      show-subject-field:
+        description: |
+          Show the subject field which appears above the iMessage/Text Message field in Messages. Text entered in the subject field will be sent in bold (unless there is no text in the iMessage/Text Message field; in this case, the text in the subject field will be sent without the bold effect).
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.MobileSMS "MMSShowSubject" && killall Messages
+          {{ else }}
+            defaults write com.apple.MobileSMS "MMSShowSubject" -bool "{{ .Input.mode }}" && killall Messages
+          {{ end }}
+  misc:
+    description: |
+      All the others `defaults` that don't deserve their own category.
+    commands:
+      apple-intelligence:
+        description: |
+          Toggle Apple Intelligence from command line interface.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.CloudSubscriptionFeatures.optIn "545129924"
+          {{ else }}
+            defaults write com.apple.CloudSubscriptionFeatures.optIn "545129924" -bool "{{ .Input.mode }}"
+          {{ end }}
+      calendar-timezones:
+        description: |
+          Clear all recently used time zones from the time zone selector in Calendar when time zone support is enabled (Calendar → Settings → Advanced → Turn on time zone support).
+        run: |
+          defaults delete com.apple.iCal "RecentlyUsedTimeZones"
+      devmode:
+        description: |
+          Choose whether the Help Menu should be always-on-top.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.helpviewer "DevMode"
+          {{ else }}
+            defaults write com.apple.helpviewer "DevMode" -bool "{{ .Input.mode }}"
+          {{ end }}
+      enable-spring-load-actions-on-all-items:
+        description: |
+          Drag a file over an icon in the Dock, hover, and the application will open. The behaviour is unchanged if the app is already open. This behaviour has been observed with Preview, Quicktime, and iWork (Keynote, Pages, Numbers).
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "enable-spring-load-actions-on-all-items" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "enable-spring-load-actions-on-all-items" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      lsquarantine:
+        description: |
+          Turn off the “Application Downloaded from Internet” quarantine warning.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.LaunchServices "LSQuarantine"
+          {{ else }}
+            defaults write com.apple.LaunchServices "LSQuarantine" -bool "{{ .Input.mode }}"
+          {{ end }}
+      nsclosealwaysconfirmschanges:
+        description: |
+          Should you be asked to keep changes when closing documents or just have changes saved automatically.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain "NSCloseAlwaysConfirmsChanges"
+          {{ else }}
+            defaults write NSGlobalDomain "NSCloseAlwaysConfirmsChanges" -bool "{{ .Input.mode }}"
+          {{ end }}
+      nsquitalwayskeepwindows:
+        description: |
+          When enabled, open documents and windows will be restored when you re-open an application.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain "NSQuitAlwaysKeepsWindow"
+          {{ else }}
+            defaults write NSGlobalDomain "NSQuitAlwaysKeepsWindow" -bool "{{ .Input.mode }}"
+          {{ end }}
+      userwantsplaybacknotifications:
+        description: |
+          Display a notification when a new song starts in the Music app.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.Music "userWantsPlaybackNotifications" && killall Music
+          {{ else }}
+            defaults write com.apple.Music "userWantsPlaybackNotifications" -bool "{{ .Input.mode }}" && killall Music
+          {{ end }}
+  mission-control:
+    description: |
+      Formerly known as Spaces, Mission Control allows a user to do the following: `⌃ ctrl`+`↑ up` view all open application windows. - `⌃ ctrl`+`↓ down` view all open application windows of a specific application. - `⌘ cmd`+`F3 Mission Control` hide all application windows and show the desktop. - `⌃ ctrl`+`← left`/`→ right` manage application windows across multiple virtual desktops. - manage application windows across multiple monitors.
+    commands:
+      applespacesswitchonactivate:
+        description: |
+          When switching to an app, switch to a space with open windows for this app.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete NSGlobalDomain "AppleSpacesSwitchOnActivate" && killall Dock
+          {{ else }}
+            defaults write NSGlobalDomain "AppleSpacesSwitchOnActivate" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      expose-group-apps:
+        description: |
+          If you have several windows from multiple apps open simultaneously, have the windows organised by app in Mission Control.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "expose-group-apps" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "expose-group-apps" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      mru-spaces:
+        description: |
+          Choose whether to rearrange Spaces automatically.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dock "mru-spaces" && killall Dock
+          {{ else }}
+            defaults write com.apple.dock "mru-spaces" -bool "{{ .Input.mode }}" && killall Dock
+          {{ end }}
+      spans-displays:
+        description: |
+          Set up separate spaces for each display (if you use Spaces and have multiple displays).
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.spaces "spans-displays" && killall SystemUIServer
+          {{ else }}
+            defaults write com.apple.spaces "spans-displays" -bool "{{ .Input.mode }}" && killall SystemUIServer
+          {{ end }}
+  mouse:
+    description: |
+      The hardware device to control the cursor.
+    commands:
+      focusfollowsmouse:
+        description: |
+          Focus of the Terminal windows when the mouse cursor hovers over them. The focus change only works between the Terminal windows.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.Terminal "FocusFollowsMouse" && killall Terminal
+          {{ else }}
+            defaults write com.apple.Terminal "FocusFollowsMouse" -bool "{{ .Input.mode }}" && killall Terminal
+          {{ end }}
+      linear:
+        description: |
+          Disable mouse acceleration.
+        run: |
+          defaults delete NSGlobalDomain com.apple.mouse.linear
+      scaling:
+        description: |
+          Set movement speed of the mouse cursor.
+        inputs:
+          value:
+            type: number
+            default: 1
+        run: |
+          {{ if (eq .Input.value 1) }}
+            defaults delete NSGlobalDomain com.apple.mouse.scaling
+          {{ else }}
+            defaults write NSGlobalDomain "com.apple.mouse.scaling" -float "{{ .Input.value }}"
+          {{ end }}
+  safari:
+    description: |
+      Safari is the default web browser on macOS. Some of its features can be customized.
+    commands:
+      showfullurlinsmartsearchfield:
+        description: |
+          Show full website address.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.Safari "ShowFullURLInSmartSearchField" && killall Safari
+          {{ else }}
+            defaults write com.apple.Safari "ShowFullURLInSmartSearchField" -bool "{{ .Input.mode }}" && killall Safari
+          {{ end }}
+  screenshots:
+    description: |
+      On a Mac, you can take screenshots using: - `⌘ cmd`+`⇧ shift`+`3` for fullscreen. - `⌘ cmd`+`⇧ shift`+`4` for a selection. Then use `space` to capture an entire app. - `⌘ cmd`+`⇧ shift`+`5` to open the Screenshot app. There are a few keys you can customize.
+    commands:
+      disable-shadow:
+        description: |
+          Disable screenshot shadow when capturing an app (`⌘ cmd`+`⇧ shift`+`4` then `space`).
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.screencapture "disable-shadow"
+          {{ else }}
+            defaults write com.apple.screencapture "disable-shadow" -bool "{{ .Input.mode }}"
+          {{ end }}
+      include-date:
+        description: |
+          Include date and time in screenshot filenames.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.screencapture "include-date"
+          {{ else }}
+            defaults write com.apple.screencapture "include-date" -bool "{{ .Input.mode }}"
+          {{ end }}
+      location:
+        description: |
+          Set default screenshot location.
+        inputs:
+          location:
+            type: string
+            default: "~/Desktop"
+        run: |
+          {{ if (eq .Input.location "~/Desktop") }}
+            defaults delete com.apple.screencapture "location" && killall SystemUIServer
+          {{ else }}
+            defaults write com.apple.screencapture "location" -string "{{ .Input.location }}" && killall SystemUIServer
+          {{ end }}
+      show-thumbnail:
+        description: |
+          Choose whether to display a thumbnail after taking a screenshot.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.screencapture "show-thumbnail"
+          {{ else }}
+            defaults write com.apple.screencapture "show-thumbnail" -bool "{{ .Input.mode }}"
+          {{ end }}
+      type:
+        description: |
+          Choose the screenshots image format.
+        inputs:
+          mode:
+            type: string
+            default: "png"
+            options:
+              "png": "png"
+              "jpg": "jpg"
+              "heic": "heic"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.screencapture "type"
+          {{ else }}
+            defaults write com.apple.screencapture "type" -string "{{ .Input.mode }}"
+          {{ end }}
+  simulator:
+    description: |
+      Installed as part of the Xcode tools, Simulator is a Mac app simulating iPhone, iPad, Apple Watch, or Apple TV environments.
+    commands:
+      screenshotsavelocation:
+        description: |
+          Set default location for Simulator screenshots. Note that the folder has to exist in the filesystem.
+        inputs:
+          location:
+            type: string
+            default: "~/Pictures/Screenshots"
+        run: |
+          {{ if (eq .Input.location "~/Pictures/Screenshots") }}
+            defaults delete com.apple.iphonesimulator "ScreenShotSaveLocation"
+          {{ else }}
+            defaults write com.apple.iphonesimulator "ScreenShotSaveLocation" -string "{{ .Input.location }}"
+          {{ end }}
+  textedit:
+    description: |
+      TextEdit allows you to open and edit rich text, plain text and HTML documents.
+    commands:
+      richtext:
+        description: |
+          Set default document format as rich text (.rtf) or plain text (.txt).
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.TextEdit "RichText" && killall TextEdit
+          {{ else }}
+            defaults write com.apple.TextEdit "RichText" -bool "{{ .Input.mode }}" && killall TextEdit
+          {{ end }}
+      smartquotes:
+        description: |
+          Set if quotation marks should be converted from neutral form to opening/closing variants.
+        inputs:
+          mode:
+            type: string
+            default: "true"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.TextEdit "SmartQuotes" && killall TextEdit
+          {{ else }}
+            defaults write com.apple.TextEdit "SmartQuotes" -bool "{{ .Input.mode }}" && killall TextEdit
+          {{ end }}
+  timemachine:
+    description: |
+      The Time Machine feature allows simple, regular backups of your filesystem.
+    commands:
+      donotoffernewdisksforbackup:
+        description: |
+          Prevent Time Machine from prompting to use newly connected storage as backup volumes.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.TimeMachine "DoNotOfferNewDisksForBackup"
+          {{ else }}
+            defaults write com.apple.TimeMachine "DoNotOfferNewDisksForBackup" -bool "{{ .Input.mode }}"
+          {{ end }}
+  trackpad:
+    description: |
+      The trackpad is hardware to control the cursor that comes on all MacBooks.
+    commands:
+      dragging:
+        description: |
+          Mutually exclusive with `DragLock` and `TrackpadThreeFingerDrag`.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.AppleMultitouchTrackpad "Dragging"
+          {{ else }}
+            defaults write com.apple.AppleMultitouchTrackpad "Dragging" -bool "{{ .Input.mode }}"
+          {{ end }}
+      draglock:
+        description: |
+          Mutually exclusive with `Dragging` and `TrackpadThreeFingerDrag`.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.AppleMultitouchTrackpad "DragLock"
+          {{ else }}
+            defaults write com.apple.AppleMultitouchTrackpad "DragLock" -bool "{{ .Input.mode }}"
+          {{ end }}
+      firstclickthreshold:
+        description: |
+          Choose between Light/Medium/Firm.
+        inputs:
+          threshold:
+            type: number
+            default: 1
+        run: |
+          {{ if (eq .Input.threshold 1) }}
+            defaults delete com.apple.AppleMultitouchTrackpad "FirstClickThreshold"
+          {{ else }}
+            defaults write com.apple.AppleMultitouchTrackpad "FirstClickThreshold" -int "{{ .Input.threshold }}"
+          {{ end }}
+      trackpadthreefingerdrag:
+        description: |
+          Mutually exclusive with `Dragging` and `DragLock`.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.AppleMultitouchTrackpad "TrackpadThreeFingerDrag"
+          {{ else }}
+            defaults write com.apple.AppleMultitouchTrackpad "TrackpadThreeFingerDrag" -bool "{{ .Input.mode }}"
+          {{ end }}
+  xcode:
+    description: |
+      Xcode is an integrated development environment for macOS containing a suite of software development tools developed by Apple for developing software for macOS, iOS, iPadOS, watchOS, and tvOS.
+    commands:
+      ideadditionalcounterpartsuffixes:
+        description: |
+          Add additional counterpart suffixes that Xcode should consider in the "Related Items > Counterparts" menu.
+        inputs:
+          mode:
+            type: string
+            options:
+              "Add \"ViewModel\" and \"View\"": "\"ViewModel\" \"View\""
+              "Add \"Router\", \"Interactor\" and \"Builder\"": "\"Router\" \"Interactor\" \"Builder\""
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dt.Xcode "IDEAdditionalCounterpartSuffixes" && killall Xcode
+          {{ else }}
+            defaults write com.apple.dt.Xcode "IDEAdditionalCounterpartSuffixes" -array-add {{ .Input.mode }} && killall Xcode
+          {{ end }}
+      showbuildoperationduration:
+        description: |
+          Show build durations in the Activity Viewer in Xcode's toolbar at the top of the workspace window.
+        inputs:
+          mode:
+            type: string
+            default: "false"
+            options:
+              Enable: "true"
+              Disable: "false"
+              Reset: "reset"
+        run: |
+          {{ if (eq .Input.mode "reset") }}
+            defaults delete com.apple.dt.Xcode "ShowBuildOperationDuration" && killall Xcode
+          {{ else }}
+            defaults write com.apple.dt.Xcode "ShowBuildOperationDuration" -bool "{{ .Input.mode }}" && killall Xcode
+          {{ end }}
