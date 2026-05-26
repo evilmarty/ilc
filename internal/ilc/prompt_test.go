@@ -419,7 +419,7 @@ func TestCommandModel_SelectableBooleanInput(t *testing.T) {
 	assert.Equal(t, "Yes Please", opts[0].Label)
 }
 
-func TestCommandModel_CommandSelectMode_Wrapping(t *testing.T) {
+func TestCommandModel_CommandSelectMode_Truncation(t *testing.T) {
 	rootCmd := Command{
 		Name:        "root",
 		Description: "root command",
@@ -440,13 +440,15 @@ func TestCommandModel_CommandSelectMode_Wrapping(t *testing.T) {
 		mode:          modeCommandSelect,
 		history:       history,
 		selectedIndex: 0,
-		width:         40, // narrow width to force wrapping
+		width:         40, // narrow width to force truncation
 	}
 
 	viewStr := m.View()
 	// dock name length is 4. maxLen is 4. maxLen + 9 is 13.
-	// Subsequent lines should be indented by 13 spaces.
-	assert.Contains(t, viewStr, "\n             feature of macOS.")
+	// wrapWidth is 40 - 13 = 27.
+	// The truncated description should be 27 runes total including ellipsis.
+	// "The Dock is a prominent ..." (27 runes)
+	assert.Contains(t, viewStr, "The Dock is a prominent ...")
 }
 
 func TestCommandModel_CommandSelectMode_Pagination(t *testing.T) {

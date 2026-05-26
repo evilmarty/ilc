@@ -386,29 +386,17 @@ func (m *commandModel) View() string {
 				if wrapWidth < 20 {
 					wrapWidth = 20
 				}
-				lines := wrapText(sub.Description, wrapWidth)
-				if len(lines) > 0 {
-					var styledFirstLine string
-					if idx == m.selectedIndex {
-						styledFirstLine = descActiveStyle.Render(padding + lines[0])
-					} else {
-						styledFirstLine = descDimStyle.Render(padding + lines[0])
-					}
-					sb.WriteString(fmt.Sprintf("%s%s\n", prefixAndName, styledFirstLine))
-
-					indent := strings.Repeat(" ", maxLen+9)
-					for _, line := range lines[1:] {
-						var styledLine string
-						if idx == m.selectedIndex {
-							styledLine = descActiveStyle.Render(line)
-						} else {
-							styledLine = descDimStyle.Render(line)
-						}
-						sb.WriteString(fmt.Sprintf("%s%s\n", indent, styledLine))
-					}
-				} else {
-					sb.WriteString(prefixAndName + "\n")
+				desc := sub.Description
+				if utf8.RuneCountInString(desc) > wrapWidth {
+					desc = truncateText(desc, wrapWidth)
 				}
+				var styledDesc string
+				if idx == m.selectedIndex {
+					styledDesc = descActiveStyle.Render(padding + desc)
+				} else {
+					styledDesc = descDimStyle.Render(padding + desc)
+				}
+				sb.WriteString(fmt.Sprintf("%s%s\n", prefixAndName, styledDesc))
 			} else {
 				sb.WriteString(prefixAndName + "\n")
 			}
@@ -417,8 +405,6 @@ func (m *commandModel) View() string {
 		if endIdx < totalSubs {
 			sb.WriteString(dimStyle.Render("  ▼  (more below)") + "\n")
 		}
-
-		sb.WriteString("\n" + helpStyle.Render("  [Enter] Select/Confirm  •  [Esc] Back  •  [Ctrl+C] Abort") + "\n")
 	} else {
 		// modeInputPrompt
 		// Render completed inputs in progressive/condensed form
@@ -462,6 +448,14 @@ func (m *commandModel) View() string {
 		}
 
 		// Help Guidelines (Hide confirm instruction if active input is invalid)
+		// Rendered statically at the end of View()
+	}
+
+	var helpText string
+	if m.mode == modeCommandSelect {
+		helpText = "  [Enter] Select/Confirm  •  [Esc] Back  •  [Ctrl+C] Abort"
+	} else {
+		current := m.missing[m.inputIndex]
 		var helpParts []string
 		if _, isAdjustable := current.Value.(inputs.AdjustableValue); isAdjustable {
 			helpParts = append(helpParts, "[Up/Down] +/-")
@@ -470,8 +464,15 @@ func (m *commandModel) View() string {
 			helpParts = append(helpParts, "[Enter] Confirm")
 		}
 		helpParts = append(helpParts, "[Esc] Back", "[Ctrl+C] Abort")
-		sb.WriteString("\n" + helpStyle.Render("  "+strings.Join(helpParts, "  •  ")) + "\n")
+		helpText = "  " + strings.Join(helpParts, "  •  ")
 	}
+
+	contentLines := strings.Count(sb.String(), "\n")
+	paddingNewlines := m.height - contentLines - 2
+	if paddingNewlines > 0 {
+		sb.WriteString(strings.Repeat("\n", paddingNewlines))
+	}
+	sb.WriteString(helpStyle.Render(helpText) + "\n")
 
 	return sb.String()
 }
@@ -557,37 +558,18 @@ func (m *commandModel) getBooleanOptions(current *inputs.Input) []inputs.InputOp
 	}
 }
 
-func wrapText(text string, limit int) []string {
-	if limit <= 0 {
-		return []string{text}
-	}
-	words := strings.Fields(text)
-	if len(words) == 0 {
-		return nil
-	}
-	var lines []string
-	var currentLine []string
-	currentLen := 0
-	for _, word := range words {
-		wordLen := utf8.RuneCountInString(word)
-		if currentLen + len(currentLine) + wordLen > limit {
-			if len(currentLine) > 0 {
-				lines = append(lines, strings.Join(currentLine, " "))
-				currentLine = nil
-				currentLen = 0
-			}
-			if wordLen > limit {
-				lines = append(lines, word)
-				continue
-			}
+func truncateText(text string, limit int) string {
+	if limit <= 3 {
+		if utf8.RuneCountInString(text) <= limit {
+			return text
 		}
-		currentLine = append(currentLine, word)
-		currentLen += wordLen
+		return "..."
 	}
-	if len(currentLine) > 0 {
-		lines = append(lines, strings.Join(currentLine, " "))
+	if utf8.RuneCountInString(text) <= limit {
+		return text
 	}
-	return lines
+	runes := []rune(text)
+	return string(runes[:limit-3]) + "..."
 }
 
 
