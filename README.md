@@ -1,4 +1,6 @@
-![ILC](assets/logo.svg)
+<p align="center">
+  <img src="assets/logo.svg" alt="ilc" />
+</p>
 
 # The simple way to create a command-line utility
 
@@ -6,6 +8,8 @@
 
 Create an easy to use interactive CLI to simplify your workflow with a single
 YAML file.
+
+![demo](assets/demo.gif)
 
 ## Installation
 
@@ -148,12 +152,14 @@ Optionally describe the input's purpose or outcome.
 Limit the value to a set of acceptable choices. Options can be defined as either a **list** or a **map**, with behavior varying slightly based on the input type:
 
 #### 1. Using Lists (Arrays)
+
 - **String inputs**: The list items are presented directly as selectable options.
 - **Boolean inputs**: The list must contain exactly 2 items; the item at index 0 represents `false` and the item at index 1 represents `true`.
 
 ##### List Examples
 
 **String options list:**
+
 ```yaml
 inputs:
   month:
@@ -173,6 +179,7 @@ inputs:
 ```
 
 **Boolean options list:**
+
 ```yaml
 inputs:
   confirm:
@@ -183,12 +190,14 @@ inputs:
 ```
 
 #### 2. Using Maps
+
 - **Standard Behavior**: In general (and for string inputs), keys are presented as the user-facing labels, and the corresponding values are the resulting values.
 - **Boolean inputs**: Follows the standard `Label: Value` format for consistency, but also supports the shorthand `Value: Label` format for convenience.
 
 ##### Map Examples
 
 **String options map:**
+
 ```yaml
 inputs:
   city:
@@ -199,6 +208,7 @@ inputs:
 ```
 
 **Boolean options map (Consistent style):**
+
 ```yaml
 inputs:
   confirm:
@@ -209,6 +219,7 @@ inputs:
 ```
 
 **Boolean options map (Shorthand style):**
+
 ```yaml
 inputs:
   confirm:
@@ -217,7 +228,6 @@ inputs:
       true: Absolutely
       false: No way
 ```
-
 
 ### `inputs.<input_name>.pattern`
 
@@ -426,6 +436,7 @@ commands:
 Contributions are welcome! Whether you are reporting a bug, proposing a feature, or submitting a pull request, we appreciate your help in making `ilc` better.
 
 Before contributing, please read our [Contributing Guidelines](CONTRIBUTING.md) to understand:
+
 - The project's architecture and package design (e.g., the separation of concerns between `internal/inputs` and `internal/ilc`).
 - How to format issues and pull requests.
 - Our coding standards.
@@ -435,9 +446,11 @@ For AI agents contributing to this repository, please also refer to [AGENTS.md](
 ## Development & Testing
 
 ### Prerequisites
+
 Ensure you have [Go](https://go.dev) installed (Go 1.18 or later is recommended).
 
 ### Building from Source
+
 You can compile the binary locally by running:
 
 ```shell
@@ -447,6 +460,7 @@ make build
 This compiles the `ilc` executable using the `-buildvcs=false` flag to prevent VCS permission errors during sandboxed builds.
 
 ### Running Tests
+
 To run the automated unit test suite, use the following command:
 
 ```shell
@@ -460,21 +474,27 @@ go test -buildvcs=false ./...
 ```
 
 ### Manual & Interactive Testing
+
 Since `ilc` features rich interactive TUI components built on Bubble Tea, you can verify your changes using the configurations inside the `examples/` directory:
 
 1. **Verify Numeric Inputs & Constraints**:
+
    ```shell
    ./ilc examples/ilc.yml rate
    ```
+
    *Select the `rate` command, navigate to the `rating` input, and press the `Up` and `Down` arrows to test validation, increment/decrement, and bounds clamping.*
 
 2. **Verify Text Validation & Placeholders**:
+
    ```shell
    ./ilc examples/ilc.yml greet
    ```
+
    *Verify that default text placeholders render correctly, and that live input regex pattern matching triggers validation ticks/crosses immediately as you type.*
 
 3. **Verify Help Cascades**:
+
    ```shell
    ./ilc examples/ilc.yml -help
    # Or for specific subcommands:
@@ -484,4 +504,3 @@ Since `ilc` features rich interactive TUI components built on Bubble Tea, you ca
 ## License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
-
