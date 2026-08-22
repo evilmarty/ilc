@@ -28,6 +28,8 @@ brews:
     description: "Simplify creating command-line utilities"
     license: "GPL"
     custom_block: |
+      deprecate! date: "2026-08-22", because: "it has moved to the evilmarty/tap repository"
+
       head do
         url "https://github.com/evilmarty/ilc.git", branch: "main"
         depends_on "go" => :build

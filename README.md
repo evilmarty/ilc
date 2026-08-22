@@ -18,7 +18,7 @@ YAML file.
 To install via [Homebrew](https://brew.sh) just run the following command:
 
 ```shell
-brew install evilmarty/ilc/ilc
+brew install evilmarty/tap/ilc
 ```
 
 ### Golang
