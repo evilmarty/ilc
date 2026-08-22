@@ -62,3 +62,16 @@ jobs:
         env:
           COMMITTER_TOKEN: ${{ secrets.PAT }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: evilmarty/bump-homebrew-formula-action@run
+        with:
+          formula-name: ilc
+          formula-path: Formula/ilc.rb
+          homebrew-tap: evilmarty/homebrew-tap
+          base-branch: main
+          download-url: https://github.com/evilmarty/ilc/archive/${{github.ref}}.tar.gz
+          commit-message: |
+            {{formulaName}} {{version}}
+        env:
+          COMMITTER_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
